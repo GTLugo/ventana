@@ -1,7 +1,3 @@
-pub mod position;
-pub mod size;
-pub mod settings;
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Fullscreen {
   // Exclusive, // todo

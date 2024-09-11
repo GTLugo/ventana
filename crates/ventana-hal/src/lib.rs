@@ -1,8 +1,14 @@
-use ventana_types::settings::WindowSettings;
+use self::settings::WindowSettings;
+
+pub mod position;
+pub mod settings;
+pub mod size;
 
 pub trait Backend {
   /// For debugging purposes
-  fn name() -> &'static str where Self: Sized;
+  fn name() -> &'static str
+  where
+    Self: Sized;
   /// Use this to create the crate-specific window object
   fn create_window(&self, settings: WindowSettings) -> Box<dyn Window>;
 }

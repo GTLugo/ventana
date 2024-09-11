@@ -30,10 +30,6 @@ cursor-icon = "1.1.x"
 version = "*"
 path = "../ventana-derive"
 
-[dependencies.ventana-types]
-version = "*"
-path = "../ventana-types"
-
 [dependencies.ventana-hal]
 version = "*"
 path = "../ventana-hal"

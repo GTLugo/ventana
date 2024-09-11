@@ -1,5 +1,4 @@
-use ventana_hal::{Backend, Window as HalWindow};
-use ventana_types::settings::WindowSettings;
+use ventana_hal::{settings::WindowSettings, Backend, Window as HalWindow};
 
 pub struct Win32Backend;
 
@@ -19,7 +18,6 @@ pub struct Window {
 
 impl HalWindow for Window {
   fn new(settings: WindowSettings) -> Self {
-    println!("New Win32 window!");
     Self { settings }
   }
 

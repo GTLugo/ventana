@@ -1,8 +1,7 @@
-use ventana::window::{Backend, Window, WindowSettings};
+use ventana::{settings::WindowSettings, window::Window};
 
 fn main() {
   #[allow(unreachable_code)]
-
   // let window = Window::builder().build();
   // let window = Window::builder().with_backend(Backend::default()).build();
   let window = Window::new(&WindowSettings::default());

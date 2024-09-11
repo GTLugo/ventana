@@ -11,7 +11,3 @@ repository.workspace = true
 
 [dependencies]
 thiserror = "1.0.x"
-
-[dependencies.ventana-types]
-version = "*"
-path = "../ventana-types"

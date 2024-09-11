@@ -16,8 +16,7 @@ pub use ventana_backend_win32 as win32;
 #[cfg(x11_platform)]
 pub use ventana_backend_x11 as x11;
 
-use ventana_hal::{Backend as HalBackend, Window as HalWindow};
-use ventana_types::settings::WindowSettings;
+use ventana_hal::{settings::WindowSettings, Backend as HalBackend, Window as HalWindow};
 
 // pub struct BackendRegistry {
 //   backends: HashMap<TypeId, Box<dyn Backend>>,

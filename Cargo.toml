@@ -4,8 +4,7 @@ members = [
   "crates/ventana-backend-win32", 
   "crates/ventana-backend-x11",
   "crates/ventana-derive", 
-  "crates/ventana-hal", 
-  "crates/ventana-types",
+  "crates/ventana-hal",
   "crates/win64",
 ]
 resolver = "2"

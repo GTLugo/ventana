@@ -1,5 +1,4 @@
-use ventana_hal::{Backend as HalBackend, Window as HalWindow};
-pub use ventana_types::settings::WindowSettings;
+use ventana_hal::{settings::WindowSettings, Backend as HalBackend, Window as HalWindow};
 
 use crate::backend;
 
