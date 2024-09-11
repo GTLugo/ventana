@@ -1,5 +1,4 @@
-use ventana_hal::{Backend, Window as HalWindow};
-use ventana_types::settings::WindowSettings;
+use ventana_hal::{settings::WindowSettings, Backend, Window as HalWindow};
 
 pub struct X11Backend;
 

@@ -15,8 +15,7 @@ impl Window {
   }
 
   pub fn new(settings: &WindowSettings) -> Self {
-    let backend = Backend::default().0();
-    Self(backend.create_window(settings.clone()))
+    Self::with_backend(&Backend::default(), settings)
   }
 
   pub fn title(&self) -> String {
