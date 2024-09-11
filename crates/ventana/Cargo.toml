@@ -1,0 +1,47 @@
+[package]
+name    = "ventana"
+readme.workspace = true
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+x11     = []
+
+[build-dependencies]
+cfg_aliases = "0.2.x"
+
+[dependencies]
+thiserror = "1.0.x"
+tracing = "0.1.x"
+bitflags = "2.6.x"
+cursor-icon = "1.1.x"
+
+#hal = { package = "ventana-hal", version = "*", path = "hal" }
+#backend-win32 = { package = "ventana-backend-win32", version = "*", path = "src/backend/win32", optional = true }
+#backend-x11 = { package = "ventana-backend-x11", version = "*", path = "src/backend/x11", optional = true }
+
+[dependencies.ventana-derive]
+version = "*"
+path = "../ventana-derive"
+
+[dependencies.ventana-types]
+version = "*"
+path = "../ventana-types"
+
+[dependencies.ventana-hal]
+version = "*"
+path = "../ventana-hal"
+
+# Windows
+[target.'cfg(target_os = "windows")'.dependencies.ventana-backend-win32]
+version = "*"
+path = "../ventana-backend-win32"
+
+# Linux
+[target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies]

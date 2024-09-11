@@ -1,0 +1,17 @@
+[package]
+name = "ventana-hal"
+readme.workspace = true
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+thiserror = "1.0.x"
+
+[dependencies.ventana-types]
+version = "*"
+path = "../ventana-types"

@@ -1,0 +1,24 @@
+[package]
+name = "ventana-backend-win32"
+readme.workspace = true
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+keywords.workspace = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+
+[dependencies.ventana-types]
+version = "*"
+path = "../ventana-types"
+
+[dependencies.ventana-hal]
+version = "*"
+path = "../ventana-hal"
+
+[dependencies.win64]
+version = "*"
+path = "../win64"
