@@ -1,4 +1,4 @@
-use ventana_hal::{settings::WindowSettings, Backend as HalBackend, Window as HalWindow};
+use ventana_hal::{position::Position, settings::WindowSettings, size::Size, Backend as HalBackend, Window as HalWindow};
 
 use crate::backend;
 
@@ -21,6 +21,14 @@ impl Window {
   pub fn title(&self) -> String {
     self.0.title()
   }
+
+  pub fn size(&self) -> Size {
+    self.0.size()
+  }
+
+  pub fn position(&self) -> Position {
+    self.0.position()
+  }
 }
 
 pub struct Backend(Box<dyn Fn() -> Box<dyn HalBackend> + 'static>);
@@ -33,7 +41,7 @@ impl Default for Backend {
       return Box::new(backend::win32::Win32Backend);
       #[cfg(x11_platform)]
       return Box::new(backend::x11::X11Backend);
-      panic!("No valid backend selected");
+      panic!("No valid default backend selected for ventana. Check feature flags or try manually selecting a compatible backend.");
     }))
   }
 }

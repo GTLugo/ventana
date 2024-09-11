@@ -1,4 +1,4 @@
-use ventana_hal::{settings::WindowSettings, Backend, Window as HalWindow};
+use ventana_hal::{position::Position, settings::WindowSettings, size::Size, Backend, Window as HalWindow};
 
 pub struct X11Backend;
 
@@ -12,14 +12,24 @@ impl Backend for X11Backend {
   }
 }
 
-pub struct Window;
+pub struct Window {
+  settings: WindowSettings,
+}
 
 impl HalWindow for Window {
-  fn new(_settings: WindowSettings) -> Self {
-    Self
+  fn new(settings: WindowSettings) -> Self {
+    Self { settings }
   }
 
   fn title(&self) -> String {
-    todo!()
+    self.settings.title.clone()
+  }
+
+  fn size(&self) -> Size {
+    self.settings.size
+  }
+
+  fn position(&self) -> Position {
+    self.settings.position
   }
 }

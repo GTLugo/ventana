@@ -10,7 +10,7 @@ categories.workspace = true
 repository.workspace = true
 
 [features]
-default = []
+default = ["x11"]
 x11     = []
 
 [build-dependencies]

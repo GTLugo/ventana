@@ -1,4 +1,4 @@
-use self::settings::WindowSettings;
+use self::{position::Position, settings::WindowSettings, size::Size};
 
 pub mod position;
 pub mod settings;
@@ -19,6 +19,10 @@ pub trait Window {
     Self: Sized;
 
   fn title(&self) -> String;
+
+  fn size(&self) -> Size;
+
+  fn position(&self) -> Position;
 }
 
 // WIP. Syntax errors due to me changing my mind on it while working on it

@@ -16,7 +16,7 @@ pub use ventana_backend_win32 as win32;
 #[cfg(x11_platform)]
 pub use ventana_backend_x11 as x11;
 
-use ventana_hal::{settings::WindowSettings, Backend as HalBackend, Window as HalWindow};
+// use ventana_hal::{settings::WindowSettings, Backend as HalBackend, Window as HalWindow};
 
 // pub struct BackendRegistry {
 //   backends: HashMap<TypeId, Box<dyn Backend>>,
@@ -67,26 +67,26 @@ use ventana_hal::{settings::WindowSettings, Backend as HalBackend, Window as Hal
 //   }
 // }
 
-pub struct DummyBackend;
+// pub struct DummyBackend;
 
-impl HalBackend for DummyBackend {
-  fn name() -> &'static str {
-    "Dummy"
-  }
+// impl HalBackend for DummyBackend {
+//   fn name() -> &'static str {
+//     "Dummy"
+//   }
 
-  fn create_window(&self, settings: WindowSettings) -> Box<dyn HalWindow> {
-    Box::new(DummyWindow::new(settings))
-  }
-}
+//   fn create_window(&self, settings: WindowSettings) -> Box<dyn HalWindow> {
+//     Box::new(DummyWindow::new(settings))
+//   }
+// }
 
-pub struct DummyWindow;
+// pub struct DummyWindow;
 
-impl HalWindow for DummyWindow {
-  fn new(_settings: WindowSettings) -> Self {
-    Self
-  }
+// impl HalWindow for DummyWindow {
+//   fn new(_settings: WindowSettings) -> Self {
+//     Self
+//   }
 
-  fn title(&self) -> String {
-    String::new()
-  }
-}
+//   fn title(&self) -> String {
+//     String::new()
+//   }
+// }
