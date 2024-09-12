@@ -1,14 +1,12 @@
 use ventana_hal::{position::Position, settings::WindowSettings, size::Size, Backend, Window as HalWindow};
 
-pub struct Win32Backend;
+// #[derive(Backend)]
+// #[window(Window)]
+pub struct Win32;
 
-impl Backend for Win32Backend {
-  fn name() -> &'static str {
-    "Win32"
-  }
-
+impl Backend for Win32 {
   fn create_window(&self, settings: WindowSettings) -> Box<dyn HalWindow> {
-    Box::new(Window::new(settings))
+    Box::new(Window { settings })
   }
 }
 
@@ -17,10 +15,6 @@ pub struct Window {
 }
 
 impl HalWindow for Window {
-  fn new(settings: WindowSettings) -> Self {
-    Self { settings }
-  }
-
   fn title(&self) -> String {
     self.settings.title.clone()
   }

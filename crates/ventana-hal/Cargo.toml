@@ -9,5 +9,14 @@ keywords.workspace = true
 categories.workspace = true
 repository.workspace = true
 
+[features]
+default = ["derive"]
+derive = ["dep:ventana-derive"]
+
 [dependencies]
 thiserror = "1.0.x"
+
+[dependencies.ventana-derive]
+version = "*"
+path = "../ventana-derive"
+optional = true

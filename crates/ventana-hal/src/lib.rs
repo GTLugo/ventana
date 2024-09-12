@@ -4,19 +4,17 @@ pub mod position;
 pub mod settings;
 pub mod size;
 
+// #[cfg(feature = "derive")]
+// pub use ventana_derive::Backend;
+
 pub trait Backend {
-  /// For debugging purposes
-  fn name() -> &'static str
-  where
-    Self: Sized;
   /// Use this to create the crate-specific window object
   fn create_window(&self, settings: WindowSettings) -> Box<dyn Window>;
 }
 
-pub trait Window {
-  fn new(settings: WindowSettings) -> Self
-  where
-    Self: Sized;
+// Maybe split this into things like "BasicWindow" "ResizableWindow" "MoveableWindow" etc
+pub trait Window: Send + Sync {
+  // fn id(&self) -> WindowId;
 
   fn title(&self) -> String;
 
@@ -24,6 +22,31 @@ pub trait Window {
 
   fn position(&self) -> Position;
 }
+
+// pub trait CreateWindow<W: Window> {
+//   fn create_window(settings: WindowSettings) -> impl Window {
+//     W::new(settings)
+//   }
+// }
+
+// pub enum Platform<T: Backend = ()> {
+//   Win32,
+//   X11,
+//   Custom(T),
+// }
+
+// impl Backend for () {
+//   fn name(&self) -> &'static str {
+//     unimplemented!()
+//   }
+
+//   fn create_window(&self, settings: WindowSettings) -> Box<dyn Window>
+//   where
+//     Self: Sized,
+//   {
+//     unimplemented!()
+//   }
+// }
 
 // WIP. Syntax errors due to me changing my mind on it while working on it
 // #[macro_export]
