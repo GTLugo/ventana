@@ -8,21 +8,6 @@ use crate::{
   message::{Message, data::MessageData, id::MessageId},
 };
 
-// #[derive(Debug, Default, Clone, Copy, PartialEq)]
-// pub struct ProcedureResult(pub isize);
-
-// impl From<ProcedureResult> for LRESULT {
-//   fn from(value: ProcedureResult) -> Self {
-//     Self(value.0)
-//   }
-// }
-
-// impl From<LRESULT> for ProcedureResult {
-//   fn from(value: LRESULT) -> Self {
-//     Self(value.0)
-//   }
-// }
-
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 #[repr(transparent)]
 pub struct Response(pub isize);
@@ -32,6 +17,7 @@ impl From<Response> for LRESULT {
     Self(value.0)
   }
 }
+
 impl From<LRESULT> for Response {
   fn from(value: LRESULT) -> Self {
     Self(value.0)
@@ -40,18 +26,9 @@ impl From<LRESULT> for Response {
 
 pub trait WindowProcedure {
   #[allow(unused_variables)]
-  fn on_create(&mut self) {}
-
-  #[allow(unused_variables)]
   fn on_message(&mut self, window: WindowId, message: &Message) -> Option<Response> {
     None
   }
-
-  // fn on_create(&mut self, window: WindowId, message: Message) {}
-
-  // fn on_keyboard(&mut self, window: WindowId, message: KeyboardMessage) {}
-
-  // fn on_mouse(&mut self, window: WindowId, message: MouseMessage) {}
 }
 
 pub(crate) struct CreateInfo {
