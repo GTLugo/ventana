@@ -96,7 +96,7 @@ impl WindowProcedure for Internal {
   fn on_message(&mut self, mut window: WindowId, message: &crate::message::Message) -> Option<Response> {
     println!("{window:?} | {message:?}");
 
-    window.destroy();
+    // window.destroy(); // This will cause a crash
 
     None
   }
