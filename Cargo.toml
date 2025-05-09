@@ -1,20 +1,16 @@
 [workspace]
-members = [
-  "crates/ventana", 
-  "crates/ventana-backend-win32", 
-  "crates/ventana-backend-x11",
-  "crates/ventana-derive", 
-  "crates/ventana-hal",
-  "crates/win64",
-]
-resolver = "2"
+resolver = "3"
+members = ["crates/*"]
+default-members = ["crates/ventana"]
 
 [workspace.package]
 readme      = "README.md"
 version     = "0.1.0"
-edition     = "2021"
+edition     = "2024"
 authors     = ["Gabriel Lugo <dev.gabriel.lugo@gmail.com>"]
 license     = "MIT OR Apache-2.0"
 keywords    = ["windows", "windowing"]
 categories  = ["game-development", "rendering", "gui"]
 repository  = "https://github.com/GTLugo/ventana"
+
+[workspace.dependencies]

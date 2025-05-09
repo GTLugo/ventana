@@ -17,18 +17,14 @@ x11     = []
 cfg_aliases = "0.2.x"
 
 [dependencies]
-thiserror = "1.0.x"
+thiserror = "2.0.x"
 tracing = "0.1.x"
-bitflags = "2.6.x"
+bitflags = "2.9.x"
 cursor-icon = "1.1.x"
 
 #hal = { package = "ventana-hal", version = "*", path = "hal" }
 #backend-win32 = { package = "ventana-backend-win32", version = "*", path = "src/backend/win32", optional = true }
 #backend-x11 = { package = "ventana-backend-x11", version = "*", path = "src/backend/x11", optional = true }
-
-[dependencies.ventana-derive]
-version = "*"
-path = "../ventana-derive"
 
 [dependencies.ventana-hal]
 version = "*"

@@ -1,5 +1,5 @@
 [package]
-name = "ventana-hal"
+name = "window-input"
 readme.workspace = true
 version.workspace = true
 edition.workspace = true
@@ -10,11 +10,9 @@ categories.workspace = true
 repository.workspace = true
 
 [features]
-default = []
+serde = ["dep:serde", "bitflags/serde"]
 
 [dependencies]
-thiserror = "2.0.x"
-
-[dependencies.window-input]
-version = "*"
-path = "../window-input"
+serde = { version = "1.0.x", optional = true }
+bitflags = "2.9.x"
+smol_str = "0.3.x"

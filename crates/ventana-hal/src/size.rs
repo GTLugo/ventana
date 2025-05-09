@@ -26,6 +26,12 @@ impl Size {
   }
 }
 
+impl Default for Size {
+  fn default() -> Self {
+    Self::Logical((800.0, 450.0).into())
+  }
+}
+
 impl From<LogicalSize> for Size {
   fn from(val: LogicalSize) -> Self {
     Self::Logical(val)
@@ -50,8 +56,7 @@ impl LogicalSize {
   }
 
   pub fn as_physical(&self, scale_factor: f64) -> PhysicalSize {
-    PhysicalSize::new(self.width.round() as u32, self.height.round() as u32)
-      * scale_factor
+    PhysicalSize::new(self.width.round() as u32, self.height.round() as u32) * scale_factor
   }
 
   pub fn is_any_positive(&self) -> bool {

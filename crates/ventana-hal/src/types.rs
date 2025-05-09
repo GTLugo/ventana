@@ -33,3 +33,9 @@ pub enum Theme {
   Dark,
   Light,
 }
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub enum Focus {
+  Gained,
+  Lost,
+}

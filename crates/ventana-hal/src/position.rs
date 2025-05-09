@@ -26,6 +26,12 @@ impl Position {
   }
 }
 
+impl Default for Position {
+  fn default() -> Self {
+    Self::Logical((0.0, 0.0).into())
+  }
+}
+
 impl From<LogicalPosition> for Position {
   fn from(val: LogicalPosition) -> Self {
     Self::Logical(val)
@@ -126,10 +132,7 @@ impl From<LogicalPosition> for [f64; 2] {
 
 impl From<(f64, f64)> for LogicalPosition {
   fn from(value: (f64, f64)) -> Self {
-    Self {
-      x: value.0,
-      y: value.1,
-    }
+    Self { x: value.0, y: value.1 }
   }
 }
 
@@ -218,10 +221,7 @@ impl From<PhysicalPosition> for [i32; 2] {
 
 impl From<(i32, i32)> for PhysicalPosition {
   fn from(value: (i32, i32)) -> Self {
-    Self {
-      x: value.0,
-      y: value.1,
-    }
+    Self { x: value.0, y: value.1 }
   }
 }
 

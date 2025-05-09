@@ -1,54 +1,22 @@
 use std::{io, ops::RangeInclusive};
 
-use ventana_hal::{
-  WindowCreationError,
-  context::Backend,
-  provider::{InputProvider, WindowProvider},
-  settings::WindowSettings,
-  window::Window as HalWindow,
-};
-
-use self::window::Window;
+use thiserror::Error;
+use windows::Win32::UI::WindowsAndMessaging::{self, GetMessageW, MSG, PeekMessageW};
 
 use self::{
   flag::PeekMessageFlags,
   handle::{Win32Type, window::WindowId},
   message::thread::ThreadMessage,
 };
-use thiserror::Error;
-use windows::Win32::UI::WindowsAndMessaging::{self, GetMessageW, MSG, PeekMessageW};
 
 pub mod class;
 pub mod descriptor;
 pub mod flag;
 pub mod handle;
 pub mod message;
+pub mod prelude;
 pub mod procedure;
 pub mod types;
-pub mod window;
-
-pub struct Win32;
-
-impl Backend for Win32 {}
-
-impl WindowProvider for Win32 {
-  fn create_window(&self, settings: WindowSettings) -> Result<Box<dyn HalWindow>, WindowCreationError> {
-    match Window::new(settings) {
-      Ok(window) => Ok(Box::new(window)),
-      Err(error) => Err(WindowCreationError::GenericError(Box::new(error))),
-    }
-  }
-}
-
-impl InputProvider for Win32 {
-  fn key_to_scancode(&self, key: ventana_hal::keyboard::PhysicalKey) -> Option<u32> {
-    todo!()
-  }
-
-  fn scancode_to_key(&self, scancode: u32) -> ventana_hal::keyboard::PhysicalKey {
-    todo!()
-  }
-}
 
 #[derive(Error, Debug)]
 pub enum Error {
