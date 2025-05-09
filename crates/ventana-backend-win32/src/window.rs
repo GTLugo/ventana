@@ -54,15 +54,15 @@ impl HalWindow for Window {
   }
 
   fn title(&self, context: &Context) -> String {
-    todo!()
+    self.settings.lock().unwrap().title.clone()
   }
 
   fn size(&self, context: &Context) -> Size {
-    todo!()
+    self.settings.lock().unwrap().size
   }
 
   fn position(&self, context: &Context) -> Position {
-    todo!()
+    self.settings.lock().unwrap().position
   }
 
   fn key(&self, context: &Context, keycode: KeyCode) -> KeyState {
