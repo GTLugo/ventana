@@ -2,7 +2,7 @@ use ventana::prelude::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   let window = Window::builder()
-    .with_backend(ventana_backend_win32::Win32) // if omitted, it will auto-select from built-in backends
+    // .with_backend(ventana_backend_win32::Win32) // if omitted, it will auto-select from built-in backends
     .with_settings(WindowSettings { size: Size::Logical((400.0, 250.0).into()), ..Default::default() })
     .build()?;
 
