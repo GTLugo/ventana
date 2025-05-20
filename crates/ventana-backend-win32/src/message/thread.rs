@@ -6,14 +6,14 @@ use windows::Win32::{
 };
 
 use crate::{
-  flag::PeekMessageFlags, get_message, handle::{window::WindowId, Win32Type}, peek_message, procedure::Response, GetMessageResult, PeekMessageResult
+  flag::PeekMessageFlags, get_message, handle::{window::WindowHandle, Win32Type}, peek_message, procedure::Response, GetMessageResult, PeekMessageResult
 };
 
 use super::{Message, data::MessageData, id::MessageId};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Metadata {
-  hwnd: WindowId,
+  hwnd: WindowHandle,
   time: u32,
   pt: POINT,
 }
@@ -63,12 +63,12 @@ impl ThreadMessage {
     self.message.id() == MessageId::Destroy
   }
 
-  pub fn get(hwnd: Option<WindowId>, filter: Option<RangeInclusive<u32>>) -> GetMessageResult {
+  pub fn get(hwnd: Option<WindowHandle>, filter: Option<RangeInclusive<u32>>) -> GetMessageResult {
     get_message(hwnd, &filter)
   }
 
   pub fn peek(
-    hwnd: Option<WindowId>,
+    hwnd: Option<WindowHandle>,
     filter: Option<RangeInclusive<u32>>,
     flags: PeekMessageFlags,
   ) -> PeekMessageResult {
@@ -85,7 +85,7 @@ impl ThreadMessage {
     Response(unsafe { DispatchMessageW(&msg) }.0)
   }
 
-  pub fn window(&self) -> WindowId {
+  pub fn window(&self) -> WindowHandle {
     self.metadata.hwnd
   }
 

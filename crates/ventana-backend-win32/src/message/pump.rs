@@ -1,7 +1,7 @@
 use std::ops::RangeInclusive;
 
 use crate::{
-  GetMessageResult, PeekMessageResult, flag::PeekMessageFlags, get_message, handle::window::WindowId, peek_message,
+  GetMessageResult, PeekMessageResult, flag::PeekMessageFlags, get_message, handle::window::WindowHandle, peek_message,
 };
 
 use super::thread::ThreadMessage;
@@ -16,7 +16,7 @@ pub enum PollingMode {
 
 pub struct MessagePump {
   mode: PollingMode,
-  hwnd: Option<WindowId>,
+  hwnd: Option<WindowHandle>,
   filter: Option<RangeInclusive<u32>>,
   flags: PeekMessageFlags,
   translate: bool,

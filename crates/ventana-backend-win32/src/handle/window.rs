@@ -1,10 +1,9 @@
 use std::ptr::NonNull;
-
 use windows::{
   Win32::{
     Foundation::{HWND, LPARAM, SetLastError, WIN32_ERROR, WPARAM},
     UI::WindowsAndMessaging::{
-      DefWindowProcW, DestroyWindow, GetWindowLongPtrW, PostQuitMessage, SetWindowLongPtrW, SetWindowTextW,
+      DefWindowProcW, DestroyWindow, GetWindowLongPtrW, IsWindow, PostQuitMessage, SetWindowLongPtrW, SetWindowTextW,
     },
   },
   core::{HRESULT, HSTRING},
@@ -13,22 +12,22 @@ use windows::{
 use crate::{
   flag::LongPointerIndex,
   message::Message,
-  procedure::{CreateInfo, Response, State, WindowData},
+  procedure::{CreateInfo, Response, WindowData},
 };
-
+use crate::procedure::WindowState;
 use super::{Handle, Win32Type};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct WindowId(Option<NonNull<usize>>)
+pub struct WindowHandle(Option<NonNull<usize>>)
 where
   Self: Send + Sync;
 
-unsafe impl Send for WindowId {}
-unsafe impl Sync for WindowId {}
+unsafe impl Send for WindowHandle {}
+unsafe impl Sync for WindowHandle {}
 
 type Void = core::ffi::c_void;
 
-impl Handle for WindowId {
+impl Handle for WindowHandle {
   fn as_ptr(&self) -> *mut Void {
     self.0.map_or(core::ptr::null_mut(), |ptr| ptr.as_ptr().cast())
   }
@@ -43,19 +42,19 @@ impl Handle for WindowId {
   }
 
   fn is_valid(&self) -> bool {
-    self.0.is_some()
+    unsafe { IsWindow(Some(self.to_win32())) }.as_bool()
   }
 }
 
-impl Win32Type for WindowId {
+impl Win32Type for WindowHandle {
   type Type = HWND;
 
-  fn to_win32(&self) -> Self::Type {
-    (*self).into()
+  fn to_win32(self) -> Self::Type {
+    self.into()
   }
 }
 
-impl WindowId {
+impl WindowHandle {
   pub fn send_message(&self) {
     // TODO: somehow ensure these are always sent to the correct thread, even when called from a different thread.
     // maybe do it by storing the thread id?
@@ -68,13 +67,10 @@ impl WindowId {
   }
 
   pub fn destroy(&mut self) {
-    if self.is_valid() {
-      if let Some(data) = self.data() {
-        data.state = State::Destroyed;
-      }
+    if self.is_valid() && !self.data().unwrap().is_destroying() {
+      self.data().unwrap().state = WindowState::Destroying;
       unsafe { DestroyWindow(self.to_win32()) }.unwrap();
     }
-    self.0.take();
   }
 
   pub(crate) fn quit(&self) {
@@ -123,13 +119,13 @@ impl WindowId {
   }
 }
 
-impl From<WindowId> for HWND {
-  fn from(value: WindowId) -> Self {
+impl From<WindowHandle> for HWND {
+  fn from(value: WindowHandle) -> Self {
     Self(value.as_ptr())
   }
 }
 
-impl From<HWND> for WindowId {
+impl From<HWND> for WindowHandle {
   fn from(value: HWND) -> Self {
     unsafe { Self::from_ptr(value.0) }
   }

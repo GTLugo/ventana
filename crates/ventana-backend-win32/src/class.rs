@@ -1,20 +1,16 @@
 use cursor_icon::CursorIcon;
+use ventana_hal::dpi::{Position, Size};
 use windows::{
   core::{HSTRING, PCWSTR}, Win32::UI::WindowsAndMessaging::{
     CreateWindowExW, GetClassInfoExW, LoadCursorW, RegisterClassExW, UnregisterClassW, WNDCLASSEXW,
   }
 };
-
-use crate::{
-  descriptor::WindowDescriptor,
-  flag::WindowClassStyle,
-  handle::{Win32Type, instance::InstanceId, window::WindowId},
-  procedure::{self, CreateInfo, WindowProcedure},
-  types::ToHCURSOR,
-};
+use ventana_hal::settings::WindowSettings;
+use crate::{descriptor::WindowDescriptor, flag::WindowClassStyle, handle::{Win32Type, instance::InstanceId, window::WindowHandle}, procedure::{self, CreateInfo, WindowProcedure}, types::ToHCURSOR, Error};
 
 const TEMP_SCALE_FACTOR: f64 = 1.0;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct WindowClass {
   instance: InstanceId,
   name: String,
@@ -42,9 +38,9 @@ impl WindowClass {
   }
 
   pub fn get(instance: &InstanceId, name: String) -> Result<Self, windows::core::Error> {
-    let hstring = HSTRING::from(name.clone());
+    let hs = HSTRING::from(name.clone());
     let mut class = WNDCLASSEXW::default();
-    let result = unsafe { GetClassInfoExW(Some(instance.to_win32()), &hstring, &mut class) };
+    let result = unsafe { GetClassInfoExW(Some(instance.to_win32()), &hs, &mut class) };
     result.map(|_| Self {
       instance: *instance,
       name,
@@ -52,8 +48,8 @@ impl WindowClass {
   }
 
   pub fn unregister(self) -> Result<(), windows::core::Error> {
-    let hstring = HSTRING::from(self.name);
-    unsafe { UnregisterClassW(PCWSTR(hstring.as_ptr()), Some(self.instance.to_win32())) }?;
+    let hs = HSTRING::from(self.name);
+    unsafe { UnregisterClassW(PCWSTR(hs.as_ptr()), Some(self.instance.to_win32())) }?;
 
     Ok(())
   }
@@ -68,34 +64,41 @@ impl WindowClass {
 
   pub fn spawn(
     &self,
+    settings: WindowSettings,
     desc: &WindowDescriptor,
     window_state: impl 'static + WindowProcedure,
-  ) -> Result<WindowId, windows::core::Error> {
+  ) -> Result<WindowHandle, Error> {
     let title = HSTRING::from(desc.title.clone());
-    let position = desc.position.clone().unwrap_or_default().as_logical(TEMP_SCALE_FACTOR);
-    let size = desc.size.clone().unwrap_or_default().as_logical(TEMP_SCALE_FACTOR);
+    let position = desc.position.unwrap_or(Position::Logical((0.0, 0.0).into())).to_logical(TEMP_SCALE_FACTOR);
+    let size = desc.size.unwrap_or(Size::Logical((0.0, 0.0).into())).to_logical(TEMP_SCALE_FACTOR);
     let instance = self.instance.to_win32();
     let class_name = HSTRING::from(self.name());
-
-    let create_info = Box::into_raw(Box::new(CreateInfo::new(window_state)));
-
-    unsafe {
+    
+    let create_info = Box::into_raw(Box::new(CreateInfo::new(window_state, settings)));
+    
+    match unsafe {
       CreateWindowExW(
         desc.ext_style.into(),
         &class_name,
         &title,
         desc.style.into(),
-        position.x as i32,
-        position.y as i32,
-        size.width as i32,
-        size.height as i32,
+        position.x,
+        position.y,
+        size.width,
+        size.height,
         None,
         None,
         Some(instance),
         Some(create_info.cast()),
       )
+    } {
+      Ok(hwnd) => {
+        Ok(hwnd.into())
+      }
+      Err(err) => {
+        Err(Error::Win32Error(err))
+      }
     }
-    .map(Into::into)
   }
 }
 

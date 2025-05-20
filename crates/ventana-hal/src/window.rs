@@ -1,33 +1,48 @@
-use window_input::keyboard::KeyCode;
+use dpi::{Position, Size};
+use keyboard_types::{Code, KeyState};
 
 use crate::{
-  context::Context, input::{
+  event::Event,
+  input::{
     mouse::MouseButton,
-    state::{ButtonState, KeyState},
-  }, message::Message, position::Position, size::Size
+  },
 };
+use crate::context::Backend;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct WindowId(usize);
+
+impl WindowId {
+  pub const fn to_raw(self) -> usize {
+    self.0
+  }
+
+  pub const fn from_raw(raw: usize) -> Self {
+    Self(raw)
+  }
+}
 
 // Maybe split this into things like "BasicWindow" "ResizableWindow" "MoveableWindow" etc
-pub trait Window: Send + Sync {
-  // fn id(&self) -> WindowId;
+pub trait BackendWindow: Send + Sync {
+  fn id(&self) -> WindowId;
 
-  fn next(&self, context: &Context) -> Option<Message>;
+  fn next(&self, context: &dyn Backend) -> Option<Event>;
 
-  fn title(&self, context: &Context) -> String;
+  fn title(&self, context: &dyn Backend) -> String;
 
-  fn size(&self, context: &Context) -> Size;
+  fn size(&self, context: &dyn Backend) -> Size;
 
-  fn position(&self, context: &Context) -> Position;
+  fn position(&self, context: &dyn Backend) -> Position;
 
-  fn key(&self, context: &Context, keycode: KeyCode) -> KeyState;
+  fn key(&self, context: &dyn Backend, keycode: Code) -> KeyState;
 
-  fn mouse(&self, context: &Context, button: MouseButton) -> ButtonState;
+  fn mouse(&self, context: &dyn Backend, button: MouseButton) -> KeyState;
 
-  fn shift_key(&self, context: &Context) -> ButtonState;
+  fn shift_key(&self, context: &dyn Backend) -> KeyState;
 
-  fn ctrl_key(&self, context: &Context) -> ButtonState;
+  fn ctrl_key(&self, context: &dyn Backend) -> KeyState;
 
-  fn alt_key(&self, context: &Context) -> ButtonState;
+  fn alt_key(&self, context: &dyn Backend) -> KeyState;
 
-  fn super_key(&self, context: &Context) -> ButtonState;
+  fn super_key(&self, context: &dyn Backend) -> KeyState;
 }

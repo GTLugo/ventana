@@ -3,19 +3,21 @@ use std::{io, ops::RangeInclusive};
 use ventana_hal::{
   WindowCreationError,
   context::Backend,
+  keyboard::Code,
   provider::{InputProvider, WindowProvider},
   settings::WindowSettings,
-  window::Window as HalWindow,
+  window::BackendWindow,
 };
 
 use self::window::Window;
 
 use self::{
   flag::PeekMessageFlags,
-  handle::{Win32Type, window::WindowId},
+  handle::{Win32Type, window::WindowHandle},
   message::thread::ThreadMessage,
 };
 use thiserror::Error;
+use windows::Win32::Foundation::ERROR_SUCCESS;
 use windows::Win32::UI::WindowsAndMessaging::{self, GetMessageW, MSG, PeekMessageW};
 
 pub mod class;
@@ -32,7 +34,7 @@ pub struct Win32;
 impl Backend for Win32 {}
 
 impl WindowProvider for Win32 {
-  fn create_window(&self, settings: WindowSettings) -> Result<Box<dyn HalWindow>, WindowCreationError> {
+  fn create_window(&self, settings: WindowSettings) -> Result<Box<dyn BackendWindow>, WindowCreationError> {
     match Window::new(settings) {
       Ok(window) => Ok(Box::new(window)),
       Err(error) => Err(WindowCreationError::GenericError(Box::new(error))),
@@ -41,11 +43,11 @@ impl WindowProvider for Win32 {
 }
 
 impl InputProvider for Win32 {
-  fn key_to_scancode(&self, key: ventana_hal::keyboard::PhysicalKey) -> Option<u32> {
+  fn key_to_scancode(&self, key: Code) -> Option<u32> {
     todo!()
   }
 
-  fn scancode_to_key(&self, scancode: u32) -> ventana_hal::keyboard::PhysicalKey {
+  fn scancode_to_key(&self, scancode: u32) -> Code {
     todo!()
   }
 }
@@ -72,7 +74,16 @@ pub enum PeekMessageResult {
   None,
 }
 
-fn get_message(hwnd: Option<WindowId>, filter: &Option<RangeInclusive<u32>>) -> GetMessageResult {
+fn get_last_error() -> Option<Error> {
+  let error = windows::core::Error::from_win32();
+  if error.code() == ERROR_SUCCESS.to_hresult() {
+    None
+  } else {
+    Some(Error::Win32Error(error))
+  }
+}
+
+fn get_message(hwnd: Option<WindowHandle>, filter: &Option<RangeInclusive<u32>>) -> GetMessageResult {
   let (min, max) = match filter {
     Some(filter) => (*filter.start(), *filter.end()),
     None => (0, 0),
@@ -92,7 +103,7 @@ fn get_message(hwnd: Option<WindowId>, filter: &Option<RangeInclusive<u32>>) -> 
 }
 
 fn peek_message(
-  hwnd: Option<WindowId>,
+  hwnd: Option<WindowHandle>,
   filter: &Option<RangeInclusive<u32>>,
   flags: PeekMessageFlags,
 ) -> PeekMessageResult {

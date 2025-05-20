@@ -1,30 +1,24 @@
 use std::sync::{Arc, Mutex};
-
 use ventana_hal::{
-  context::Context,
-  input::{
-    mouse::MouseButton,
-    state::{ButtonState, KeyState},
-  },
-  keyboard::KeyCode,
-  message::Message,
-  position::Position,
+  dpi::{Position, Size},
+  event::Event,
+  input::mouse::MouseButton,
+  keyboard::{Code, KeyState},
   settings::WindowSettings,
-  size::Size,
-  window::Window as HalWindow,
+  window::{BackendWindow, WindowId},
 };
-
+use ventana_hal::context::Backend;
 use crate::{
   Error,
   class::WindowClass,
   descriptor::WindowDescriptor,
-  handle::window::WindowId,
+  handle::{Handle, window::WindowHandle},
   message::pump::{MessagePump, PollingMode},
   procedure::{Response, WindowProcedure},
 };
 
 pub struct Window {
-  hwnd: WindowId,
+  hwnd: WindowHandle,
   settings: Arc<Mutex<WindowSettings>>,
 }
 
@@ -32,6 +26,7 @@ impl Window {
   pub fn new(settings: WindowSettings) -> Result<Self, Error> {
     let class = WindowClass::default();
     let hwnd = class.spawn(
+      settings.clone(),
       WindowDescriptor::default()
         .with_title(settings.title.clone())
         .with_position(settings.position)
@@ -48,44 +43,48 @@ impl Window {
   }
 }
 
-impl HalWindow for Window {
-  fn next(&self, context: &Context) -> Option<Message> {
+impl BackendWindow for Window {
+  fn id(&self) -> WindowId {
+    WindowId::from_raw(self.hwnd.as_ptr() as usize)
+  }
+
+  fn next(&self, backend: &dyn Backend) -> Option<Event> {
     None
   }
 
-  fn title(&self, context: &Context) -> String {
+  fn title(&self, backend: &dyn Backend) -> String {
     self.settings.lock().unwrap().title.clone()
   }
 
-  fn size(&self, context: &Context) -> Size {
+  fn size(&self, backend: &dyn Backend) -> Size {
     self.settings.lock().unwrap().size
   }
 
-  fn position(&self, context: &Context) -> Position {
+  fn position(&self, backend: &dyn Backend) -> Position {
     self.settings.lock().unwrap().position
   }
 
-  fn key(&self, context: &Context, keycode: KeyCode) -> KeyState {
+  fn key(&self, backend: &dyn Backend, keycode: Code) -> KeyState {
     todo!()
   }
 
-  fn mouse(&self, context: &Context, button: MouseButton) -> ButtonState {
+  fn mouse(&self, backend: &dyn Backend, button: MouseButton) -> KeyState {
     todo!()
   }
 
-  fn shift_key(&self, context: &Context) -> ButtonState {
+  fn shift_key(&self, backend: &dyn Backend) -> KeyState {
     todo!()
   }
 
-  fn ctrl_key(&self, context: &Context) -> ButtonState {
+  fn ctrl_key(&self, backend: &dyn Backend) -> KeyState {
     todo!()
   }
 
-  fn alt_key(&self, context: &Context) -> ButtonState {
+  fn alt_key(&self, backend: &dyn Backend) -> KeyState {
     todo!()
   }
 
-  fn super_key(&self, context: &Context) -> ButtonState {
+  fn super_key(&self, backend: &dyn Backend) -> KeyState {
     todo!()
   }
 }
@@ -93,10 +92,11 @@ impl HalWindow for Window {
 struct Internal;
 
 impl WindowProcedure for Internal {
-  fn on_message(&mut self, mut window: WindowId, message: &crate::message::Message) -> Option<Response> {
+  fn on_message(&mut self, mut window: WindowHandle, message: &crate::message::Message) -> Option<Response> {
     println!("{window:?} | {message:?}");
 
-    // window.destroy(); // This will cause a crash
+    window.destroy();
+
 
     None
   }

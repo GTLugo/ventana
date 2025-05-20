@@ -1,7 +1,8 @@
-use ventana_hal::{position::Position, size::Size};
+use ventana_hal::dpi::{Position, Size};
 
 use crate::flag::{ExtendedWindowStyle, WindowStyle};
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct WindowDescriptor {
   pub title: String,
   pub position: Option<Position>,
@@ -16,7 +17,7 @@ impl Default for WindowDescriptor {
       title: "Window".to_owned(),
       position: Default::default(),
       size: Default::default(),
-      style: WindowStyle::OverlappedWindow | WindowStyle::Visible,
+      style: WindowStyle::OverlappedWindow,
       ext_style: ExtendedWindowStyle::empty(),
     }
   }

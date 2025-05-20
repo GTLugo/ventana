@@ -1,52 +1,60 @@
-use window_input::keyboard::{Key, KeyLocation, PhysicalKey, SmolStr};
-
 /*
   Perhaps I should replace this with a more standard enum such as that of winit?
 */
 
-use crate::{
-  input::{
-    mouse::MouseButton,
-    state::{ButtonState, KeyState, RawKeyState},
-  },
-  position::PhysicalPosition,
-  size::PhysicalSize,
-  types::Focus,
-};
+use dpi::{PhysicalPosition, PhysicalSize, Position};
+use keyboard_types::{Code, Key, KeyState, Location, Modifiers};
+
+use crate::{input::mouse::MouseButton, types::Focus, window::WindowId};
 
 #[derive(Debug, PartialEq, Clone)]
-pub enum Message {
+pub enum Event {
   /// Artificial window messages sent by the window loop.
-  Loop(LoopMessage),
+  /// Sent when the message pump is polled, but there are no messages.
+  None,
+  /// Sent when the message pump is exiting.
+  LoopExiting,
   /// Messages sent by devices registered for raw input.
   RawInput(RawInputMessage),
+  Window(WindowEvent),
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub enum WindowEvent {
   /// Message sent when window is created.
-  Created { hwnd: usize, hinstance: usize },
+  Created,
   /// Message sent when window X button is pressed.
-  CloseRequested,
+  CloseRequest,
   /// Message sent when Windows requests the window be repainted.
-  Paint,
+  Draw,
   /// Message sent when a key is pressed, held, or released.
-  Key {
-    physical_key: PhysicalKey,
-    logical_key: Key,
-    text: Option<SmolStr>,
+  Keyboard {
     state: KeyState,
-    location: KeyLocation,
+    // Logical key value.
+    key: Key,
+    // Physical key position. (Use this for games)
+    code: Code,
+    // Location for keys with multiple instances on common keyboards.
+    location: Location,
+    // Flags for pressed modifier keys.
+    modifiers: Modifiers,
+    // True if the key is currently auto-repeated.
+    repeat: bool,
+    // Events with this flag should be ignored in a text editor
+    // and instead [composition events](CompositionEvent) should be used.
+    is_composing: bool,
   },
-  /// Message sent when a text character is typed containing that character.
-  Text(String),
   ModifiersChanged {
-    shift: ButtonState,
-    ctrl: ButtonState,
-    alt: ButtonState,
-    win: ButtonState,
+    shift: KeyState,
+    ctrl: KeyState,
+    alt: KeyState,
+    win: KeyState,
   },
   /// Message sent when a mouse button is pressed or released.
   MouseButton {
     button: MouseButton,
-    state: ButtonState,
-    position: PhysicalPosition,
+    state: KeyState,
+    position: Position,
     is_double_click: bool,
   },
   /// Message sent when the scroll wheel is actuated.
@@ -55,17 +63,17 @@ pub enum Message {
   /// use this for mouse input in cases such as first-person cameras as it is
   /// locked to the bounds of the window.
   CursorMove {
-    position: PhysicalPosition,
+    position: PhysicalPosition<i32>,
     kind: CursorMoveKind,
   },
   /// Message sent when the window is resized. Sent after [`BoundsChanged`]
-  Resized(PhysicalSize),
+  Resized(PhysicalSize<u32>),
   /// Message sent when the window is moved. Sent after [`BoundsChanged`]
-  Moved(PhysicalPosition),
+  Moved(PhysicalPosition<i32>),
   /// Message sent first when the window is moved or resized.
   BoundsChanged {
-    outer_position: PhysicalPosition,
-    outer_size: PhysicalSize,
+    outer_position: PhysicalPosition<i32>,
+    outer_size: PhysicalSize<u32>,
   },
   /// Message sent by Windows when certain actions are taken. WIP
   Command,
@@ -77,30 +85,12 @@ pub enum Message {
   ScaleFactorChanged(f64),
 }
 
-pub struct KeyMessage {
-
-}
-
-/// Artificial window messages sent by the window loop.
-#[derive(Debug, PartialEq, Clone)]
-pub enum LoopMessage {
-  /// Sent when the window receives a command request.
-  Command, /*(Command)*/
-  /// Sent when the message pump is polled, but there are no messages.
-  Empty,
-  /// Sent when the message pump is exiting.
-  Exit,
-}
-
 #[derive(Debug, PartialEq, Clone)]
 pub enum RawInputMessage {
   /// Raw keyboard input
-  Keyboard {
-    physical_key: PhysicalKey,
-    state: RawKeyState,
-  },
+  Keyboard { physical_key: Code, state: KeyState },
   /// Raw mouse button input
-  MouseButton { button: MouseButton, state: ButtonState },
+  MouseButton { button: MouseButton, state: KeyState },
   /// Raw mouse motion. Use this for mouse input in cases such as first-person
   /// cameras.
   MouseMove { delta_x: f32, delta_y: f32 },

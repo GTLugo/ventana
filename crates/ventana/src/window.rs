@@ -1,21 +1,15 @@
+use std::sync::Arc;
 use ventana_hal::{
-  WindowCreationError,
-  context::{Backend as HalBackend, Context},
-  message::Message,
-  position::Position,
-  settings::WindowSettings,
-  size::Size,
-  window::Window as HalWindow,
+  context::Backend, dpi::{Position, Size}, event::Event, settings::WindowSettings, window::{BackendWindow, WindowId}, WindowCreationError
 };
-
 use crate::backend;
 
 pub struct Window
 where
   Self: Send + Sync,
 {
-  context: Context,
-  window: Box<dyn HalWindow>,
+  backend: Arc<dyn Backend>,
+  window: Box<dyn BackendWindow>,
 }
 
 impl Window {
@@ -23,30 +17,34 @@ impl Window {
     WindowBuilder::new()
   }
 
-  fn new(context: Context, settings: &WindowSettings) -> Result<Self, WindowCreationError> {
-    let window = context.create_window(settings.clone())?;
-    Ok(Self { context, window })
+  fn new(backend: Arc<dyn Backend>, settings: &WindowSettings) -> Result<Self, WindowCreationError> {
+    let window = backend.create_window(settings.clone())?;
+    Ok(Self { backend, window })
+  }
+
+  pub fn id(&self) -> WindowId {
+    self.window.id()
   }
 
   pub fn title(&self) -> String {
-    self.window.title(&self.context)
+    self.window.title(&*self.backend)
   }
 
   pub fn size(&self) -> Size {
-    self.window.size(&self.context)
+    self.window.size(&*self.backend)
   }
 
   pub fn position(&self) -> Position {
-    self.window.position(&self.context)
+    self.window.position(&*self.backend)
   }
 
-  pub fn next_message(&self) -> Option<Message> {
-    self.window.next(&self.context)
+  pub fn next_event(&self) -> Option<Event> {
+    self.window.next(&*self.backend)
   }
 }
 
 pub struct WindowBuilder {
-  backend: Option<Context>,
+  backend: Option<Arc<dyn Backend>>,
   settings: WindowSettings,
 }
 
@@ -59,11 +57,11 @@ impl Default for WindowBuilder {
 impl WindowBuilder {
   pub fn new() -> Self {
     #[allow(unreachable_code)]
-    fn pick() -> Option<Context> {
+    fn pick() -> Option<Arc<dyn Backend>> {
       #[cfg(windows_platform)]
-      return Some(Context::from(backend::win32::Win32));
+      return Some(Arc::new(backend::Win32));
       #[cfg(x11_platform)]
-      return Some(Context::from(backend::x11::X11Backend));
+      return Some(Arc::new(backend::Wayland));
       None
     }
 
@@ -73,8 +71,8 @@ impl WindowBuilder {
     }
   }
 
-  pub fn with_backend(&mut self, backend: impl HalBackend) -> &mut Self {
-    self.backend = Some(backend.into());
+  pub fn with_backend(&mut self, backend: impl Backend) -> &mut Self {
+    self.backend = Some(Arc::new(backend));
     self
   }
 

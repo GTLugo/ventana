@@ -1,20 +1,24 @@
 [package]
 name = "ventana-hal"
-readme.workspace = true
-version.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
-keywords.workspace = true
+readme.workspace     = true
+version.workspace    = true
+edition.workspace    = true
+authors.workspace    = true
+license.workspace    = true
+keywords.workspace   = true
 categories.workspace = true
 repository.workspace = true
 
 [features]
 default = []
+serde = ["dep:serde"]
 
 [dependencies]
-thiserror = "2.0.x"
+thiserror = "2.0"
+serde     = { version = "1.0", optional = true }
+bitflags  = "2.9"
+smol_str  = "0.3"
 
-[dependencies.window-input]
-version = "*"
-path = "../window-input"
+# Standard windowing types
+dpi            = "0.1"
+keyboard-types = "0.8"

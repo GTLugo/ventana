@@ -4,7 +4,7 @@ pub mod window;
 pub trait Win32Type {
   type Type;
 
-  fn to_win32(&self) -> Self::Type;
+  fn to_win32(self) -> Self::Type;
 }
 
 pub trait Handle: Sized {

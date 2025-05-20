@@ -1,4 +1,4 @@
-use ventana::prelude::*;
+use ventana::{event::WindowEvent, prelude::*};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   let window = Window::builder()
@@ -6,9 +6,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .with_settings(WindowSettings { size: Size::Logical((400.0, 250.0).into()), ..Default::default() })
     .build()?;
 
-  while let Some(msg) = window.next_message() {
-    println!("{msg:?}");
+  while let Some(event) = window.next_event() {
+    match event {
+      Event::LoopExiting => {}
+      Event::Window(WindowEvent::Keyboard { code, .. })=> {
+        println!("{code:?}");
+      }
+      _ => (),
+    }
   }
-
+  
   Ok(())
 }

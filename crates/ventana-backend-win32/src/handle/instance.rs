@@ -25,8 +25,8 @@ impl Default for InstanceId {
 impl Win32Type for InstanceId {
   type Type = HINSTANCE;
 
-  fn to_win32(&self) -> Self::Type {
-    (*self).into()
+  fn to_win32(self) -> Self::Type {
+    self.into()
   }
 }
 

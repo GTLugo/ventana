@@ -35,8 +35,8 @@ impl From<LongPointerIndex> for WINDOW_LONG_PTR_INDEX {
 impl Win32Type for LongPointerIndex {
   type Type = WINDOW_LONG_PTR_INDEX;
 
-  fn to_win32(&self) -> Self::Type {
-    (*self).into()
+  fn to_win32(self) -> Self::Type {
+    self.into()
   }
 }
 
