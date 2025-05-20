@@ -29,8 +29,8 @@ impl WindowDescriptor {
     self
   }
 
-  pub fn with_position(&mut self, position: impl Into<Position>) -> &mut Self {
-    self.position = Some(position.into());
+  pub fn with_position(&mut self, position: Option<impl Into<Position>>) -> &mut Self {
+    self.position = position.map(Into::into);
     self
   }
 

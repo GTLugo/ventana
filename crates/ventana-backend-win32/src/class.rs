@@ -5,6 +5,7 @@ use windows::{
     CreateWindowExW, GetClassInfoExW, LoadCursorW, RegisterClassExW, UnregisterClassW, WNDCLASSEXW,
   }
 };
+use windows::Win32::UI::WindowsAndMessaging::CW_USEDEFAULT;
 use ventana_hal::settings::WindowSettings;
 use crate::{descriptor::WindowDescriptor, flag::WindowClassStyle, handle::{Win32Type, instance::InstanceId, window::WindowHandle}, procedure::{self, CreateInfo, WindowProcedure}, types::ToHCURSOR, Error};
 
@@ -69,7 +70,18 @@ impl WindowClass {
     window_state: impl 'static + WindowProcedure,
   ) -> Result<WindowHandle, Error> {
     let title = HSTRING::from(desc.title.clone());
-    let position = desc.position.unwrap_or(Position::Logical((0.0, 0.0).into())).to_logical(TEMP_SCALE_FACTOR);
+    
+    let (pos_x, pos_y) = match desc.position { 
+      Some(Position::Logical(pos)) => {
+        let pos = pos.cast();
+        (pos.x, pos.y)
+      },
+      Some(Position::Physical(pos)) => {
+        let pos = pos.to_logical(TEMP_SCALE_FACTOR);
+        (pos.x, pos.y)
+      },
+      None => (CW_USEDEFAULT, CW_USEDEFAULT),
+    };
     let size = desc.size.unwrap_or(Size::Logical((0.0, 0.0).into())).to_logical(TEMP_SCALE_FACTOR);
     let instance = self.instance.to_win32();
     let class_name = HSTRING::from(self.name());
@@ -82,8 +94,8 @@ impl WindowClass {
         &class_name,
         &title,
         desc.style.into(),
-        position.x,
-        position.y,
+        pos_x,
+        pos_y,
         size.width,
         size.height,
         None,

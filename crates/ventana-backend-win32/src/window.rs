@@ -61,7 +61,7 @@ impl BackendWindow for Window {
   }
 
   fn position(&self, backend: &dyn Backend) -> Position {
-    self.settings.lock().unwrap().position
+    self.settings.lock().unwrap().position.unwrap() // TODO: Handle None case (probably change this entirely)
   }
 
   fn key(&self, backend: &dyn Backend, keycode: Code) -> KeyState {

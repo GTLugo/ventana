@@ -2,8 +2,7 @@ use ventana::{event::WindowEvent, prelude::*};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
   let window = Window::builder()
-    // .with_backend(ventana::backend::Win32) // if omitted, it will auto-select from built-in backends
-    .with_settings(WindowSettings { size: Size::Logical((400.0, 250.0).into()), ..Default::default() })
+    .with_settings(WindowSettings::default())
     .build()?;
 
   while let Some(event) = window.next_event() {
