@@ -6,8 +6,6 @@ use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOW};
 use ventana_hal::settings::WindowSettings;
 use ventana_hal::types::Visibility;
 use crate::{get_last_error, handle::window::WindowHandle, message::{Message, data::MessageData, id::MessageId}};
-use crate::descriptor::WindowDescriptor;
-use crate::flag::WindowStyle;
 use crate::handle::{Handle, Win32Type};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
