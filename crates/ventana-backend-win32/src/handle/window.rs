@@ -58,6 +58,7 @@ impl WindowHandle {
   pub fn send_message(&self) {
     // TODO: somehow ensure these are always sent to the correct thread, even when called from a different thread.
     // maybe do it by storing the thread id?
+    // Reference winit for this!
     todo!()
   }
 
