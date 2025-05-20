@@ -1,12 +1,16 @@
+use crate::handle::{Handle, Win32Type};
+use crate::{
+  get_last_error,
+  handle::window::WindowHandle,
+  message::{Message, data::MessageData, id::MessageId},
+};
+use ventana_hal::settings::WindowSettings;
+use ventana_hal::types::Visibility;
+use windows::Win32::UI::WindowsAndMessaging::{SW_SHOW, ShowWindow};
 use windows::Win32::{
   Foundation::{HWND, LPARAM, LRESULT, WPARAM},
   UI::WindowsAndMessaging::CREATESTRUCTW,
 };
-use windows::Win32::UI::WindowsAndMessaging::{ShowWindow, SW_SHOW};
-use ventana_hal::settings::WindowSettings;
-use ventana_hal::types::Visibility;
-use crate::{get_last_error, handle::window::WindowHandle, message::{Message, data::MessageData, id::MessageId}};
-use crate::handle::{Handle, Win32Type};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 #[repr(transparent)]
@@ -100,12 +104,16 @@ fn on_message(window: WindowHandle, message: &Message) -> LRESULT {
       drop(window.take_data());
       LRESULT(0)
     }
-    (Some(WindowData { state: WindowState::Ready, proc }), _) => {
-      proc
-        .on_message(window, message)
-        .unwrap_or_else(|| window.default_procedure(message))
-        .into()
-    }
+    (
+      Some(WindowData {
+        state: WindowState::Ready,
+        proc,
+      }),
+      _,
+    ) => proc
+      .on_message(window, message)
+      .unwrap_or_else(|| window.default_procedure(message))
+      .into(),
     _ => window.default_procedure(message).into(),
   }
 }
@@ -125,7 +133,7 @@ fn on_nc_create(window: WindowHandle, message: &Message) -> LRESULT {
 fn on_create(window: WindowHandle, message: &Message, data: &mut WindowData) -> LRESULT {
   // let create_info = CreateInfo::from_message(message.clone());
   if let WindowState::Creating(settings) = &data.state {
-    if settings.visibility == Visibility::Shown && !unsafe {  ShowWindow(window.to_win32(), SW_SHOW) }.as_bool() {
+    if settings.visibility == Visibility::Shown && !unsafe { ShowWindow(window.to_win32(), SW_SHOW) }.as_bool() {
       if let Some(error) = get_last_error() {
         eprintln!("Error: {error}");
         return LRESULT(-1);

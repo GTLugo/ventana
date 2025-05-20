@@ -5,7 +5,7 @@
 use dpi::{PhysicalPosition, PhysicalSize, Position};
 use keyboard_types::{Code, Key, KeyState, Location, Modifiers};
 
-use crate::{input::mouse::MouseButton, types::Focus, window::WindowId};
+use crate::{input::mouse::MouseButton, types::Focus};
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum Event {

@@ -1,13 +1,3 @@
-use std::sync::{Arc, Mutex};
-use ventana_hal::{
-  dpi::{Position, Size},
-  event::Event,
-  input::mouse::MouseButton,
-  keyboard::{Code, KeyState},
-  settings::WindowSettings,
-  window::{BackendWindow, WindowId},
-};
-use ventana_hal::context::Backend;
 use crate::{
   Error,
   class::WindowClass,
@@ -15,6 +5,16 @@ use crate::{
   handle::{Handle, window::WindowHandle},
   message::pump::{MessagePump, PollingMode},
   procedure::{Response, WindowProcedure},
+};
+use std::sync::{Arc, Mutex};
+use ventana_hal::context::Backend;
+use ventana_hal::{
+  dpi::{Position, Size},
+  event::Event,
+  input::mouse::MouseButton,
+  keyboard::{Code, KeyState},
+  settings::WindowSettings,
+  window::{BackendWindow, WindowId},
 };
 
 pub struct Window {
