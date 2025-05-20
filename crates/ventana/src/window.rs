@@ -1,8 +1,13 @@
+use crate::backend;
 use std::sync::Arc;
 use ventana_hal::{
-  context::Backend, dpi::{Position, Size}, event::Event, settings::WindowSettings, window::{BackendWindow, WindowId}, WindowCreationError
+  WindowCreationError,
+  context::Backend,
+  dpi::{Position, Size},
+  event::Event,
+  settings::WindowSettings,
+  window::{BackendWindow, WindowId},
 };
-use crate::backend;
 
 pub struct Window
 where
