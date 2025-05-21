@@ -1,4 +1,4 @@
-use ventana_backend_win32_macro::{GetId, Getter};
+use win64_macro::{GetId, Getter};
 
 use self::{data::MessageData, id::MessageId};
 

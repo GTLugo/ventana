@@ -1,11 +1,3 @@
-use crate::{
-  Error,
-  class::WindowClass,
-  descriptor::WindowDescriptor,
-  handle::{Handle, window::WindowHandle},
-  message::pump::{MessagePump, PollingMode},
-  procedure::{Response, WindowProcedure},
-};
 use std::sync::{Arc, Mutex};
 use ventana_hal::context::Backend;
 use ventana_hal::{
@@ -16,6 +8,14 @@ use ventana_hal::{
   settings::WindowSettings,
   window::{BackendWindow, WindowId},
 };
+use win64::Error;
+use win64::class::WindowClass;
+use win64::descriptor::WindowDescriptor;
+use win64::handle::Handle;
+use win64::handle::window::WindowHandle;
+use win64::message::Message;
+use win64::message::pump::{MessagePump, PollingMode};
+use win64::procedure::{Response, WindowProcedure};
 
 pub struct Window {
   hwnd: WindowHandle,
@@ -26,7 +26,6 @@ impl Window {
   pub fn new(settings: WindowSettings) -> Result<Self, Error> {
     let class = WindowClass::default();
     let hwnd = class.spawn(
-      settings.clone(),
       WindowDescriptor::default()
         .with_title(settings.title.clone())
         .with_position(settings.position)
@@ -92,7 +91,7 @@ impl BackendWindow for Window {
 struct Internal;
 
 impl WindowProcedure for Internal {
-  fn on_message(&mut self, mut window: WindowHandle, message: &crate::message::Message) -> Option<Response> {
+  fn on_message(&mut self, mut window: WindowHandle, message: &Message) -> Option<Response> {
     println!("{window:?} | {message:?}");
 
     None

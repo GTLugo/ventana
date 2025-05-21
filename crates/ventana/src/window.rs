@@ -1,5 +1,5 @@
 use crate::backend;
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 use ventana_hal::{
   WindowCreationError,
   context::Backend,
@@ -32,19 +32,19 @@ impl Window {
   }
 
   pub fn title(&self) -> String {
-    self.window.title(&*self.backend)
+    self.window.title(self.backend.deref())
   }
 
   pub fn size(&self) -> Size {
-    self.window.size(&*self.backend)
+    self.window.size(self.backend.deref())
   }
 
   pub fn position(&self) -> Position {
-    self.window.position(&*self.backend)
+    self.window.position(self.backend.deref())
   }
 
   pub fn next_event(&self) -> Option<Event> {
-    self.window.next(&*self.backend)
+    self.window.next(self.backend.deref())
   }
 }
 

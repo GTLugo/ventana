@@ -1,12 +1,15 @@
-use ventana_hal::dpi::{Position, Size};
+use dpi::{Position, Size};
 
-use crate::flag::{ExtendedWindowStyle, WindowStyle};
+use crate::{
+  flag::{ExtendedWindowStyle, WindowStyle},
+  types::{Win32Position, Win32Size},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct WindowDescriptor {
   pub title: String,
-  pub position: Option<Position>,
-  pub size: Option<Size>,
+  pub position: Win32Position,
+  pub size: Win32Size,
   pub style: WindowStyle,
   pub ext_style: ExtendedWindowStyle,
 }
@@ -17,7 +20,7 @@ impl Default for WindowDescriptor {
       title: "Window".to_owned(),
       position: Default::default(),
       size: Default::default(),
-      style: WindowStyle::OverlappedWindow,
+      style: WindowStyle::OverlappedWindow | WindowStyle::Visible,
       ext_style: ExtendedWindowStyle::empty(),
     }
   }
@@ -30,12 +33,15 @@ impl WindowDescriptor {
   }
 
   pub fn with_position(&mut self, position: Option<impl Into<Position>>) -> &mut Self {
-    self.position = position.map(Into::into);
+    self.position = match position {
+      Some(pos) => Win32Position::Position(pos.into()),
+      None => Win32Position::Auto,
+    };
     self
   }
 
   pub fn with_size(&mut self, size: impl Into<Size>) -> &mut Self {
-    self.size = Some(size.into());
+    self.size = Win32Size::Size(size.into());
     self
   }
 

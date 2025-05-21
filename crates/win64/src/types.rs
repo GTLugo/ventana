@@ -1,5 +1,58 @@
 use cursor_icon::CursorIcon;
-use windows::Win32::UI::WindowsAndMessaging::{self, HCURSOR};
+use dpi::{Pixel, Position, Size};
+use windows::Win32::UI::WindowsAndMessaging::{self, CW_USEDEFAULT, HCURSOR};
+
+const INIT_SCALE_FACTOR: f64 = 1.0;
+
+#[derive(Debug, Default, Clone, PartialEq)]
+pub enum Win32Position {
+  #[default]
+  Auto,
+  Position(Position),
+}
+
+impl Win32Position {
+  pub fn x(&self) -> i32 {
+    match self {
+      Win32Position::Auto => CW_USEDEFAULT,
+      Win32Position::Position(Position::Logical(pos)) => pos.to_physical(INIT_SCALE_FACTOR).x,
+      Win32Position::Position(Position::Physical(pos)) => pos.x,
+    }
+  }
+
+  pub fn y(&self) -> i32 {
+    match self {
+      Win32Position::Auto => CW_USEDEFAULT,
+      Win32Position::Position(Position::Logical(pos)) => pos.to_physical(INIT_SCALE_FACTOR).y,
+      Win32Position::Position(Position::Physical(pos)) => pos.y,
+    }
+  }
+}
+
+#[derive(Debug, Default, Clone, PartialEq)]
+pub enum Win32Size {
+  #[default]
+  Auto,
+  Size(Size),
+}
+
+impl Win32Size {
+  pub fn width(&self) -> i32 {
+    match self {
+      Win32Size::Auto => CW_USEDEFAULT,
+      Win32Size::Size(Size::Logical(size)) => size.to_physical(INIT_SCALE_FACTOR).width,
+      Win32Size::Size(Size::Physical(size)) => size.width.cast(),
+    }
+  }
+
+  pub fn height(&self) -> i32 {
+    match self {
+      Win32Size::Auto => CW_USEDEFAULT,
+      Win32Size::Size(Size::Logical(size)) => size.to_physical(INIT_SCALE_FACTOR).height,
+      Win32Size::Size(Size::Physical(size)) => size.height.cast(),
+    }
+  }
+}
 
 // pub trait Auto {
 //   fn auto() -> Self where Self: Sized;

@@ -1,5 +1,3 @@
-use std::{ops::Deref, sync::Arc};
-
 use crate::provider::{InputProvider, WindowProvider};
 
 pub trait Backend: WindowProvider + InputProvider + 'static {}

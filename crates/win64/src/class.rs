@@ -1,15 +1,18 @@
-use cursor_icon::CursorIcon;
-use ventana_hal::dpi::{Position, Size};
-use windows::{
-  core::{HSTRING, PCWSTR}, Win32::UI::WindowsAndMessaging::{
-    CreateWindowExW, GetClassInfoExW, LoadCursorW, RegisterClassExW, UnregisterClassW, WNDCLASSEXW,
-  }
+use crate::{
+  Error,
+  descriptor::WindowDescriptor,
+  flag::{WindowClassStyle, WindowStyle},
+  handle::{Win32Type, instance::InstanceId, window::WindowHandle},
+  procedure::{self, CreateInfo, WindowProcedure},
+  types::ToHCURSOR,
 };
-use windows::Win32::UI::WindowsAndMessaging::CW_USEDEFAULT;
-use ventana_hal::settings::WindowSettings;
-use crate::{descriptor::WindowDescriptor, flag::WindowClassStyle, handle::{Win32Type, instance::InstanceId, window::WindowHandle}, procedure::{self, CreateInfo, WindowProcedure}, types::ToHCURSOR, Error};
-
-const TEMP_SCALE_FACTOR: f64 = 1.0;
+use cursor_icon::CursorIcon;
+use windows::{
+  Win32::UI::WindowsAndMessaging::{
+    CreateWindowExW, GetClassInfoExW, LoadCursorW, RegisterClassExW, UnregisterClassW, WNDCLASSEXW,
+  },
+  core::{HSTRING, PCWSTR},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct WindowClass {
@@ -65,51 +68,35 @@ impl WindowClass {
 
   pub fn spawn(
     &self,
-    settings: WindowSettings,
     desc: &WindowDescriptor,
     window_state: impl 'static + WindowProcedure,
   ) -> Result<WindowHandle, Error> {
     let title = HSTRING::from(desc.title.clone());
-    
-    let (pos_x, pos_y) = match desc.position { 
-      Some(Position::Logical(pos)) => {
-        let pos = pos.cast();
-        (pos.x, pos.y)
-      },
-      Some(Position::Physical(pos)) => {
-        let pos = pos.to_logical(TEMP_SCALE_FACTOR);
-        (pos.x, pos.y)
-      },
-      None => (CW_USEDEFAULT, CW_USEDEFAULT),
-    };
-    let size = desc.size.unwrap_or(Size::Logical((0.0, 0.0).into())).to_logical(TEMP_SCALE_FACTOR);
     let instance = self.instance.to_win32();
     let class_name = HSTRING::from(self.name());
-    
-    let create_info = Box::into_raw(Box::new(CreateInfo::new(window_state, settings)));
-    
+
+    let create_info = Box::into_raw(Box::new(CreateInfo::new(window_state, desc.clone())));
+
+    let mut new_style = desc.style;
+    new_style.remove(WindowStyle::Visible); // remove visible style and reapply it later in the window procedure
     match unsafe {
       CreateWindowExW(
         desc.ext_style.into(),
         &class_name,
         &title,
-        desc.style.into(),
-        pos_x,
-        pos_y,
-        size.width,
-        size.height,
+        new_style.into(),
+        desc.position.x(),
+        desc.position.y(),
+        desc.size.width(),
+        desc.size.height(),
         None,
         None,
         Some(instance),
         Some(create_info.cast()),
       )
     } {
-      Ok(hwnd) => {
-        Ok(hwnd.into())
-      }
-      Err(err) => {
-        Err(Error::Win32Error(err))
-      }
+      Ok(hwnd) => Ok(hwnd.into()),
+      Err(err) => Err(Error::Win32Error(err)),
     }
   }
 }

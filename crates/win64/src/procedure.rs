@@ -1,11 +1,11 @@
+use crate::descriptor::WindowDescriptor;
+use crate::flag::WindowStyle;
 use crate::handle::{Handle, Win32Type};
 use crate::{
   get_last_error,
   handle::window::WindowHandle,
   message::{Message, data::MessageData, id::MessageId},
 };
-use ventana_hal::settings::WindowSettings;
-use ventana_hal::types::Visibility;
 use windows::Win32::UI::WindowsAndMessaging::{SW_SHOW, ShowWindow};
 use windows::Win32::{
   Foundation::{HWND, LPARAM, LRESULT, WPARAM},
@@ -37,14 +37,14 @@ pub trait WindowProcedure {
 
 pub(crate) struct CreateInfo {
   pub state: Option<Box<dyn WindowProcedure>>,
-  pub settings: WindowSettings,
+  pub desc: WindowDescriptor,
 }
 
 impl CreateInfo {
-  pub fn new(window_state: impl 'static + WindowProcedure, settings: WindowSettings) -> Self {
+  pub fn new(window_state: impl 'static + WindowProcedure, desc: WindowDescriptor) -> Self {
     Self {
       state: Some(Box::new(window_state)),
-      settings,
+      desc,
     }
   }
 
@@ -56,7 +56,7 @@ impl CreateInfo {
 }
 
 pub(crate) enum WindowState {
-  Creating(WindowSettings),
+  Creating(WindowDescriptor),
   Ready,
   Destroying,
 }
@@ -69,7 +69,7 @@ pub(crate) struct WindowData {
 impl WindowData {
   pub fn new(mut create_info: CreateInfo) -> Self {
     Self {
-      state: WindowState::Creating(create_info.settings),
+      state: WindowState::Creating(create_info.desc),
       proc: create_info.state.take().unwrap(),
     }
   }
@@ -132,8 +132,8 @@ fn on_nc_create(window: WindowHandle, message: &Message) -> LRESULT {
 
 fn on_create(window: WindowHandle, message: &Message, data: &mut WindowData) -> LRESULT {
   // let create_info = CreateInfo::from_message(message.clone());
-  if let WindowState::Creating(settings) = &data.state {
-    if settings.visibility == Visibility::Shown && !unsafe { ShowWindow(window.to_win32(), SW_SHOW) }.as_bool() {
+  if let WindowState::Creating(desc) = &data.state {
+    if desc.style.contains(WindowStyle::Visible) && !unsafe { ShowWindow(window.to_win32(), SW_SHOW) }.as_bool() {
       if let Some(error) = get_last_error() {
         eprintln!("Error: {error}");
         return LRESULT(-1);

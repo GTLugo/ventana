@@ -1,6 +1,6 @@
 use std::ops::RangeInclusive;
 
-use ventana_backend_win32_macro::Id;
+use win64_macro::Id;
 use windows::Win32::UI::WindowsAndMessaging;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Id)]
