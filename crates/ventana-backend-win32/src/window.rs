@@ -72,19 +72,19 @@ impl BackendWindow for Win32Window {
   }
 
   fn inner_size(&self) -> Size {
-    todo!()
+    self.hwnd.inner_size()
   }
 
   fn outer_size(&self) -> Size {
-    todo!()
+    self.hwnd.outer_size()
   }
 
   fn inner_position(&self) -> Position {
-    todo!()
+    self.hwnd.inner_position()
   }
 
   fn outer_position(&self) -> Position {
-    todo!()
+    self.hwnd.outer_position()
   }
 
   fn key(&self, keycode: Code) -> KeyState {
