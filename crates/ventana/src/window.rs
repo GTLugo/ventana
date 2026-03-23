@@ -31,10 +31,13 @@ where
 
 impl Window {
   pub fn new(options: WindowOptions) -> Result<Self, RequestError> {
-    let settings = options.clone().into();
+    let settings: WindowSettings = options.clone().into();
     let Some(backend) = options.backend else {
       return Err(RequestError::NotSupported("No backend selected"));
     };
+
+    log::trace!("Creating window `{}`", settings.title);
+
     let window = backend.create_window(settings)?;
     Ok(Self { backend, window })
   }
@@ -47,12 +50,20 @@ impl Window {
     self.window.title()
   }
 
-  pub fn size(&self) -> Size {
-    self.window.size()
+  pub fn inner_size(&self) -> Size {
+    self.window.inner_size()
   }
 
-  pub fn position(&self) -> Position {
-    self.window.position()
+  pub fn outer_size(&self) -> Size {
+    self.window.outer_size()
+  }
+
+  pub fn inner_position(&self) -> Position {
+    self.window.inner_position()
+  }
+
+  pub fn outer_position(&self) -> Position {
+    self.window.outer_position()
   }
 
   pub fn next_event(&self) -> Option<Event> {

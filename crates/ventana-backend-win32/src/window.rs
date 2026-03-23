@@ -1,4 +1,5 @@
 use {
+  crate::state::State,
   ::win64::Handle,
   std::sync::{
     Arc,
@@ -25,21 +26,20 @@ use {
       WindowId,
     },
   },
-  win64::prelude as win64,
+  win64::prelude::*,
 };
 
 pub struct Win32Window {
-  hwnd: win64::Window,
-  settings: Arc<RwLock<WindowSettings>>,
+  hwnd: Window,
+  state: Arc<RwLock<State>>,
 }
 
 impl Win32Window {
   #[allow(clippy::new_ret_no_self)]
   pub fn new(settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    let class = win64::WindowClass::builder()
-      .name("Window Class")
-      .register()
-      .map_to_os_err()?;
+    win64::set_process_dpi_awareness(win64::DPIAwarenessContext::PerMonitorAwareV2);
+
+    let class = WindowClass::builder().name("Window Class").register().map_to_os_err()?;
     let hwnd = class
       .window_builder()
       .procedure(Internal)
@@ -53,7 +53,7 @@ impl Win32Window {
 
     Ok(Arc::new(Self {
       hwnd,
-      settings: Arc::new(RwLock::new(settings)),
+      state: Arc::new(RwLock::new(State::new())),
     }))
   }
 }
@@ -68,15 +68,23 @@ impl BackendWindow for Win32Window {
   }
 
   fn title(&self) -> String {
-    self.settings.read().unwrap().title.to_string()
+    self.hwnd.get_window_text().unwrap()
   }
 
-  fn size(&self) -> Size {
-    self.settings.read().unwrap().size
+  fn inner_size(&self) -> Size {
+    todo!()
   }
 
-  fn position(&self) -> Position {
-    self.settings.read().unwrap().position.unwrap() // TODO: Handle None case (probably change this entirely)
+  fn outer_size(&self) -> Size {
+    todo!()
+  }
+
+  fn inner_position(&self) -> Position {
+    todo!()
+  }
+
+  fn outer_position(&self) -> Position {
+    todo!()
   }
 
   fn key(&self, keycode: Code) -> KeyState {
@@ -108,9 +116,18 @@ impl BackendWindow for Win32Window {
 
 struct Internal;
 
-impl win64::WindowProcedure for Internal {
-  fn on_message(&mut self, window: &win64::Window, message: &win64::Message) -> Option<win64::LResult> {
+impl WindowProcedure for Internal {
+  fn on_message(&mut self, window: &Window, message: &Message) -> Option<LResult> {
     log::trace!("{window:?} | {message:?}");
+    match message {
+      Message::Create(_) | Message::SettingChange(_) => {
+        window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
+      },
+      Message::Destroy => {
+        window.quit(); // SHOULD BE CHANGED
+      },
+      _ => (),
+    }
 
     None
   }

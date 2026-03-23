@@ -34,9 +34,13 @@ pub trait BackendWindow: Send + Sync {
 
   fn title(&self) -> String;
 
-  fn size(&self) -> Size;
+  fn inner_size(&self) -> Size;
 
-  fn position(&self) -> Position;
+  fn outer_size(&self) -> Size;
+
+  fn inner_position(&self) -> Position;
+  
+  fn outer_position(&self) -> Position;
 
   fn key(&self, keycode: Code) -> KeyState;
 

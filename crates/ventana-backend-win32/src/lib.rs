@@ -1,4 +1,5 @@
 pub mod window;
+mod state;
 
 use {
   self::window::Win32Window,
