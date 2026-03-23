@@ -1,8 +1,18 @@
+mod create_info;
+mod sync;
+mod thread;
+
 use {
+  self::{
+    create_info::CreateInfo,
+    sync::SyncData,
+    thread::WindowThread,
+  },
   crate::state::State,
   ::win64::Handle,
   std::sync::{
     Arc,
+    Mutex,
     RwLock,
   },
   ventana_hal::{
@@ -31,7 +41,8 @@ use {
 
 pub struct Win32Window {
   hwnd: Window,
-  state: Arc<RwLock<State>>,
+  state: RwLock<State>,
+  thread: WindowThread,
 }
 
 impl Win32Window {
@@ -39,21 +50,27 @@ impl Win32Window {
   pub fn new(settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     win64::set_process_dpi_awareness(win64::DPIAwarenessContext::PerMonitorAwareV2);
 
-    let class = WindowClass::builder().name("Window Class").register().map_to_os_err()?;
-    let hwnd = class
-      .window_builder()
-      .procedure(Internal)
-      .name(settings.title.clone())
-      .position(settings.position)
-      .size(Some(settings.size))
-      .create()
-      .map_to_os_err()?;
+    let create_info = CreateInfo {
+      settings: settings.clone(),
+      message: Arc::new(Mutex::new(None)),
+      sync: SyncData::new(),
+    };
 
-    // MessagePump::default().with_mode(PollingMode::Poll).run();
+    let (window_sender, window_receiver) = std::sync::mpsc::sync_channel(0);
+    let thread = WindowThread::spawn(window_sender, create_info)?;
+
+    log::trace!("Waiting to receive window handle back from window thread");
+
+    let hwnd = window_receiver
+      .recv()
+      .expect("Failed to receive window back from window thread");
+
+    log::trace!("Received window handle from window thread: `{hwnd:?}`");
 
     Ok(Arc::new(Self {
       hwnd,
-      state: Arc::new(RwLock::new(State::new())),
+      state: RwLock::new(State::new()),
+      thread,
     }))
   }
 }
@@ -111,24 +128,5 @@ impl BackendWindow for Win32Window {
 
   fn super_key(&self) -> KeyState {
     todo!()
-  }
-}
-
-struct Internal;
-
-impl WindowProcedure for Internal {
-  fn on_message(&mut self, window: &Window, message: &Message) -> Option<LResult> {
-    log::trace!("{window:?} | {message:?}");
-    match message {
-      Message::Create(_) | Message::SettingChange(_) => {
-        window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
-      },
-      Message::Destroy => {
-        window.quit(); // SHOULD BE CHANGED
-      },
-      _ => (),
-    }
-
-    None
   }
 }

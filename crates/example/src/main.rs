@@ -5,6 +5,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let window = Window::new(WindowOptions::default())?;
 
+  loop {}
+
   for event in window {
     match event {
       Event::LoopExiting => {},
