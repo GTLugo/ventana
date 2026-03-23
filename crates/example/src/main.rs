@@ -15,7 +15,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
   }
 
-  // while let Some(event) = window.next_event() {}
-
   Ok(())
 }
