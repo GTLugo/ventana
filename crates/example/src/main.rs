@@ -1,10 +1,7 @@
-use ventana::{
-  event::WindowEvent,
-  prelude::*,
-};
+use ventana::prelude::*;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-  initialize_logger();
+  example::initialize_logger();
 
   let window = Window::new(WindowOptions::default())?;
 
@@ -19,11 +16,4 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   }
 
   Ok(())
-}
-
-fn initialize_logger() {
-  env_logger::builder()
-    .filter(None, log::LevelFilter::Trace)
-    .format_source_path(true)
-    .init();
 }

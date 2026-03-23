@@ -12,7 +12,10 @@ pub use {
       Position,
       Size,
     },
-    event::Event,
+    event::{
+      Event,
+      WindowEvent,
+    },
     settings::WindowSettings,
   },
 };
