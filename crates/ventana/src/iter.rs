@@ -54,3 +54,24 @@ impl<'a> IntoIterator for &'a mut Window {
     self.iter_mut()
   }
 }
+
+pub struct WindowIntoIterator {
+  window: Window,
+}
+
+impl Iterator for WindowIntoIterator {
+  type Item = Event;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    self.window.next_event()
+  }
+}
+
+impl IntoIterator for Window {
+  type IntoIter = WindowIntoIterator;
+  type Item = Event;
+
+  fn into_iter(self) -> Self::IntoIter {
+    WindowIntoIterator { window: self }
+  }
+}
