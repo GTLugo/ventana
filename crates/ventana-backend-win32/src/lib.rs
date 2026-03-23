@@ -1,30 +1,32 @@
 pub mod window;
 
-use ventana_hal::{
-  WindowCreationError,
-  context::Backend,
-  keyboard::Code,
-  provider::{InputProvider, WindowProvider},
-  settings::WindowSettings,
-  window::BackendWindow,
+use {
+  self::window::Win32Window,
+  std::sync::Arc,
+  ventana_hal::{
+    backend::Backend,
+    error::RequestError,
+    keyboard::Code,
+    settings::WindowSettings,
+    window::BackendWindow,
+  },
 };
-
-use self::window::Window;
 
 pub struct Win32;
 
-impl Backend for Win32 {}
-
-impl WindowProvider for Win32 {
-  fn create_window(&self, settings: WindowSettings) -> Result<Box<dyn BackendWindow>, WindowCreationError> {
-    match Window::new(settings) {
-      Ok(window) => Ok(Box::new(window)),
-      Err(error) => Err(WindowCreationError::GenericError(Box::new(error))),
-    }
+#[allow(unused)]
+impl Backend for Win32 {
+  fn instance() -> Arc<dyn Backend>
+  where
+    Self: Sized,
+  {
+    Arc::new(Self)
   }
-}
 
-impl InputProvider for Win32 {
+  fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
+    Win32Window::new(settings)
+  }
+
   fn key_to_scancode(&self, key: Code) -> Option<u32> {
     todo!()
   }

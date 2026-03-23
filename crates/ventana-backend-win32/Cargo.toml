@@ -10,6 +10,7 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
+log       = "0.4"
 thiserror = "2.0.x"
 
 bitflags = "2.9.x"
@@ -20,5 +21,4 @@ version = "*"
 path = "../ventana-hal"
 
 [dependencies.win64]
-version  = "0.1"
-path = "../win64"
+version = "0.0.6"

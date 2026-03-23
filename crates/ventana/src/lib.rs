@@ -1,9 +1,11 @@
 pub mod backend;
-pub mod window;
 pub mod prelude;
+pub mod window;
 
 pub use ventana_hal as hal;
-pub use ventana_hal::dpi as dpi;
-pub use ventana_hal::keyboard as keyboard;
-pub use ventana_hal::event as event;
-pub use ventana_hal::settings as settings;
+pub use ventana_hal::{
+  dpi,
+  event,
+  keyboard,
+  settings,
+};

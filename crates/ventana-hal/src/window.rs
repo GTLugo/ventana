@@ -1,13 +1,17 @@
-use dpi::{Position, Size};
-use keyboard_types::{Code, KeyState};
-
-use crate::{
-  event::Event,
-  input::{
-    mouse::MouseButton,
+use {
+  crate::{
+    event::Event,
+    input::mouse::MouseButton,
+  },
+  dpi::{
+    Position,
+    Size,
+  },
+  keyboard_types::{
+    Code,
+    KeyState,
   },
 };
-use crate::context::Backend;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct WindowId(usize);
@@ -26,23 +30,23 @@ impl WindowId {
 pub trait BackendWindow: Send + Sync {
   fn id(&self) -> WindowId;
 
-  fn next(&self, context: &dyn Backend) -> Option<Event>;
+  fn next(&self) -> Option<Event>;
 
-  fn title(&self, context: &dyn Backend) -> String;
+  fn title(&self) -> String;
 
-  fn size(&self, context: &dyn Backend) -> Size;
+  fn size(&self) -> Size;
 
-  fn position(&self, context: &dyn Backend) -> Position;
+  fn position(&self) -> Position;
 
-  fn key(&self, context: &dyn Backend, keycode: Code) -> KeyState;
+  fn key(&self, keycode: Code) -> KeyState;
 
-  fn mouse(&self, context: &dyn Backend, button: MouseButton) -> KeyState;
+  fn mouse(&self, button: MouseButton) -> KeyState;
 
-  fn shift_key(&self, context: &dyn Backend) -> KeyState;
+  fn shift_key(&self) -> KeyState;
 
-  fn ctrl_key(&self, context: &dyn Backend) -> KeyState;
+  fn ctrl_key(&self) -> KeyState;
 
-  fn alt_key(&self, context: &dyn Backend) -> KeyState;
+  fn alt_key(&self) -> KeyState;
 
-  fn super_key(&self, context: &dyn Backend) -> KeyState;
+  fn super_key(&self) -> KeyState;
 }

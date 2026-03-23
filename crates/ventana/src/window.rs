@@ -1,29 +1,39 @@
-use crate::backend;
-use std::{ops::Deref, sync::Arc};
-use ventana_hal::{
-  WindowCreationError,
-  context::Backend,
-  dpi::{Position, Size},
-  event::Event,
-  settings::WindowSettings,
-  window::{BackendWindow, WindowId},
+use {
+  crate::backend,
+  std::sync::Arc,
+  ventana_hal::{
+    backend::Backend,
+    dpi::{
+      Position,
+      Size,
+    },
+    error::RequestError,
+    event::Event,
+    settings::WindowSettings,
+    types::Visibility,
+    window::{
+      BackendWindow,
+      WindowId,
+    },
+  },
 };
 
 pub struct Window
 where
   Self: Send + Sync,
 {
+  #[allow(unused)]
   backend: Arc<dyn Backend>,
-  window: Box<dyn BackendWindow>,
+  window: Arc<dyn BackendWindow>,
 }
 
 impl Window {
-  pub fn builder() -> WindowBuilder {
-    WindowBuilder::new()
-  }
-
-  fn new(backend: Arc<dyn Backend>, settings: &WindowSettings) -> Result<Self, WindowCreationError> {
-    let window = backend.create_window(settings.clone())?;
+  pub fn new(options: WindowOptions) -> Result<Self, RequestError> {
+    let settings = options.clone().into();
+    let Some(backend) = options.backend else {
+      return Err(RequestError::NotSupported("No backend selected"));
+    };
+    let window = backend.create_window(settings)?;
     Ok(Self { backend, window })
   }
 
@@ -32,64 +42,61 @@ impl Window {
   }
 
   pub fn title(&self) -> String {
-    self.window.title(self.backend.deref())
+    self.window.title()
   }
 
   pub fn size(&self) -> Size {
-    self.window.size(self.backend.deref())
+    self.window.size()
   }
 
   pub fn position(&self) -> Position {
-    self.window.position(self.backend.deref())
+    self.window.position()
   }
 
   pub fn next_event(&self) -> Option<Event> {
-    self.window.next(self.backend.deref())
+    self.window.next()
   }
 }
 
-pub struct WindowBuilder {
-  backend: Option<Arc<dyn Backend>>,
-  settings: WindowSettings,
+#[derive(Clone)]
+pub struct WindowOptions {
+  pub backend: Option<Arc<dyn Backend>>,
+  pub title: &'static str,
+  pub size: Size, // Maybe should make this optional and have backend handle None case
+  pub position: Option<Position>,
+  pub visibility: Visibility,
 }
 
-impl Default for WindowBuilder {
+impl Default for WindowOptions {
   fn default() -> Self {
-    Self::new()
+    Self {
+      backend: Self::auto_select_backend(),
+      title: "Window",
+      size: Size::Logical((800.0, 500.0).into()),
+      position: None,
+      visibility: Default::default(),
+    }
   }
 }
 
-impl WindowBuilder {
-  pub fn new() -> Self {
-    #[allow(unreachable_code)]
-    fn pick() -> Option<Arc<dyn Backend>> {
-      #[cfg(windows_platform)]
-      return Some(Arc::new(backend::Win32));
-      #[cfg(x11_platform)]
-      return Some(Arc::new(backend::Wayland));
-      None
-    }
+impl WindowOptions {
+  #[allow(unreachable_code)]
+  fn auto_select_backend() -> Option<Arc<dyn Backend>> {
+    #[cfg(windows_platform)]
+    return Some(backend::Win32::instance());
+    #[cfg(x11_platform)]
+    return Some(backend::Wayland::instance());
+    None
+  }
+}
 
+impl From<WindowOptions> for WindowSettings {
+  fn from(options: WindowOptions) -> Self {
     Self {
-      backend: pick(),
-      settings: WindowSettings::default(),
+      title: options.title.into(),
+      size: options.size,
+      position: options.position,
+      visibility: options.visibility,
     }
-  }
-
-  pub fn with_backend(&mut self, backend: impl Backend) -> &mut Self {
-    self.backend = Some(Arc::new(backend));
-    self
-  }
-
-  pub fn with_settings(&mut self, settings: WindowSettings) -> &mut Self {
-    self.settings = settings;
-    self
-  }
-
-  pub fn build(&self) -> Result<Window, WindowCreationError> {
-    let Some(backend) = &self.backend else {
-      return Err(WindowCreationError::NoBackend);
-    };
-    Window::new(backend.clone(), &self.settings)
   }
 }

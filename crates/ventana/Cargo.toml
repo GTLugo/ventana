@@ -18,6 +18,7 @@ x11     = []
 cfg_aliases = "0.2"
 
 [dependencies]
+log = "0.4"
 thiserror = "2.0"
 tracing = "0.1"
 bitflags = "2.9"

@@ -10,6 +10,7 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
+log = "0.4"
 
 [dependencies.ventana-hal]
 version = "*"

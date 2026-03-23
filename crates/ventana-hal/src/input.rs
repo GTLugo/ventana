@@ -2,7 +2,10 @@ pub mod mouse;
 
 use std::collections::HashMap;
 
-use keyboard_types::{Code, KeyState};
+use keyboard_types::{
+  Code,
+  KeyState,
+};
 
 use self::mouse::MouseButton;
 
