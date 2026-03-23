@@ -80,10 +80,12 @@ impl BackendWindow for Win32Window {
   }
 
   fn key(&self, keycode: Code) -> KeyState {
+    log::debug!("Checking {keycode:?}...");
     todo!()
   }
 
   fn mouse(&self, button: MouseButton) -> KeyState {
+    log::debug!("Checking {button:?}...");
     todo!()
   }
 
