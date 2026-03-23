@@ -5,7 +5,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let window = Window::new(WindowOptions::default())?;
 
-  while let Some(event) = window.next_event() {
+  for event in &window {
     match event {
       Event::LoopExiting => {},
       Event::Window(WindowEvent::Keyboard { code, .. }) => {
@@ -14,6 +14,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
       _ => (),
     }
   }
+
+  // while let Some(event) = window.next_event() {}
 
   Ok(())
 }
