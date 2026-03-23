@@ -2,22 +2,23 @@
   Perhaps I should replace this with a more standard enum such as that of winit?
 */
 
-use dpi::{
-  PhysicalPosition,
-  PhysicalSize,
-  Position,
-};
-use keyboard_types::{
-  Code,
-  Key,
-  KeyState,
-  Location,
-  Modifiers,
-};
-
-use crate::{
-  input::mouse::MouseButton,
-  types::Focus,
+use {
+  crate::{
+    input::mouse::MouseButton,
+    types::Focus,
+  },
+  dpi::{
+    PhysicalPosition,
+    PhysicalSize,
+    Position,
+  },
+  keyboard_types::{
+    Code,
+    Key,
+    KeyState,
+    Location,
+    Modifiers,
+  },
 };
 
 #[derive(Debug, PartialEq, Clone)]

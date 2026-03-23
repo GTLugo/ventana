@@ -1,13 +1,13 @@
 pub mod mouse;
 
-use std::collections::HashMap;
-
-use keyboard_types::{
-  Code,
-  KeyState,
+use {
+  self::mouse::MouseButton,
+  keyboard_types::{
+    Code,
+    KeyState,
+  },
+  std::collections::HashMap,
 };
-
-use self::mouse::MouseButton;
 
 #[derive(Debug, Default)]
 pub struct Input {

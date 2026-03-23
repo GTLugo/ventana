@@ -1,10 +1,10 @@
 pub mod backend;
+pub mod iter;
 pub mod prelude;
 pub mod window;
-pub mod iter;
 
-pub use ventana_hal as hal;
 pub use ventana_hal::{
+  self as hal,
   dpi,
   event,
   keyboard,

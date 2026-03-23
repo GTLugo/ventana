@@ -1,6 +1,7 @@
-use ventana_hal::event::Event;
-
-use crate::window::Window;
+use {
+  crate::window::Window,
+  ventana_hal::event::Event,
+};
 
 impl Window {
   pub fn iter<'w>(&'w self) -> EventIterator<'w> {
