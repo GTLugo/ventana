@@ -9,7 +9,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match event {
       Event::LoopExiting => {},
       Event::Window(WindowEvent::Keyboard { code, .. }) => {
-        println!("{code:?}");
+        log::info!("{code:?}");
       },
       _ => (),
     }
