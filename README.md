@@ -27,7 +27,7 @@ Please note, as I am only one person working on this in his free time, Ventana i
 
 Ventana stands upon the shoulders of giants. It takes heavy inspiration from works such as Piston and Winit; in some cases it directly incorporates code from them. In such instances, I have tried to take care to document what was taken alongside the licenses, but please file an issue if I have missed anything!
 
----
+----
 
 > [!NOTE]
 > No AI-generated code.
