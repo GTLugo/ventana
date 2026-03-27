@@ -1,5 +1,8 @@
 use {
-  crate::types::{Flow, Visibility},
+  crate::types::{
+    Flow,
+    Visibility,
+  },
   dpi::{
     Position,
     Size,

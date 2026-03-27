@@ -32,8 +32,8 @@ impl<'a> IntoIterator for &'a Window {
 }
 
 /*
-  IntoIterator for value type needs more work, but I'm too tired to debug it. 
-  
+  IntoIterator for value type needs more work, but I'm too tired to debug it.
+
   The issue I had was it immediately closing the window after returning None after first initialization.
 */
 
