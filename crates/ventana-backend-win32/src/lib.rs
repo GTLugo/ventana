@@ -8,7 +8,6 @@ use {
     error::RequestError,
     event::WindowEvent,
     keyboard::{
-      Code,
       Key,
       NamedKey,
     },
@@ -35,14 +34,6 @@ impl Backend for Win32 {
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     Win32Window::new(settings)
-  }
-
-  fn key_to_scancode(&self, key: Code) -> Option<u32> {
-    todo!()
-  }
-
-  fn scancode_to_key(&self, scancode: u32) -> Code {
-    todo!()
   }
 }
 

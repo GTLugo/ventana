@@ -4,7 +4,6 @@ use {
     settings::WindowSettings,
     window::BackendWindow,
   },
-  keyboard_types::Code,
   std::sync::Arc,
 };
 
@@ -16,10 +15,6 @@ pub trait Backend: Send + Sync {
   fn name(&self) -> &'static str;
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError>;
-
-  fn key_to_scancode(&self, key: Code) -> Option<u32>;
-
-  fn scancode_to_key(&self, scancode: u32) -> Code;
 }
 
 // #[derive(Clone)]
