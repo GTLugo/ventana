@@ -46,6 +46,7 @@ fn message_to_event(message: &Message) -> Option<WindowEvent> {
   Some(match message {
     Message::Create(_) => WindowEvent::Created,
     Message::Close => WindowEvent::CloseRequest,
+    Message::Destroy => WindowEvent::Destroyed,
     Message::Paint => WindowEvent::Draw,
     Message::KeyDown(message) => {
       let key_event = message.event();

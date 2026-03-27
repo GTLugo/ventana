@@ -132,7 +132,6 @@ impl Procedure {
 impl WindowProcedure for Procedure {
   fn on_message(&mut self, window: &Window, message: &Message) -> Option<LResult> {
     let event = message_to_event(message);
-    // log::trace!("{window:?} | {message:?} | {event:?}");
 
     match (message, event) {
       (Message::Create(_), Some(WindowEvent::Created)) => {
@@ -176,6 +175,7 @@ impl WindowProcedure for Procedure {
         }
       },
       (_, Some(event)) => {
+        log::trace!("{window:?} | {message:?} | {event:?}");
         self.0.send_event_to_main(Event::Window(event));
       },
       _ => (),

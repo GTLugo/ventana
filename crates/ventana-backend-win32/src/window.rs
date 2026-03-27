@@ -94,7 +94,7 @@ impl BackendWindow for Win32Window {
 
     let current_stage = self.internal.state_lock().stage;
 
-    let event = match current_stage {
+    match current_stage {
       Stage::Setup => None,
       Stage::Quit => {
         self.internal.sync.skip_wait(true);
@@ -111,11 +111,7 @@ impl BackendWindow for Win32Window {
         }
         event
       },
-    };
-
-    log::trace!("{event:?}");
-
-    event
+    }
   }
 
   fn iter<'w>(&'w self) -> Box<dyn BackendEventIterator<'w> + 'w> {
