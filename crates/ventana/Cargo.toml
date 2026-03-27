@@ -1,7 +1,7 @@
 [package]
 name                 = "ventana"
+description          = "A cross-platform, iterator-based windowing library"
 version              = "0.0.1"
-description          = true
 readme.workspace     = true
 edition.workspace    = true
 authors.workspace    = true
