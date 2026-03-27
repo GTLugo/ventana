@@ -6,14 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let window = Window::new(WindowOptions::default())?;
 
   for event in &window {
-    match event {
-      Event::Window(WindowEvent::Keyboard { code, .. }) => {
-        log::info!("{code:?}");
-      },
-      e => {
-        log::info!("{e:?}");
-      },
-    }
+    log::info!("{event:?}");
   }
 
   Ok(())
