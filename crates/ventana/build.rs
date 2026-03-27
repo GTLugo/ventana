@@ -16,6 +16,11 @@ fn main() {
     wayland_platform: { all(feature = "wayland", free_unix, not(redox)) },
     orbital_platform: { redox },
   }
+  
+  cfg_aliases! {
+    raw_window_handle_v5: { all(feature = "rwh_05", not(feature = "rwh_06")) },
+    raw_window_handle_v6: { all(feature = "rwh_06", not(feature = "rwh_05")) },
+  }
 }
 
 /*
