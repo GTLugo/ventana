@@ -1,6 +1,6 @@
 use ventana::prelude::*;
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> anyhow::Result<()> {
   example::initialize_logger();
 
   let window = Window::new(WindowOptions::default())?;
