@@ -30,7 +30,13 @@ impl WindowId {
 pub trait BackendWindow: Send + Sync {
   fn id(&self) -> WindowId;
 
-  fn next(&self) -> Option<Event>;
+  fn next_event(&self) -> Option<Event>;
+
+  fn iter<'w>(&'w self) -> Box<dyn BackendEventIterator<'w> + 'w>;
+
+  fn close(&self);
+
+  fn is_closing(&self) -> bool;
 
   fn title(&self) -> String;
 
@@ -39,7 +45,7 @@ pub trait BackendWindow: Send + Sync {
   fn outer_size(&self) -> Size;
 
   fn inner_position(&self) -> Position;
-  
+
   fn outer_position(&self) -> Position;
 
   fn key(&self, keycode: Code) -> KeyState;
@@ -53,4 +59,8 @@ pub trait BackendWindow: Send + Sync {
   fn alt_key(&self) -> KeyState;
 
   fn super_key(&self) -> KeyState;
+}
+
+pub trait BackendEventIterator<'window>: Send + Sync {
+  fn next(&mut self) -> Option<Event>;
 }

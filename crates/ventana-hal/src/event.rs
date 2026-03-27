@@ -37,6 +37,8 @@ pub enum Event {
 pub enum WindowEvent {
   /// Message sent when window is created.
   Created,
+  /// Message sent when window is destroyed.
+  Destroyed,
   /// Message sent when window X button is pressed.
   CloseRequest,
   /// Message sent when Windows requests the window be repainted.
@@ -54,9 +56,9 @@ pub enum WindowEvent {
     modifiers: Modifiers,
     // True if the key is currently auto-repeated.
     repeat: bool,
-    // Events with this flag should be ignored in a text editor
-    // and instead [composition events](CompositionEvent) should be used.
-    is_composing: bool,
+    // // Events with this flag should be ignored in a text editor
+    // // and instead [composition events](CompositionEvent) should be used.
+    // is_composing: bool,
   },
   ModifiersChanged {
     shift: KeyState,

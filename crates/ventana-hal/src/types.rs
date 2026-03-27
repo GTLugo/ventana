@@ -1,3 +1,11 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Stage {
+  Setup,
+  Looping,
+  Closing,
+  Quit,
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Fullscreen {
   // Exclusive, // todo

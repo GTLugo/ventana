@@ -1,27 +1,24 @@
 use {
   crate::window::Window,
-  ventana_hal::event::Event,
+  ventana_hal::{
+    event::Event,
+    window::BackendEventIterator,
+  },
 };
 
 impl Window {
   pub fn iter<'w>(&'w self) -> EventIterator<'w> {
-    EventIterator { window: self }
-  }
-
-  pub fn iter_mut<'w>(&'w mut self) -> EventIteratorMut<'w> {
-    EventIteratorMut { window: self }
+    EventIterator(self.window.iter())
   }
 }
 
-pub struct EventIterator<'a> {
-  window: &'a Window,
-}
+pub struct EventIterator<'w>(Box<dyn BackendEventIterator<'w> + 'w>);
 
 impl<'a> Iterator for EventIterator<'a> {
   type Item = Event;
 
   fn next(&mut self) -> Option<Self::Item> {
-    self.window.next_event()
+    self.0.next()
   }
 }
 
@@ -34,44 +31,29 @@ impl<'a> IntoIterator for &'a Window {
   }
 }
 
-pub struct EventIteratorMut<'a> {
-  window: &'a mut Window,
-}
+/*
+  IntoIterator for value type needs more work, but I'm too tired to debug it. 
+  
+  The issue I had was it immediately closing the window after returning None after first initialization.
+*/
 
-impl<'a> Iterator for EventIteratorMut<'a> {
-  type Item = Event;
+// pub struct WindowIntoIterator {
+//   window: Window,
+// }
 
-  fn next(&mut self) -> Option<Self::Item> {
-    self.window.next_event()
-  }
-}
+// impl Iterator for WindowIntoIterator {
+//   type Item = Event;
 
-impl<'a> IntoIterator for &'a mut Window {
-  type IntoIter = EventIteratorMut<'a>;
-  type Item = Event;
+//   fn next(&mut self) -> Option<Self::Item> {
+//     self.window.next_event()
+//   }
+// }
 
-  fn into_iter(self) -> Self::IntoIter {
-    self.iter_mut()
-  }
-}
+// impl IntoIterator for Window {
+//   type IntoIter = WindowIntoIterator;
+//   type Item = Event;
 
-pub struct WindowIntoIterator {
-  window: Window,
-}
-
-impl Iterator for WindowIntoIterator {
-  type Item = Event;
-
-  fn next(&mut self) -> Option<Self::Item> {
-    self.window.next_event()
-  }
-}
-
-impl IntoIterator for Window {
-  type IntoIter = WindowIntoIterator;
-  type Item = Event;
-
-  fn into_iter(self) -> Self::IntoIter {
-    WindowIntoIterator { window: self }
-  }
-}
+//   fn into_iter(self) -> Self::IntoIter {
+//     WindowIntoIterator { window: self }
+//   }
+// }

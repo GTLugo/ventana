@@ -12,7 +12,10 @@ use {
     error::RequestError,
     event::Event,
     settings::WindowSettings,
-    types::Visibility,
+    types::{
+      Flow,
+      Visibility,
+    },
     window::{
       BackendWindow,
       WindowId,
@@ -67,7 +70,7 @@ impl Window {
   }
 
   pub fn next_event(&self) -> Option<Event> {
-    self.window.next()
+    self.window.next_event()
   }
 }
 
@@ -78,6 +81,8 @@ pub struct WindowOptions {
   pub size: Size, // Maybe should make this optional and have backend handle None case
   pub position: Option<Position>,
   pub visibility: Visibility,
+  pub flow: Flow,
+  pub close_on_x: bool,
 }
 
 impl Default for WindowOptions {
@@ -88,6 +93,8 @@ impl Default for WindowOptions {
       size: Size::Logical((800.0, 500.0).into()),
       position: None,
       visibility: Default::default(),
+      flow: Default::default(),
+      close_on_x: true,
     }
   }
 }
@@ -110,6 +117,8 @@ impl From<WindowOptions> for WindowSettings {
       size: options.size,
       position: options.position,
       visibility: options.visibility,
+      flow: options.flow,
+      close_on_x: options.close_on_x,
     }
   }
 }

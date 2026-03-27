@@ -1,37 +1,39 @@
-mod create_info;
+mod command;
+mod iter;
+mod state;
 mod sync;
 mod thread;
 
 use {
   self::{
-    create_info::CreateInfo,
-    sync::SyncData,
-    thread::WindowThread,
+    command::Command,
+    iter::Win32EventIterator,
+    state::Internal,
   },
-  crate::state::State,
   ::win64::Handle,
-  std::sync::{
-    Arc,
-    Mutex,
-    RwLock,
-  },
+  std::sync::Arc,
   ventana_hal::{
     dpi::{
       Position,
       Size,
     },
-    error::{
-      MapToOSError,
-      RequestError,
+    error::RequestError,
+    event::{
+      Event,
+      WindowEvent,
     },
-    event::Event,
     input::mouse::MouseButton,
     keyboard::{
       Code,
       KeyState,
     },
     settings::WindowSettings,
+    types::{
+      Flow,
+      Stage,
+    },
     window::{
+      BackendEventIterator,
       BackendWindow,
       WindowId,
     },
@@ -41,8 +43,7 @@ use {
 
 pub struct Win32Window {
   hwnd: Window,
-  state: RwLock<State>,
-  thread: WindowThread,
+  internal: Arc<Internal>, // This is Arc so that it can be shared with the Window thread
 }
 
 impl Win32Window {
@@ -50,14 +51,14 @@ impl Win32Window {
   pub fn new(settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     win64::set_process_dpi_awareness(win64::DPIAwarenessContext::PerMonitorAwareV2);
 
-    let create_info = CreateInfo {
-      settings: settings.clone(),
-      message: Arc::new(Mutex::new(None)),
-      sync: SyncData::new(),
-    };
+    let internal = Internal::new(settings.clone());
 
     let (window_sender, window_receiver) = std::sync::mpsc::sync_channel(0);
-    let thread = WindowThread::spawn(window_sender, create_info)?;
+    internal
+      .thread
+      .lock()
+      .unwrap()
+      .spawn(window_sender, internal.clone(), settings)?;
 
     log::trace!("Waiting to receive window handle back from window thread");
 
@@ -67,11 +68,19 @@ impl Win32Window {
 
     log::trace!("Received window handle from window thread: `{hwnd:?}`");
 
-    Ok(Arc::new(Self {
-      hwnd,
-      state: RwLock::new(State::new()),
-      thread,
-    }))
+    Ok(Arc::new(Self { hwnd, internal }))
+  }
+
+  fn take_event(&self) -> Option<Event> {
+    let flow = self.internal.state_lock().flow;
+    if let Flow::Wait = flow {
+      let no_events = self.internal.event_lock().is_none();
+      if no_events {
+        self.internal.sync.wait_on_new_event();
+      }
+    }
+
+    self.internal.event_lock().take().or(Some(Event::None))
   }
 }
 
@@ -80,8 +89,52 @@ impl BackendWindow for Win32Window {
     WindowId::from_raw(self.hwnd.to_ptr() as usize)
   }
 
-  fn next(&self) -> Option<Event> {
-    None
+  fn next_event(&self) -> Option<Event> {
+    self.internal.sync.signal_next_frame();
+
+    let current_stage = self.internal.state_lock().stage;
+
+    let event = match current_stage {
+      Stage::Setup => None,
+      Stage::Quit => {
+        self.internal.sync.skip_wait(true);
+        self.internal.thread.lock().unwrap().join().unwrap();
+        None
+      },
+      Stage::Looping | Stage::Closing => {
+        let event = self.take_event();
+        if let Some(Event::Window(WindowEvent::CloseRequest)) = event {
+          let x = self.internal.state_lock().close_on_x;
+          if x {
+            self.close();
+          }
+        }
+        event
+      },
+    };
+
+    log::trace!("{event:?}");
+
+    event
+  }
+
+  fn iter<'w>(&'w self) -> Box<dyn BackendEventIterator<'w> + 'w> {
+    self.internal.state_lock().stage = Stage::Looping;
+    Box::new(Win32EventIterator::new(self))
+  }
+
+  fn close(&self) {
+    if self.is_closing() {
+      return; // already closing
+    }
+
+    log::trace!("[`{}`]: closing window", self.title());
+    self.internal.state_lock().stage = Stage::Closing;
+    Command::Destroy.post(self.hwnd);
+  }
+
+  fn is_closing(&self) -> bool {
+    self.internal.state_lock().is_closing()
   }
 
   fn title(&self) -> String {
