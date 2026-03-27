@@ -1,6 +1,6 @@
 # <div align="center">`Ventana`</div>
 
-[<div align="center">![Crates.io Version](https://img.shields.io/crates/v/ventana)](https://crates.io/crates/ventana)
+[<div align="center">![Crates.io Version](https://img.shields.io/crates/v/ventana?style=for-the-badge)](https://crates.io/crates/ventana)
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)</div>](https://ko-fi.com/R6R8PGIU6)
 
 ```rust
