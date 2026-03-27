@@ -3,18 +3,14 @@
 ```rust
 use ventana::prelude::*;
 
-fn main() -> anyhow::Result<()> {
-  let window = Window::new(WindowOptions {
-    title: "Example",
-    size: Size::Logical((800, 500).into()),
-    ..Default::default()
-  })?;
+let window = Window::new(WindowOptions {
+  title: "Example",
+  size: Size::Logical((800, 500).into()),
+  ..Default::default()
+})?;
 
-  for event in &window {
-    println!("{event:?}");
-  }
-
-  Ok(())
+for event in &window {
+  println!("{event:?}");
 }
 ```
 
