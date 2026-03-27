@@ -6,7 +6,7 @@ default-members = ["crates/example"]
 [workspace.package]
 readme      = "README.md"
 edition     = "2024"
-authors     = ["Gabriel Lugo <dev.gabriel.lugo@gmail.com>"]
+authors     = ["Gabriel Lugo-Maldonado <dev.gabriel.lugo@gmail.com>"]
 license     = "MIT OR Apache-2.0"
 keywords    = ["windows", "windowing"]
 categories  = ["game-development", "rendering", "gui"]
