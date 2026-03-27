@@ -8,7 +8,7 @@ use {
   std::sync::Arc,
 };
 
-pub trait Backend: Send + Sync + 'static {
+pub trait Backend: Send + Sync {
   fn instance() -> Arc<dyn Backend>
   where
     Self: Sized;
