@@ -6,7 +6,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
   let window = Window::new(WindowOptions::default())?;
 
   for event in &window {
-    log::info!("{event:?}");
+    log::info!("{} | {event:?}", window.id());
   }
 
   Ok(())

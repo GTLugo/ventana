@@ -26,6 +26,12 @@ impl WindowId {
   }
 }
 
+impl std::fmt::Display for WindowId {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.0)
+  }
+}
+
 // Maybe split this into things like "BasicWindow" "ResizableWindow" "MoveableWindow" etc
 pub trait BackendWindow: Send + Sync {
   fn id(&self) -> WindowId;
