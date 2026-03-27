@@ -4,7 +4,8 @@ fn main() -> anyhow::Result<()> {
   example::initialize_logger();
 
   let window = Window::new(WindowOptions {
-    flow: Flow::Poll,
+    title: "Example",
+    size: Size::Logical((800, 500).into()),
     ..Default::default()
   })?;
 
