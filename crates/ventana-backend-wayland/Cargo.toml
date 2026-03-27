@@ -1,11 +1,12 @@
 [package]
-name    = "ventana-backend-wayland"
-version = "0.0.1"
-readme.workspace = true
-edition.workspace = true
-authors.workspace = true
-license.workspace = true
-keywords.workspace = true
+name                 = "ventana-backend-wayland"
+version              = "0.0.1"
+description          = true
+readme.workspace     = true
+edition.workspace    = true
+authors.workspace    = true
+license.workspace    = true
+keywords.workspace   = true
 categories.workspace = true
 repository.workspace = true
 

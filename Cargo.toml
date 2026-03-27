@@ -4,6 +4,7 @@ members = ["crates/*"]
 default-members = ["crates/example"]
 
 [workspace.package]
+description = "A cross-platform, iterator-based windowing library"
 readme      = "README.md"
 edition     = "2024"
 authors     = ["Gabriel Lugo <dev.gabriel.lugo@gmail.com>"]
