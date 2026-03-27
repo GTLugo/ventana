@@ -17,5 +17,6 @@ pub use {
       WindowEvent,
     },
     settings::WindowSettings,
+    types::*,
   },
 };

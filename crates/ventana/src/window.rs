@@ -32,6 +32,15 @@ where
   window: Arc<dyn BackendWindow>,
 }
 
+impl std::fmt::Debug for Window {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    f.debug_struct("Window")
+      .field("backend", &self.backend.name())
+      .field("window", &self.window.id())
+      .finish()
+  }
+}
+
 impl Window {
   pub fn new(options: WindowOptions) -> Result<Self, RequestError> {
     let settings: WindowSettings = options.clone().into();

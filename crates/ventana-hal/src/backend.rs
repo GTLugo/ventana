@@ -13,6 +13,8 @@ pub trait Backend: Send + Sync {
   where
     Self: Sized;
 
+  fn name(&self) -> &'static str;
+
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError>;
 
   fn key_to_scancode(&self, key: Code) -> Option<u32>;

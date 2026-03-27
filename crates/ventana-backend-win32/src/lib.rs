@@ -29,6 +29,10 @@ impl Backend for Win32 {
     Arc::new(Self)
   }
 
+  fn name(&self) -> &'static str {
+    "Win32"
+  }
+
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     Win32Window::new(settings)
   }
