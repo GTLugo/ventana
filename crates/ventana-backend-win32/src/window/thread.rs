@@ -115,7 +115,7 @@ impl Procedure {
   fn event_lock(&self) -> MutexGuard<'_, Option<Event>> {
     self.0.event_lock()
   }
-  
+
   fn state_lock(&self) -> MutexGuard<'_, State> {
     self.0.state_lock()
   }
