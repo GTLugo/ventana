@@ -41,6 +41,12 @@ impl std::fmt::Debug for Window {
   }
 }
 
+impl std::fmt::Display for Window {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{backend}({id})", backend = self.backend.name(), id = self.window.id())
+  }
+}
+
 impl Window {
   pub fn new(options: WindowOptions) -> Result<Self, RequestError> {
     let settings: WindowSettings = options.clone().into();

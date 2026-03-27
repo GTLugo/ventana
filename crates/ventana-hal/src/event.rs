@@ -19,9 +19,10 @@ use {
     Location,
     Modifiers,
   },
+  strum::Display,
 };
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Display, PartialEq, Clone)]
 pub enum Event {
   /// Artificial window messages sent by the window loop.
   /// Sent when the message pump is polled, but there are no messages.
@@ -33,7 +34,7 @@ pub enum Event {
   Window(WindowEvent),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Display, PartialEq, Clone)]
 pub enum WindowEvent {
   /// Message sent when window is created.
   Created,
@@ -101,7 +102,7 @@ pub enum WindowEvent {
   ScaleFactorChanged(f64),
 }
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, Display, PartialEq, Clone)]
 pub enum RawInputMessage {
   /// Raw keyboard input
   Keyboard { physical_key: Code, state: KeyState },
@@ -116,7 +117,7 @@ pub enum RawInputMessage {
   Adapted from `winit` according to Apache-2.0 license. (https://github.com/rust-windowing/winit/blob/master/src/platform_impl/windows/event_loop.rs#L2568)
   Adapted for windows crate.
 */
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Display, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CursorMoveKind {
   /// Cursor entered to the window.
   Entered,

@@ -1,4 +1,6 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+use strum::Display;
+
+#[derive(Debug, Display, Clone, Copy, PartialEq, Eq)]
 pub enum Stage {
   Setup,
   Looping,
@@ -6,13 +8,13 @@ pub enum Stage {
   Quit,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Display, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Fullscreen {
   // Exclusive, // todo
   Borderless,
 }
 
-#[derive(Default, Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Default, Debug, Display, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CursorMode {
   #[default]
   Normal,
@@ -20,21 +22,21 @@ pub enum CursorMode {
 }
 
 /// The wait behaviour of the window.
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Debug, Display, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Flow {
   #[default]
   Wait,
   Poll,
 }
 
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Debug, Display, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Visibility {
   #[default]
   Shown,
   Hidden,
 }
 
-#[derive(Default, Debug, Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Default, Debug, Display, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Theme {
   #[default]
   Auto,
@@ -42,7 +44,7 @@ pub enum Theme {
   Light,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Display, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Focus {
   Gained,
   Lost,
