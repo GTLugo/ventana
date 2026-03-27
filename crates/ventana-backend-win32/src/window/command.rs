@@ -21,7 +21,6 @@ use {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
-  Close,
   Destroy,
   Redraw,
   SetVisibility(Visibility),
@@ -54,6 +53,7 @@ impl Command {
       .unwrap();
   }
 
+  #[allow(unused)]
   pub fn send(self, window: Window) {
     let command = Box::leak(Box::new(self));
     let addr = command as *mut Command as usize;
