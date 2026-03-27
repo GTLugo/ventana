@@ -31,3 +31,7 @@ rwh_06 = { package = "raw-window-handle", version = "0.6", features = ["std"], o
 [dependencies.ventana-hal]
 version = "0.0.1"
 path = "../ventana-hal"
+
+[dependencies.x11rb]
+version = "0.13"
+features = ["cursor", "extra-traits"]

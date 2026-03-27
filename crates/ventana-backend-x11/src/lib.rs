@@ -8,7 +8,10 @@
   ))
 ))] // TODO: Swap this out for a stub impl on other platforms.
 
+pub mod window;
+
 use {
+  self::window::X11Window,
   std::sync::Arc,
   ventana_hal::{
     backend::Backend,
@@ -33,7 +36,7 @@ impl Backend for X11 {
   }
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    todo!()
+    X11Window::new()
   }
 }
 
