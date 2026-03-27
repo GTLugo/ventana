@@ -41,8 +41,8 @@ path = "../ventana-hal"
 
 # # Windows
 [target.'cfg(target_os = "windows")'.dependencies]
-backend-win32 = { package = "ventana-backend-win32", version = "*", path = "../ventana-backend-win32" }
+backend-win32 = { package = "ventana-backend-win32", version = "0.0.1", path = "../ventana-backend-win32" }
 
 # Linux
 [target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies]
-backend-wayland = { package = "ventana-backend-wayland", version = "*", path = "../ventana-backend-wayland" } # , optional = true
+backend-wayland = { package = "ventana-backend-wayland", version = "0.0.1", path = "../ventana-backend-wayland" } # , optional = true
