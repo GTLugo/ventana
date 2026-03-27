@@ -121,6 +121,8 @@ impl WindowOptions {
     #[cfg(windows_platform)]
     return Some(backend::Win32::instance());
     #[cfg(x11_platform)]
+    return Some(backend::X11::instance());
+    #[cfg(wayland_platform)]
     return Some(backend::Wayland::instance());
     None
   }

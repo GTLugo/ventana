@@ -1,3 +1,5 @@
+#![cfg(target_os = "windows")] // TODO: Swap this out for a stub impl on other platforms.
+
 pub mod window;
 
 use {

@@ -1,8 +1,41 @@
-// use ventana_hal::{
-//   message::Message, position::Position, settings::WindowSettings, size::Size, WindowProvider, Window as HalWindow,
-// };
+#![cfg(all(
+  unix,
+  not(any(
+    target_os = "redox",
+    target_family = "wasm",
+    target_os = "android",
+    target_vendor = "apple"
+  ))
+))] // TODO: Swap this out for a stub impl on other platforms.
 
-// pub struct WaylandBackend;
+use {
+  std::sync::Arc,
+  ventana_hal::{
+    backend::Backend,
+    error::RequestError,
+    settings::WindowSettings,
+    window::BackendWindow,
+  },
+};
+
+pub struct X11;
+
+impl Backend for X11 {
+  fn instance() -> Arc<dyn Backend>
+  where
+    Self: Sized,
+  {
+    Arc::new(Self)
+  }
+
+  fn name(&self) -> &'static str {
+    "X11"
+  }
+
+  fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
+    todo!()
+  }
+}
 
 // impl WindowProvider for WaylandBackend {
 //   fn create_window(&self, settings: WindowSettings) -> Box<dyn HalWindow> {
