@@ -25,6 +25,7 @@ use {
       Event,
       WindowEvent,
     },
+    rgb::RGB8,
     settings::WindowSettings,
     types::Stage,
   },
@@ -92,10 +93,16 @@ impl WindowThread {
   }
 
   fn create_window(internal: Arc<Internal>, settings: WindowSettings) -> Result<Window, RequestError> {
-    let class = WindowClass::builder()
-      .with_name("Window Class")
-      .register()
-      .map_to_os_err()?;
+    let class = {
+      let mut class = WindowClass::builder().with_name("Window Class");
+      if let Some(RGB8 { r, g, b }) = settings.clear_color {
+        let color: u32 = ((b as u32) << 16) & ((g as u32) << 8) & r as u32;
+        class = class.with_background_brush(Brush::solid(color));
+      }
+      class
+    }
+    .register()
+    .map_to_os_err()?;
     let hwnd = class
       .create_window()
       .with_procedure(Procedure(internal))

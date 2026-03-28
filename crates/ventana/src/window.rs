@@ -12,6 +12,7 @@ use {
     },
     error::RequestError,
     event::Event,
+    rgb::RGB8,
     settings::WindowSettings,
     types::{
       Flow,
@@ -28,7 +29,6 @@ pub struct Window
 where
   Self: Send + Sync,
 {
-  #[allow(unused)]
   backend: Arc<dyn Backend>,
   window: Arc<dyn BackendWindow>,
 }
@@ -99,6 +99,8 @@ pub struct WindowOptions {
   pub visibility: Visibility,
   pub flow: Flow,
   pub close_on_x: bool,
+  pub clear_color: Option<RGB8>,
+  // pub reveal_delay_frames: Option<u32>,
 }
 
 impl Default for WindowOptions {
@@ -111,6 +113,8 @@ impl Default for WindowOptions {
       visibility: Default::default(),
       flow: Default::default(),
       close_on_x: true,
+      clear_color: None,
+      // reveal_delay_frames: None,
     }
   }
 }
@@ -137,6 +141,8 @@ impl From<WindowOptions> for WindowSettings {
       visibility: options.visibility,
       flow: options.flow,
       close_on_x: options.close_on_x,
+      clear_color: options.clear_color,
+      // reveal_delay_frames: options.reveal_delay_frames,
     }
   }
 }

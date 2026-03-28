@@ -6,6 +6,7 @@ fn main() -> anyhow::Result<()> {
   let window = Window::new(WindowOptions {
     title: "Example",
     size: Size::Logical((800, 500).into()),
+    clear_color: Some((255, 255, 255).into()),
     ..Default::default()
   })?;
 

@@ -14,4 +14,5 @@ pub use rwh_06 as raw_window_handle;
 pub use {
   dpi,
   keyboard_types as keyboard,
+  rgb,
 };

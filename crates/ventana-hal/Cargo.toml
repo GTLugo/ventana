@@ -30,6 +30,7 @@ strum     = { version = "0.28", features = ["derive"] }
 # Standard windowing types
 dpi            = "0.1"
 keyboard-types = "0.8"
+rgb            = "0.8"
 
 rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = ["std"], optional = true }
 rwh_06 = { package = "raw-window-handle", version = "0.6", features = ["std"], optional = true }

@@ -7,6 +7,7 @@ use {
     Position,
     Size,
   },
+  rgb::RGB8,
   smol_str::SmolStr,
 };
 
@@ -18,6 +19,8 @@ pub struct WindowSettings {
   pub visibility: Visibility,
   pub flow: Flow,
   pub close_on_x: bool,
+  pub clear_color: Option<RGB8>,
+  // pub reveal_delay_frames: Option<u32>, // Future feature to offer a way around Win32's infamous White Flash (TM)
 }
 
 impl WindowSettings {}
