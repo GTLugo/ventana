@@ -26,7 +26,7 @@ Please note, as I am only one person working on this in his free time, Ventana i
 ## Backends
 
 > [!IMPORTANT]
-> Alternate platforms not listed below may be implemented as custom backends and fed into the `backend` field of `WindowOptions`. While the library is designed to be cross-platform, the overall library is still in its infancy and support across the board is still work-in-progress. MacOS support is currently unplanned as I do not own any MacOS devices.
+> Alternate platforms not listed below can be implemented as third-party backends and fed into the `backend` field of `WindowOptions`. While the library is designed to be cross-platform, the overall library is still in its infancy and support across the board is still work-in-progress. MacOS support is currently unplanned as I do not own any MacOS devices.
 
 Platform | First-Party Support
 -|-
