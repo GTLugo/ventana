@@ -23,10 +23,6 @@ The two key features for this library are the iterator API and backend extensibi
 
 Please note, as I am only one person working on this in his free time, Ventana is likely hilariously unoptimized in certain places. Certain performance liberties are taken in the name of maintainability and ease-of-use, but I am completely open to feedback concerning particularly problematic code.
 
-## Credits
-
-Ventana stands upon the shoulders of giants. It takes heavy inspiration from works such as Piston and Winit; in some cases it directly incorporates code from them. In such instances, I have tried to take care to document what was taken alongside the licenses, but please file an issue if I have missed anything. I try to take plagiarism seriously, but a lot of this was written at 3am after my 10th cup of coffee.
-
 ## Backends
 
 > [!IMPORTANT]
@@ -43,6 +39,10 @@ MacOS | ❌
 ###### ⚠️ - Partial
 ###### 🚧 - In development
 ###### ❌ - No first-party support planned
+
+## Credits
+
+Ventana stands upon the shoulders of giants. It takes heavy inspiration from works such as Piston and Winit; in some cases it directly incorporates code from them. In such instances, I have tried to take care to document what was taken alongside the licenses, but please file an issue if I have missed anything. I try to take plagiarism seriously, but a lot of this was written late at night after work and on my 10th cup of coffee.
 
 ----
 
