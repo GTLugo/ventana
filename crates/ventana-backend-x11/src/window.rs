@@ -1,10 +1,12 @@
 use {
+  crate::event::map_native_event,
   std::sync::Arc,
   ventana_hal::{
     error::{
       MapToOSError,
       RequestError,
     },
+    settings::WindowSettings,
     window::{
       BackendWindow,
       WindowId,
@@ -18,17 +20,20 @@ use {
       CreateWindowAux,
       WindowClass,
     },
+    rust_connection::RustConnection,
   },
 };
 
 pub struct X11Window {
   id: u32,
+  connection: Arc<RustConnection>,
 }
 
 impl X11Window {
   #[allow(clippy::new_ret_no_self)]
-  pub fn new() -> Result<Arc<dyn BackendWindow>, RequestError> {
+  pub fn new(settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     let (connection, screen_index) = x11rb::connect(None).map_to_os_err()?;
+
     let screen = &connection.setup().roots[screen_index];
     let id = connection.generate_id().map_to_os_err()?;
     connection
@@ -50,12 +55,15 @@ impl X11Window {
     connection.map_window(id).map_to_os_err()?;
     connection.flush().map_to_os_err()?;
 
-    loop {
-      let event = connection.wait_for_event().map_to_os_err()?;
-      log::trace!("{:?}", event);
-    }
+    // loop {
+    //   let event = connection.wait_for_event().map_to_os_err()?;
+    //   log::trace!("{:?}", event);
+    // }
 
-    Ok(Arc::new(Self { id }))
+    Ok(Arc::new(Self {
+      id,
+      connection: Arc::new(connection),
+    }))
   }
 }
 
@@ -73,6 +81,14 @@ impl BackendWindow for X11Window {
   }
 
   fn next_event(&self) -> Option<ventana_hal::event::Event> {
+    let _event = match self.connection.wait_for_event() {
+      Ok(event) => map_native_event(&event),
+      Err(e) => {
+        log::error!("{e}");
+        return None;
+      },
+    };
+
     todo!()
   }
 

@@ -16,24 +16,3 @@ pub trait Backend: Send + Sync {
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError>;
 }
-
-// #[derive(Clone)]
-// pub struct Context {
-//   backend: Arc<dyn Backend>,
-// }
-//
-// impl<T: Backend> From<T> for Context {
-//   fn from(backend: T) -> Self {
-//     Self {
-//       backend: Arc::new(backend),
-//     }
-//   }
-// }
-//
-// impl Deref for Context {
-//   type Target = dyn Backend;
-//
-//   fn deref(&self) -> &Self::Target {
-//     self.backend.as_ref()
-//   }
-// }

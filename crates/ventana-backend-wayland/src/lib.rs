@@ -21,11 +21,11 @@ use {
 pub struct Wayland;
 
 impl Backend for Wayland {
-  fn instance() -> Arc<dyn Backend>
+  fn instance() -> impl Backend
   where
     Self: Sized,
   {
-    Arc::new(Self)
+    Self
   }
 
   fn name(&self) -> &'static str {

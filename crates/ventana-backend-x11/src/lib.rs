@@ -9,6 +9,7 @@
 ))] // TODO: Swap this out for a stub impl on other platforms.
 
 pub mod window;
+mod event;
 
 use {
   self::window::X11Window,
@@ -24,11 +25,11 @@ use {
 pub struct X11;
 
 impl Backend for X11 {
-  fn instance() -> Arc<dyn Backend>
+  fn instance() -> impl Backend
   where
     Self: Sized,
   {
-    Arc::new(Self)
+    Self
   }
 
   fn name(&self) -> &'static str {
@@ -36,34 +37,6 @@ impl Backend for X11 {
   }
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    X11Window::new()
+    X11Window::new(settings)
   }
 }
-
-// impl WindowProvider for WaylandBackend {
-//   fn create_window(&self, settings: WindowSettings) -> Box<dyn HalWindow> {
-//     Box::new(Window { settings })
-//   }
-// }
-
-// pub struct Window {
-//   settings: WindowSettings,
-// }
-
-// impl HalWindow for Window {
-//   fn next(&self) -> Option<Message> {
-//     None
-//   }
-
-//   fn title(&self) -> String {
-//     self.settings.title.clone()
-//   }
-
-//   fn size(&self) -> Size {
-//     self.settings.size
-//   }
-
-//   fn position(&self) -> Position {
-//     self.settings.position
-//   }
-// }

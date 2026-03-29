@@ -11,9 +11,7 @@ fn main() -> anyhow::Result<()> {
   })?;
 
   for event in &window {
-    if !matches!(event, Event::None) {
-      log::info!("{window} | {event:?}");
-    }
+    log::info!("{window} | {event:?}");
   }
 
   Ok(())
