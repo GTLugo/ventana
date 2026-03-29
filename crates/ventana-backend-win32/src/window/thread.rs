@@ -7,7 +7,7 @@ use {
     },
     sync::SyncData,
   },
-  crate::message_to_event,
+  crate::event::map_native_event,
   std::{
     sync::{
       Arc,
@@ -138,7 +138,7 @@ impl Procedure {
 
 impl WindowProcedure for Procedure {
   fn on_message(&mut self, window: &Window, message: &Message) -> Option<LResult> {
-    let event = message_to_event(message);
+    let event = map_native_event(message);
 
     match (message, event) {
       (Message::Create(_), Some(WindowEvent::Created)) => {

@@ -123,11 +123,11 @@ impl WindowOptions {
   #[allow(unreachable_code)]
   fn auto_select_backend() -> Option<Arc<dyn Backend>> {
     #[cfg(windows_platform)]
-    return Some(backend::Win32::instance());
+    return Some(Arc::new(backend::Win32::instance()));
     #[cfg(x11_platform)]
-    return Some(backend::X11::instance());
+    return Some(Arc::new(backend::X11::instance()));
     #[cfg(wayland_platform)]
-    return Some(backend::Wayland::instance());
+    return Some(Arc::new(backend::Wayland::instance()));
     None
   }
 }

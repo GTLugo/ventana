@@ -8,7 +8,7 @@ use {
 };
 
 pub trait Backend: Send + Sync {
-  fn instance() -> Arc<dyn Backend>
+  fn instance() -> impl Backend
   where
     Self: Sized;
 
