@@ -17,6 +17,7 @@ use {
   ventana_hal::{
     backend::Backend,
     error::RequestError,
+    monitor::BackendMonitor,
     settings::WindowSettings,
     window::BackendWindow,
   },
@@ -40,7 +41,7 @@ impl Backend for X11 {
     Ok(Arc::new(X11Window::new(settings)?))
   }
 
-  fn primary_monitor(&self) -> Result<Arc<dyn ventana_hal::monitor::BackendMonitor>, RequestError> {
+  fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
     todo!()
   }
 }

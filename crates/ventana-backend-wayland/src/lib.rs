@@ -8,7 +8,11 @@
   ))
 ))] // TODO: Swap this out for a stub impl on other platforms.
 
+mod event;
+pub mod window;
+
 use {
+  self::window::WaylandWindow,
   std::sync::Arc,
   ventana_hal::{
     backend::Backend,
@@ -34,7 +38,7 @@ impl Backend for Wayland {
   }
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    todo!()
+    Ok(Arc::new(WaylandWindow::new(settings)?))
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {

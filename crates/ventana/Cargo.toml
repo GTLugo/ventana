@@ -11,7 +11,7 @@ categories.workspace = true
 repository.workspace = true
 
 [features]
-default = ["rwh_06", "x11"]
+default = ["rwh_06", "wayland"]
 serde = ["dep:serde", "ventana-hal/serde"]
 
 rwh_05  = ["dep:rwh_05", "ventana-hal/rwh_05", "backend-win32/rwh_05", "backend-wayland?/rwh_05"] # backend-wayland?/rwh_05
