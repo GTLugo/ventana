@@ -41,7 +41,7 @@ impl<T: BackendImpl + 'static> From<T> for Backend {
 }
 
 impl Backend {
-  /// Attempts to select a backend from the first-party backend implementations. Returns `None` if none are available.
+  /// Attempts to select a backend from the first-party backend implementations. Returns `RequestError::NotSupported` if none are available.
   pub fn auto() -> Result<Self, RequestError> {
     #[allow(unreachable_code)]
     {
