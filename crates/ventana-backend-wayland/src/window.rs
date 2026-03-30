@@ -1,5 +1,17 @@
+mod state;
+
 use {
-  std::sync::Arc,
+  self::state::WaylandWindowState,
+  sctk::reexports::client::{
+    Connection,
+    globals::{
+      self,
+    },
+  },
+  std::sync::{
+    Arc,
+    Mutex,
+  },
   ventana_hal::{
     error::{
       MapToOSError,
@@ -15,11 +27,27 @@ use {
 
 pub struct WaylandWindow {
   id: u32,
+  state: Arc<Mutex<WaylandWindowState>>,
 }
 
 impl WaylandWindow {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
-    Ok(Self { id: todo!() })
+    // I can't find any decent beginner materials on how to actually make a Wayland window and read events,
+    // so this is HEAVILY based on Winit. If there are any quirks, it's probably because of me
+    // trying to warp Winit's implementation.
+
+    let connection = Connection::connect_to_env().map_to_os_err()?;
+    let (globals, mut event_queue) = globals::registry_queue_init(&connection).map_to_os_err()?;
+    let queue_handle = event_queue.handle();
+
+    let mut state = WaylandWindowState::new(&globals, &queue_handle)?;
+
+    event_queue.roundtrip(&mut state).map_to_os_err()?;
+
+    Ok(Self {
+      id: todo!(),
+      state: Arc::new(Mutex::new(state)),
+    })
   }
 }
 

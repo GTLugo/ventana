@@ -13,7 +13,10 @@ pub mod window;
 
 use {
   self::window::X11Window,
-  std::sync::Arc,
+  std::{
+    collections::VecDeque,
+    sync::Arc,
+  },
   ventana_hal::{
     backend::Backend,
     error::RequestError,
@@ -26,7 +29,7 @@ use {
 pub struct X11;
 
 impl Backend for X11 {
-  fn instance() -> impl Backend
+  fn new() -> impl Backend
   where
     Self: Sized,
   {
@@ -39,6 +42,10 @@ impl Backend for X11 {
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     Ok(Arc::new(X11Window::new(settings)?))
+  }
+
+  fn list_available_monitors(&self) -> VecDeque<Arc<dyn BackendMonitor>> {
+    todo!()
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {

@@ -24,7 +24,7 @@ pub struct Win32;
 
 #[allow(unused)]
 impl Backend for Win32 {
-  fn instance() -> impl Backend
+  fn new() -> impl Backend
   where
     Self: Sized,
   {
@@ -37,6 +37,10 @@ impl Backend for Win32 {
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     Ok(Arc::new(Win32Window::new(settings)?))
+  }
+
+  fn list_available_monitors(&self) -> VecDeque<Arc<dyn BackendMonitor>> {
+    Win32Monitor::list_available()
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {

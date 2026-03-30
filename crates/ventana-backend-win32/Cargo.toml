@@ -20,10 +20,10 @@ cfg_aliases = "0.2"
 
 [dependencies]
 log       = "0.4"
-thiserror = "2.0.x"
+thiserror = "2.0"
 
-bitflags = "2.9.x"
-cursor-icon = "1.1.x"
+bitflags = "2.9"
+cursor-icon = "1.2"
 
 rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = ["std"], optional = true }
 rwh_06 = { package = "raw-window-handle", version = "0.6", features = ["std"], optional = true }

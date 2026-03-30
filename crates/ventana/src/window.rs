@@ -2,10 +2,12 @@ pub mod iter;
 pub mod raw;
 
 use {
-  crate::backend,
+  crate::{
+    backend::Backend,
+    monitor::Monitor,
+  },
   std::sync::Arc,
   ventana_hal::{
-    backend::Backend,
     dpi::{
       Position,
       Size,
@@ -25,11 +27,12 @@ use {
   },
 };
 
+#[derive(Clone)]
 pub struct Window
 where
   Self: Send + Sync,
 {
-  backend: Arc<dyn Backend>,
+  backend: Backend,
   window: Arc<dyn BackendWindow>,
 }
 
@@ -73,6 +76,10 @@ impl Window {
     self.window.scale_factor()
   }
 
+  pub fn monitor(&self) -> Monitor {
+    Monitor::new(self.window.monitor())
+  }
+
   pub fn inner_size(&self) -> Size {
     self.window.inner_size()
   }
@@ -96,7 +103,7 @@ impl Window {
 
 #[derive(Clone)]
 pub struct WindowOptions {
-  pub backend: Option<Arc<dyn Backend>>,
+  pub backend: Option<Backend>,
   pub title: &'static str,
   pub size: Size, // Maybe should make this optional and have backend handle None case
   pub position: Option<Position>,
@@ -110,7 +117,7 @@ pub struct WindowOptions {
 impl Default for WindowOptions {
   fn default() -> Self {
     Self {
-      backend: Self::auto_select_backend(),
+      backend: Backend::auto(),
       title: "Window",
       size: Size::Logical((800.0, 500.0).into()),
       position: None,
@@ -120,19 +127,6 @@ impl Default for WindowOptions {
       clear_color: None,
       // reveal_delay_frames: None,
     }
-  }
-}
-
-impl WindowOptions {
-  #[allow(unreachable_code)]
-  fn auto_select_backend() -> Option<Arc<dyn Backend>> {
-    #[cfg(windows_platform)]
-    return Some(Arc::new(backend::Win32::instance()));
-    #[cfg(x11_platform)]
-    return Some(Arc::new(backend::X11::instance()));
-    #[cfg(wayland_platform)]
-    return Some(Arc::new(backend::Wayland::instance()));
-    None
   }
 }
 
