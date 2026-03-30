@@ -36,7 +36,7 @@ impl Backend for Win32 {
   }
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    Ok(Arc::new(Win32Window::new(settings)?) as _)
+    Ok(Arc::new(Win32Window::new(settings)?))
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
