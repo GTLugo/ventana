@@ -30,7 +30,7 @@ pub struct X11Window {
 }
 
 impl X11Window {
-  pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
+  pub fn new(_settings: WindowSettings) -> Result<Self, RequestError> {
     let (connection, screen_index) = x11rb::connect(None).map_to_os_err()?;
 
     let screen = &connection.setup().roots[screen_index];
@@ -131,11 +131,11 @@ impl BackendWindow for X11Window {
     todo!()
   }
 
-  fn key(&self, keycode: ventana_hal::keyboard::Code) -> ventana_hal::keyboard::KeyState {
+  fn key(&self, _keycode: ventana_hal::keyboard::Code) -> ventana_hal::keyboard::KeyState {
     todo!()
   }
 
-  fn mouse(&self, button: ventana_hal::input::mouse::MouseButton) -> ventana_hal::keyboard::KeyState {
+  fn mouse(&self, _button: ventana_hal::input::mouse::MouseButton) -> ventana_hal::keyboard::KeyState {
     todo!()
   }
 
