@@ -41,28 +41,17 @@ impl<T: BackendImpl + 'static> From<T> for Backend {
 }
 
 impl Backend {
-  pub fn new<T: BackendImpl + 'static>() -> Self {
-    Self {
-      backend: Arc::new(T::new()),
-    }
-  }
-
-  // fn instance() -> &'static dyn BackendImpl {
-  //   static BACKEND: LazyLock<Backend> = LazyLock::new(|| Backend::auto());
-  //   BACKEND.backend.as_ref()
-  // }
-
   /// Attempts to select a backend from the first-party backend implementations. Returns `None` if none are available.
-  pub fn auto() -> Option<Self> {
+  pub fn auto() -> Result<Self, RequestError> {
     #[allow(unreachable_code)]
     {
       #[cfg(windows_platform)]
-      return Some(Win32.into());
+      return Ok(Win32.into());
       #[cfg(x11_platform)]
-      return Some(X11.into());
+      return Ok(X11.into());
       #[cfg(wayland_platform)]
-      return Some(Wayland.into());
-      None
+      return Ok(Wayland.into());
+      Err(RequestError::NotSupported("No supported backend available to auto-select from."))
     }
   }
 

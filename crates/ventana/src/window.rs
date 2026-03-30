@@ -117,7 +117,7 @@ pub struct WindowOptions {
 impl Default for WindowOptions {
   fn default() -> Self {
     Self {
-      backend: Backend::auto(),
+      backend: Backend::auto().ok(),
       title: "Window",
       size: Size::Logical((800.0, 500.0).into()),
       position: None,

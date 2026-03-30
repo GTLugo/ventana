@@ -23,18 +23,6 @@ impl Monitor {
     self.monitor.id()
   }
 
-  // pub fn list_available_monitors() -> impl BackendMonitor
-  // where
-  //   Self: Sized,
-  // {
-  // }
-
-  // pub fn primary() -> impl BackendMonitor
-  // where
-  //   Self: Sized,
-  // {
-  // }
-
   pub fn scale_factor(&self) -> f64 {
     self.monitor.scale_factor()
   }
