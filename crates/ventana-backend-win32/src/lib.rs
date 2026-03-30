@@ -9,7 +9,10 @@ use {
     monitor::Win32Monitor,
     window::Win32Window,
   },
-  std::sync::Arc,
+  std::{
+    collections::VecDeque,
+    sync::Arc,
+  },
   ventana_hal::{
     backend::Backend,
     error::RequestError,

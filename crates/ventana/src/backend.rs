@@ -57,11 +57,11 @@ impl Backend {
     #[allow(unreachable_code)]
     {
       #[cfg(windows_platform)]
-      return Some(Arc::new(backend::Win32::new()));
+      return Some(Win32.into());
       #[cfg(x11_platform)]
-      return Some(Arc::new(backend::X11::new()));
+      return Some(X11.into());
       #[cfg(wayland_platform)]
-      return Some(Wayland::new().into());
+      return Some(Wayland.into());
       None
     }
   }
