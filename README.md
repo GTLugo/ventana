@@ -30,7 +30,7 @@ Please note, as I am only one person working on this in his free time, Ventana i
 
 Platform | First-Party Support
 -|-
-Windows | 🚧
+Windows | ⚠️
 X11 | 🚧
 Wayland | 🚧
 MacOS | ❌
