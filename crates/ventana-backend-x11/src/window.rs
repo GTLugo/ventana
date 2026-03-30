@@ -30,8 +30,7 @@ pub struct X11Window {
 }
 
 impl X11Window {
-  #[allow(clippy::new_ret_no_self)]
-  pub fn new(settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
+  pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     let (connection, screen_index) = x11rb::connect(None).map_to_os_err()?;
 
     let screen = &connection.setup().roots[screen_index];
@@ -60,10 +59,10 @@ impl X11Window {
     //   log::trace!("{:?}", event);
     // }
 
-    Ok(Arc::new(Self {
+    Ok(Self {
       id,
       connection: Arc::new(connection),
-    }))
+    })
   }
 }
 
@@ -77,6 +76,10 @@ impl BackendWindow for X11Window {
   }
 
   fn raw_display_handle(&self) -> ventana_hal::raw_window_handle::RawDisplayHandle {
+    todo!()
+  }
+
+  fn monitor(&self) -> Arc<dyn ventana_hal::monitor::BackendMonitor> {
     todo!()
   }
 
@@ -105,6 +108,10 @@ impl BackendWindow for X11Window {
   }
 
   fn title(&self) -> String {
+    todo!()
+  }
+
+  fn scale_factor(&self) -> f64 {
     todo!()
   }
 

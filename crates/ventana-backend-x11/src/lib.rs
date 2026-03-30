@@ -37,6 +37,10 @@ impl Backend for X11 {
   }
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    X11Window::new(settings)
+    Ok(Arc::new(X11Window::new(settings)?))
+  }
+
+  fn primary_monitor(&self) -> Result<Arc<dyn ventana_hal::monitor::BackendMonitor>, RequestError> {
+    todo!()
   }
 }

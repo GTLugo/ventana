@@ -13,6 +13,7 @@ use {
   ventana_hal::{
     backend::Backend,
     error::RequestError,
+    monitor::BackendMonitor,
     settings::WindowSettings,
     window::BackendWindow,
   },
@@ -33,6 +34,10 @@ impl Backend for Wayland {
   }
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
+    todo!()
+  }
+
+  fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
     todo!()
   }
 }
