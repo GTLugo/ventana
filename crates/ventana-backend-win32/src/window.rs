@@ -27,6 +27,7 @@ use {
       Code,
       KeyState,
     },
+    monitor::BackendMonitor,
     settings::WindowSettings,
     types::{
       Flow,
@@ -47,9 +48,8 @@ pub struct Win32Window {
 }
 
 impl Win32Window {
-  #[allow(clippy::new_ret_no_self)]
-  pub fn new(settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    win64::set_process_dpi_awareness(win64::DPIAwarenessContext::PerMonitorAwareV2);
+  pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
+    set_process_dpi_awareness(DPIAwarenessContext::PerMonitorAwareV2);
 
     let internal = Internal::new(settings.clone());
 
@@ -68,7 +68,7 @@ impl Win32Window {
 
     log::trace!("Received window handle from window thread: `{hwnd:?}`");
 
-    Ok(Arc::new(Self { hwnd, internal }))
+    Ok(Self { hwnd, internal })
   }
 
   fn take_event(&self) -> Option<Event> {
@@ -155,6 +155,10 @@ impl BackendWindow for Win32Window {
     Box::new(Win32EventIterator::new(self))
   }
 
+  fn monitor(&self) -> Arc<dyn BackendMonitor> {
+    todo!()
+  }
+
   fn close(&self) {
     if self.is_closing() {
       return; // already closing
@@ -171,6 +175,10 @@ impl BackendWindow for Win32Window {
 
   fn title(&self) -> String {
     self.hwnd.get_window_text().unwrap()
+  }
+
+  fn scale_factor(&self) -> f64 {
+    self.hwnd.scale_factor()
   }
 
   fn inner_size(&self) -> Size {

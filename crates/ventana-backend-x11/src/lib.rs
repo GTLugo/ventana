@@ -8,8 +8,8 @@
   ))
 ))] // TODO: Swap this out for a stub impl on other platforms.
 
-pub mod window;
 mod event;
+pub mod window;
 
 use {
   self::window::X11Window,

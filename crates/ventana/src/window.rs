@@ -69,6 +69,10 @@ impl Window {
     self.window.title()
   }
 
+  pub fn scale_factor(&self) -> f64 {
+    self.window.scale_factor()
+  }
+
   pub fn inner_size(&self) -> Size {
     self.window.inner_size()
   }

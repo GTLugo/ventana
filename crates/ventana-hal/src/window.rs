@@ -2,6 +2,7 @@ use {
   crate::{
     event::Event,
     input::mouse::MouseButton,
+    monitor::BackendMonitor,
   },
   dpi::{
     Position,
@@ -11,6 +12,7 @@ use {
     Code,
     KeyState,
   },
+  std::sync::Arc,
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -50,11 +52,15 @@ pub trait BackendWindow: Send + Sync {
 
   fn iter<'w>(&'w self) -> Box<dyn BackendEventIterator<'w> + 'w>;
 
+  fn monitor(&self) -> Arc<dyn BackendMonitor>;
+
   fn close(&self);
 
   fn is_closing(&self) -> bool;
 
   fn title(&self) -> String;
+
+  fn scale_factor(&self) -> f64;
 
   fn inner_size(&self) -> Size;
 
