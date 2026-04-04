@@ -95,8 +95,7 @@ impl WindowThread {
   fn create_window(internal: Arc<Internal>, settings: WindowSettings) -> Result<Window, RequestError> {
     let class = {
       let mut class = WindowClass::builder().with_name("Window Class");
-      if let Some(RGB8 { r, g, b }) = settings.clear_color {
-        let color: u32 = ((b as u32) << 16) & ((g as u32) << 8) & r as u32;
+      if let Some(color) = settings.clear_color {
         class = class.with_background_brush(Brush::solid(color));
       }
       class
