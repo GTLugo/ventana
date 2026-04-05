@@ -13,3 +13,5 @@ categories  = ["game-development", "rendering", "gui"]
 repository  = "https://github.com/GTLugo/ventana"
 
 [workspace.dependencies]
+rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = ["std"] }
+rwh_06 = { package = "raw-window-handle", version = "0.6", features = ["std"] }

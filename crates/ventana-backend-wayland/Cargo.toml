@@ -35,6 +35,7 @@ rwh_06 = { package = "raw-window-handle", version = "0.6", features = ["std"], o
 version = "0.0.1"
 path = "../ventana-hal"
 
-[dependencies.sctk]
+# not sure why, but sctk still tries to compile build scripts on other targets, so this guard is necessary to avoid erroneous warnings from rust-analyzer
+[target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies.sctk]
 package = "smithay-client-toolkit"
 version = "0.20.0"
