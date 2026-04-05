@@ -115,6 +115,10 @@ impl WaylandState {
     let shm = Shm::bind(globals, queue_handle).map_to_os_err()?;
     let window = shell.create_window(surface, WindowDecorations::RequestServer, queue_handle);
 
+    let xdg_activation = ActivationState::bind(globals, queue_handle).ok();
+
+    let pool = SlotPool::new(256 * 256 * 4, &shm).map_to_os_err()?;
+
     Ok(Self {
       window_state,
       registry_state,
@@ -125,14 +129,14 @@ impl WaylandState {
       shell,
       id,
       window,
-      xdg_activation: todo!(),
-      first_configure: todo!(),
-      pool: todo!(),
-      shift: todo!(),
-      buffer: todo!(),
-      keyboard: todo!(),
-      keyboard_focus: todo!(),
-      pointer: todo!(),
+      xdg_activation,
+      first_configure: true,
+      pool,
+      shift: None,
+      buffer: None,
+      keyboard: None,
+      keyboard_focus: false,
+      pointer: None,
       loop_handle,
     })
   }
