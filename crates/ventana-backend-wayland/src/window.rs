@@ -35,6 +35,11 @@ use {
   },
 };
 
+pub struct CreateInfo {
+  pub id: WindowId,
+  pub loop_signal: LoopSignal,
+}
+
 pub struct WaylandWindow {
   id: WindowId,
   state: Arc<Mutex<SharedState>>,
@@ -59,8 +64,7 @@ impl WaylandWindow {
     let (globals, event_queue) = globals::registry_queue_init(&connection).map_to_os_err()?;
     let queue_handle = event_queue.handle();
 
-    let (signal_tx, signal_rx) = std::sync::mpsc::channel();
-    let (id_tx, id_rx) = std::sync::mpsc::channel();
+    let (info_tx, info_rx) = std::sync::mpsc::sync_channel(0);
 
     std::thread::Builder::new()
       .name("window".into())
@@ -73,8 +77,12 @@ impl WaylandWindow {
 
         let mut wayland_state = WaylandState::new(&globals, &queue_handle, shared_state, event_loop.handle())?;
 
-        id_tx.send(wayland_state.id()).map_to_os_err()?;
-        signal_tx.send(event_loop.get_signal()).map_to_os_err()?;
+        info_tx
+          .send(CreateInfo {
+            id: wayland_state.id(),
+            loop_signal: event_loop.get_signal(),
+          })
+          .map_to_os_err()?;
 
         loop {
           if let Err(error) = event_loop.dispatch(None, &mut wayland_state) {
@@ -88,8 +96,7 @@ impl WaylandWindow {
       })
       .map_to_os_err()?;
 
-    let id = id_rx.recv().map_to_os_err()?;
-    let loop_signal = signal_rx.recv().map_to_os_err()?;
+    let CreateInfo { id, loop_signal } = info_rx.recv().map_to_os_err()?;
 
     Ok(Self { id, state, loop_signal })
   }
