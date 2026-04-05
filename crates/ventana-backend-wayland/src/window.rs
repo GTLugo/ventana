@@ -1,11 +1,21 @@
 mod state;
 
 use {
-  self::state::WaylandWindowState,
-  sctk::reexports::client::{
-    Connection,
-    globals::{
-      self,
+  self::state::{
+    SharedState,
+    WaylandState,
+  },
+  sctk::reexports::{
+    calloop::{
+      EventLoop,
+      LoopSignal,
+    },
+    calloop_wayland_source::WaylandSource,
+    client::{
+      Connection,
+      globals::{
+        self,
+      },
     },
   },
   std::sync::{
@@ -26,8 +36,9 @@ use {
 };
 
 pub struct WaylandWindow {
-  id: u32,
-  state: Arc<Mutex<WaylandWindowState>>,
+  id: WindowId,
+  state: Arc<Mutex<SharedState>>,
+  loop_signal: LoopSignal,
 }
 
 impl WaylandWindow {
@@ -36,24 +47,57 @@ impl WaylandWindow {
     // so this is HEAVILY based on Winit. If there are any quirks, it's probably because of me
     // trying to warp Winit's implementation.
 
+    let state = Arc::new(Mutex::new(SharedState {
+      id: WindowId::from_raw(0),
+      width: 0,
+      height: 0,
+      should_exit: false,
+    }));
+    let shared_state = state.clone();
+
     let connection = Connection::connect_to_env().map_to_os_err()?;
-    let (globals, mut event_queue) = globals::registry_queue_init(&connection).map_to_os_err()?;
+    let (globals, event_queue) = globals::registry_queue_init(&connection).map_to_os_err()?;
     let queue_handle = event_queue.handle();
 
-    let mut state = WaylandWindowState::new(&globals, &queue_handle)?;
+    let (signal_tx, signal_rx) = std::sync::mpsc::channel();
+    let (id_tx, id_rx) = std::sync::mpsc::channel();
 
-    event_queue.roundtrip(&mut state).map_to_os_err()?;
+    std::thread::Builder::new()
+      .name("window".into())
+      .spawn(move || -> Result<(), RequestError> {
+        let mut event_loop: EventLoop<WaylandState> = EventLoop::try_new().map_to_os_err()?;
 
-    Ok(Self {
-      id: todo!(),
-      state: Arc::new(Mutex::new(state)),
-    })
+        WaylandSource::new(connection.clone(), event_queue)
+          .insert(event_loop.handle())
+          .map_to_os_err()?;
+
+        let mut wayland_state = WaylandState::new(&globals, &queue_handle, shared_state, event_loop.handle())?;
+
+        id_tx.send(wayland_state.id()).map_to_os_err()?;
+        signal_tx.send(event_loop.get_signal()).map_to_os_err()?;
+
+        loop {
+          if let Err(error) = event_loop.dispatch(None, &mut wayland_state) {
+            log::error!("{error}");
+          }
+
+          if wayland_state.state_lock().should_exit {
+            break Ok(());
+          }
+        }
+      })
+      .map_to_os_err()?;
+
+    let id = id_rx.recv().map_to_os_err()?;
+    let loop_signal = signal_rx.recv().map_to_os_err()?;
+
+    Ok(Self { id, state, loop_signal })
   }
 }
 
 impl BackendWindow for WaylandWindow {
   fn id(&self) -> WindowId {
-    WindowId::from_raw(self.id as usize)
+    self.id
   }
 
   fn raw_window_handle(&self) -> ventana_hal::raw_window_handle::RawWindowHandle {

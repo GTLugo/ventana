@@ -28,6 +28,9 @@ cursor-icon = "1.2"
 rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = ["std"], optional = true }
 rwh_06 = { package = "raw-window-handle", version = "0.6", features = ["std"], optional = true }
 
+# xkbcommon-dl = "0.4.2"
+# xkbcommon = "0.9"
+
 [dependencies.ventana-hal]
 version = "0.0.1"
 path = "../ventana-hal"
@@ -35,4 +38,3 @@ path = "../ventana-hal"
 [dependencies.sctk]
 package = "smithay-client-toolkit"
 version = "0.20.0"
-default-features = false
