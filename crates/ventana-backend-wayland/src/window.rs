@@ -1,34 +1,49 @@
+mod iter;
 mod state;
 
 use {
-  self::state::{
-    SharedState,
-    WaylandState,
-  },
-  sctk::reexports::{
-    calloop::{
-      EventLoop,
-      LoopSignal,
+  self::{
+    iter::WaylandEventIterator,
+    state::{
+      SharedState,
+      WaylandState,
     },
-    calloop_wayland_source::WaylandSource,
-    client::{
-      Connection,
-      globals::{
-        self,
+  },
+  sctk::{
+    reexports::{
+      calloop::{
+        EventLoop,
+        LoopSignal,
+      },
+      calloop_wayland_source::WaylandSource,
+      client::{
+        Connection,
+        globals::{
+          self,
+        },
       },
     },
+    shell::xdg::window::Window,
   },
   std::sync::{
     Arc,
     Mutex,
+    MutexGuard,
   },
+  synchronize::Signal,
   ventana_hal::{
     error::{
       MapToOSError,
       RequestError,
     },
+    event::{
+      Event,
+      WindowEvent,
+    },
     settings::WindowSettings,
+    types::Flow,
     window::{
+      BackendEventIterator,
       BackendWindow,
       WindowId,
     },
@@ -37,13 +52,17 @@ use {
 
 pub struct CreateInfo {
   pub id: WindowId,
+  pub window: Window,
   pub loop_signal: LoopSignal,
 }
 
 pub struct WaylandWindow {
   id: WindowId,
+  window: Window,
   state: Arc<Mutex<SharedState>>,
   loop_signal: LoopSignal,
+  event_signal: Signal,
+  iteration_signal: Signal,
 }
 
 impl WaylandWindow {
@@ -52,11 +71,19 @@ impl WaylandWindow {
     // so this is HEAVILY based on Winit. If there are any quirks, it's probably because of me
     // trying to warp Winit's implementation.
 
+    // let (event_tx, event_rx) = std::sync::mpsc::sync_channel(0);
+    let event_signal = Signal::new();
+    let iteration_signal = Signal::new();
     let state = Arc::new(Mutex::new(SharedState {
       id: WindowId::from_raw(0),
       width: 0,
       height: 0,
       should_exit: false,
+      event: None,
+      event_signal: event_signal.clone(),
+      iteration_signal: iteration_signal.clone(),
+      flow: settings.flow,
+      close_on_x: settings.close_on_x,
     }));
     let shared_state = state.clone();
 
@@ -80,9 +107,12 @@ impl WaylandWindow {
         info_tx
           .send(CreateInfo {
             id: wayland_state.id(),
+            window: wayland_state.window(),
             loop_signal: event_loop.get_signal(),
           })
           .map_to_os_err()?;
+
+        wayland_state.commit();
 
         loop {
           if let Err(error) = event_loop.dispatch(None, &mut wayland_state) {
@@ -96,9 +126,36 @@ impl WaylandWindow {
       })
       .map_to_os_err()?;
 
-    let CreateInfo { id, loop_signal } = info_rx.recv().map_to_os_err()?;
+    let CreateInfo {
+      id,
+      window,
+      loop_signal,
+    } = info_rx.recv().map_to_os_err()?;
 
-    Ok(Self { id, state, loop_signal })
+    Ok(Self {
+      id,
+      window,
+      state,
+      loop_signal,
+      event_signal,
+      iteration_signal,
+    })
+  }
+
+  pub fn state_lock(&self) -> MutexGuard<'_, SharedState> {
+    self.state.lock().unwrap()
+  }
+
+  fn take_event(&self) -> Option<Event> {
+    let flow = self.state_lock().flow;
+    if let Flow::Wait = flow {
+      let no_events = self.state_lock().event.is_none();
+      if no_events {
+        self.event_signal.wait().unwrap();
+      }
+    }
+
+    self.state_lock().event.take().or(Some(Event::None))
   }
 }
 
@@ -119,16 +176,27 @@ impl BackendWindow for WaylandWindow {
     todo!()
   }
 
-  fn next_event(&self) -> Option<ventana_hal::event::Event> {
-    todo!()
+  fn next_event(&self) -> Option<Event> {
+    self.iteration_signal.signal().unwrap();
+    let event = self.take_event();
+
+    if let Some(Event::Window(WindowEvent::CloseRequest)) = event {
+      let x = self.state_lock().close_on_x;
+      if x {
+        self.close();
+      }
+    }
+
+    event
   }
 
-  fn iter<'w>(&'w self) -> Box<dyn ventana_hal::window::BackendEventIterator<'w> + 'w> {
-    todo!()
+  fn iter<'w>(&'w self) -> Box<dyn BackendEventIterator<'w> + 'w> {
+    Box::new(WaylandEventIterator::new(self))
   }
 
   fn close(&self) {
-    todo!()
+    self.state_lock().should_exit = true;
+    self.loop_signal.wakeup();
   }
 
   fn is_closing(&self) -> bool {

@@ -37,12 +37,15 @@ use {
       keyboard::KeyboardHandler,
       pointer::PointerHandler,
     },
-    shell::xdg::{
-      XdgShell,
-      window::{
-        Window,
-        WindowDecorations,
-        WindowHandler,
+    shell::{
+      WaylandSurface,
+      xdg::{
+        XdgShell,
+        window::{
+          Window,
+          WindowDecorations,
+          WindowHandler,
+        },
       },
     },
     shm::{
@@ -59,11 +62,13 @@ use {
     Mutex,
     MutexGuard,
   },
+  synchronize::Signal,
   ventana_hal::{
     error::{
       MapToOSError,
       RequestError,
     },
+    types::Flow,
     window::WindowId,
   },
 };
@@ -73,9 +78,17 @@ pub struct SharedState {
   pub width: u32,
   pub height: u32,
   pub should_exit: bool,
+  pub event: Option<ventana_hal::event::Event>,
+  pub event_signal: Signal,
+  pub iteration_signal: Signal,
+
+  pub flow: Flow,
+  pub close_on_x: bool,
 }
 
 pub struct WaylandState {
+  event_signal: Signal,
+  iteration_signal: Signal,
   window_state: Arc<Mutex<SharedState>>,
   registry_state: RegistryState,
   seat_state: SeatState,
@@ -103,6 +116,9 @@ impl WaylandState {
     window_state: Arc<Mutex<SharedState>>,
     loop_handle: LoopHandle<'static, WaylandState>,
   ) -> Result<Self, RequestError> {
+    let event_signal = window_state.lock().unwrap().event_signal.clone();
+    let iteration_signal = window_state.lock().unwrap().iteration_signal.clone();
+
     let registry_state = RegistryState::new(globals);
     let seat_state = SeatState::new(globals, queue_handle);
     let output_state = OutputState::new(globals, queue_handle);
@@ -120,6 +136,8 @@ impl WaylandState {
     let pool = SlotPool::new(256 * 256 * 4, &shm).map_to_os_err()?;
 
     Ok(Self {
+      event_signal,
+      iteration_signal,
       window_state,
       registry_state,
       seat_state,
@@ -153,7 +171,26 @@ impl WaylandState {
     self.id
   }
 
-  pub fn draw(&mut self, _conn: &Connection, qh: &QueueHandle<Self>) {}
+  pub fn window(&self) -> Window {
+    self.window.clone()
+  }
+
+  pub fn commit(&self) {
+    self.window.commit();
+  }
+
+  fn draw(&mut self, _conn: &Connection, qh: &QueueHandle<Self>) {}
+
+  fn send_event(&mut self, event: ventana_hal::event::Event) {
+    let should_wait = self.state_lock().event.is_some();
+    if should_wait {
+      self.iteration_signal.wait().unwrap();
+    }
+
+    self.state_lock().event.replace(event);
+    self.event_signal.signal().unwrap();
+    self.iteration_signal.wait().unwrap();
+  }
 }
 
 impl CompositorHandler for WaylandState {
