@@ -86,6 +86,7 @@ impl WaylandWindow {
       close_on_x: settings.close_on_x,
     }));
     let shared_state = state.clone();
+    let shared_settings = settings.clone();
 
     let connection = Connection::connect_to_env().map_to_os_err()?;
     let (globals, event_queue) = globals::registry_queue_init(&connection).map_to_os_err()?;
@@ -102,7 +103,8 @@ impl WaylandWindow {
           .insert(event_loop.handle())
           .map_to_os_err()?;
 
-        let mut wayland_state = WaylandState::new(&globals, &queue_handle, shared_state, event_loop.handle())?;
+        let mut wayland_state =
+          WaylandState::new(&globals, &queue_handle, shared_state, event_loop.handle(), shared_settings)?;
 
         info_tx
           .send(CreateInfo {
@@ -111,8 +113,6 @@ impl WaylandWindow {
             loop_signal: event_loop.get_signal(),
           })
           .map_to_os_err()?;
-
-        wayland_state.commit();
 
         loop {
           if let Err(error) = event_loop.dispatch(None, &mut wayland_state) {

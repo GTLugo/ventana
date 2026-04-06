@@ -23,6 +23,7 @@ use {
         protocol::{
           wl_keyboard::WlKeyboard,
           wl_pointer::WlPointer,
+          wl_shm,
         },
       },
     },
@@ -35,7 +36,10 @@ use {
       SeatHandler,
       SeatState,
       keyboard::KeyboardHandler,
-      pointer::PointerHandler,
+      pointer::{
+        PointerEventKind,
+        PointerHandler,
+      },
     },
     shell::{
       WaylandSurface,
@@ -68,6 +72,11 @@ use {
       MapToOSError,
       RequestError,
     },
+    event::{
+      Event,
+      WindowEvent,
+    },
+    settings::WindowSettings,
     types::Flow,
     window::WindowId,
   },
@@ -78,7 +87,7 @@ pub struct SharedState {
   pub width: u32,
   pub height: u32,
   pub should_exit: bool,
-  pub event: Option<ventana_hal::event::Event>,
+  pub event: Option<Event>,
   pub event_signal: Signal,
   pub iteration_signal: Signal,
 
@@ -115,6 +124,7 @@ impl WaylandState {
     queue_handle: &QueueHandle<Self>,
     window_state: Arc<Mutex<SharedState>>,
     loop_handle: LoopHandle<'static, WaylandState>,
+    settings: WindowSettings,
   ) -> Result<Self, RequestError> {
     let event_signal = window_state.lock().unwrap().event_signal.clone();
     let iteration_signal = window_state.lock().unwrap().iteration_signal.clone();
@@ -130,6 +140,9 @@ impl WaylandState {
     window_state.lock().unwrap().id = id;
     let shm = Shm::bind(globals, queue_handle).map_to_os_err()?;
     let window = shell.create_window(surface, WindowDecorations::RequestServer, queue_handle);
+
+    window.set_title(settings.title);
+    window.commit();
 
     let xdg_activation = ActivationState::bind(globals, queue_handle).ok();
 
@@ -179,9 +192,70 @@ impl WaylandState {
     self.window.commit();
   }
 
-  fn draw(&mut self, _conn: &Connection, qh: &QueueHandle<Self>) {}
+  fn draw(&mut self, _conn: &Connection, qh: &QueueHandle<Self>) {
+    let width = self.state_lock().width;
+    let height = self.state_lock().height;
+    let stride = self.state_lock().width as i32 * 4;
 
-  fn send_event(&mut self, event: ventana_hal::event::Event) {
+    let buffer = self.buffer.get_or_insert_with(|| {
+      self
+        .pool
+        .create_buffer(width as i32, height as i32, stride, wl_shm::Format::Argb8888)
+        .expect("create buffer")
+        .0
+    });
+
+    let canvas = match self.pool.canvas(buffer) {
+      Some(canvas) => canvas,
+      None => {
+        // This should be rare, but if the compositor has not released the previous
+        // buffer, we need double-buffering.
+        let (second_buffer, canvas) = self
+          .pool
+          .create_buffer(width as i32, height as i32, stride, wl_shm::Format::Argb8888)
+          .expect("create buffer");
+        *buffer = second_buffer;
+        canvas
+      },
+    };
+
+    // Draw to the window:
+    {
+      let shift = self.shift.unwrap_or(0);
+      canvas.chunks_exact_mut(4).enumerate().for_each(|(index, chunk)| {
+        let x = ((index + shift as usize) % width as usize) as u32;
+        let y = (index / width as usize) as u32;
+
+        let a = 0xFF;
+        let r = u32::min(((width - x) * 0xFF) / width, ((height - y) * 0xFF) / height);
+        let g = u32::min((x * 0xFF) / width, ((height - y) * 0xFF) / height);
+        let b = u32::min(((width - x) * 0xFF) / width, (y * 0xFF) / height);
+        let color = (a << 24) + (r << 16) + (g << 8) + b;
+
+        let array: &mut [u8; 4] = chunk.try_into().unwrap();
+        *array = color.to_le_bytes();
+      });
+
+      if let Some(shift) = &mut self.shift {
+        *shift = (*shift + 1) % width;
+      }
+    }
+
+    // Damage the entire window
+    self
+      .window
+      .wl_surface()
+      .damage_buffer(0, 0, width as i32, height as i32);
+
+    // Request our next frame
+    self.window.wl_surface().frame(qh, self.window.wl_surface().clone());
+
+    // Attach and commit to present.
+    buffer.attach_to(self.window.wl_surface()).expect("buffer attach");
+    self.window.commit();
+  }
+
+  fn send_event(&mut self, event: Event) {
     let should_wait = self.state_lock().event.is_some();
     if should_wait {
       self.iteration_signal.wait().unwrap();
@@ -328,7 +402,15 @@ impl SeatHandler for WaylandState {
     seat: sctk::reexports::client::protocol::wl_seat::WlSeat,
     capability: sctk::seat::Capability,
   ) {
-    todo!()
+    if capability == Capability::Keyboard && self.keyboard.is_some() {
+      log::trace!("Unset keyboard capability");
+      self.keyboard.take().unwrap().release();
+    }
+
+    if capability == Capability::Pointer && self.pointer.is_some() {
+      log::trace!("Unset pointer capability");
+      self.pointer.take().unwrap().release();
+    }
   }
 
   fn remove_seat(
@@ -337,7 +419,6 @@ impl SeatHandler for WaylandState {
     qh: &QueueHandle<Self>,
     seat: sctk::reexports::client::protocol::wl_seat::WlSeat,
   ) {
-    todo!()
   }
 }
 
@@ -352,7 +433,10 @@ impl KeyboardHandler for WaylandState {
     raw: &[u32],
     keysyms: &[sctk::seat::keyboard::Keysym],
   ) {
-    todo!()
+    if self.window.wl_surface() == surface {
+      log::trace!("Keyboard focus on window with pressed syms: {keysyms:?}");
+      self.keyboard_focus = true;
+    }
   }
 
   fn leave(
@@ -363,7 +447,10 @@ impl KeyboardHandler for WaylandState {
     surface: &sctk::reexports::client::protocol::wl_surface::WlSurface,
     serial: u32,
   ) {
-    todo!()
+    if self.window.wl_surface() == surface {
+      log::trace!("Release keyboard focus on window");
+      self.keyboard_focus = false;
+    }
   }
 
   fn press_key(
@@ -374,6 +461,7 @@ impl KeyboardHandler for WaylandState {
     serial: u32,
     event: sctk::seat::keyboard::KeyEvent,
   ) {
+    log::trace!("Key press: {event:?}");
   }
 
   fn repeat_key(
@@ -384,7 +472,7 @@ impl KeyboardHandler for WaylandState {
     serial: u32,
     event: sctk::seat::keyboard::KeyEvent,
   ) {
-    todo!()
+    log::trace!("Key repeat: {event:?}");
   }
 
   fn release_key(
@@ -395,7 +483,7 @@ impl KeyboardHandler for WaylandState {
     serial: u32,
     event: sctk::seat::keyboard::KeyEvent,
   ) {
-    todo!()
+    log::trace!("Key release: {event:?}");
   }
 
   fn update_modifiers(
@@ -408,7 +496,7 @@ impl KeyboardHandler for WaylandState {
     raw_modifiers: sctk::seat::keyboard::RawModifiers,
     layout: u32,
   ) {
-    todo!()
+    log::trace!("Update modifiers: {modifiers:?}");
   }
 }
 
@@ -420,13 +508,41 @@ impl PointerHandler for WaylandState {
     pointer: &sctk::reexports::client::protocol::wl_pointer::WlPointer,
     events: &[sctk::seat::pointer::PointerEvent],
   ) {
-    todo!()
+    use PointerEventKind::*;
+    for event in events {
+      // Ignore events for other surfaces
+      if &event.surface != self.window.wl_surface() {
+        continue;
+      }
+
+      match event.kind {
+        Enter { .. } => {
+          log::trace!("Pointer entered @{:?}", event.position);
+        },
+        Leave { .. } => {
+          log::trace!("Pointer left");
+        },
+        Motion { .. } => {},
+        Press { button, .. } => {
+          log::trace!("Press {:x} @ {:?}", button, event.position);
+          self.shift = self.shift.xor(Some(0));
+        },
+        Release { button, .. } => {
+          log::trace!("Release {:x} @ {:?}", button, event.position);
+        },
+        Axis {
+          horizontal, vertical, ..
+        } => {
+          log::trace!("Scroll H:{horizontal:?}, V:{vertical:?}");
+        },
+      }
+    }
   }
 }
 
 impl WindowHandler for WaylandState {
   fn request_close(&mut self, conn: &Connection, qh: &QueueHandle<Self>, window: &Window) {
-    todo!()
+    self.send_event(Event::Window(WindowEvent::CloseRequest));
   }
 
   fn configure(
@@ -437,7 +553,17 @@ impl WindowHandler for WaylandState {
     configure: sctk::shell::xdg::window::WindowConfigure,
     serial: u32,
   ) {
-    todo!()
+    log::trace!("Window configured to: {:?}", configure);
+
+    self.buffer = None;
+    self.state_lock().width = configure.new_size.0.map(|v| v.get()).unwrap_or(800);
+    self.state_lock().height = configure.new_size.1.map(|v| v.get()).unwrap_or(500);
+
+    // Initiate the first draw.
+    if self.first_configure {
+      self.first_configure = false;
+      self.draw(conn, qh);
+    }
   }
 }
 
@@ -445,7 +571,11 @@ impl ActivationHandler for WaylandState {
   type RequestData = RequestData;
 
   fn new_token(&mut self, token: String, data: &Self::RequestData) {
-    todo!()
+    self
+      .xdg_activation
+      .as_ref()
+      .unwrap()
+      .activate::<Self>(self.window.wl_surface(), token);
   }
 }
 
@@ -453,7 +583,7 @@ impl ProvidesRegistryState for WaylandState {
   sctk::registry_handlers![OutputState, SeatState];
 
   fn registry(&mut self) -> &mut RegistryState {
-    todo!()
+    &mut self.registry_state
   }
 }
 
