@@ -74,15 +74,15 @@ impl Internal {
   pub fn send_event_to_main(&self, event: Event) {
     let should_wait = self.event.lock().unwrap().is_some();
     if should_wait {
-      self.sync.wait_on_frame();
+      self.sync.next_frame.wait().unwrap();
     }
 
     self.event.lock().unwrap().replace(event);
-    self.sync.signal_new_event();
+    self.sync.new_event.signal().unwrap();
 
     // TODO: try inverting these locks so that they don't lock unless the main thread tells them to lock.
 
-    self.sync.wait_on_frame();
+    self.sync.next_frame.wait().unwrap();
   }
 }
 

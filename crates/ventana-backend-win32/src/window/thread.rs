@@ -25,7 +25,6 @@ use {
       Event,
       WindowEvent,
     },
-    rgb::RGB8,
     settings::WindowSettings,
     types::Stage,
   },
@@ -146,7 +145,7 @@ impl WindowProcedure for Procedure {
         self.set_ready();
 
         self.event_lock().replace(Event::Window(WindowEvent::Created));
-        self.sync().signal_new_event();
+        self.sync().new_event.signal().unwrap();
       },
       (Message::SettingChange(_), _) => {
         window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));

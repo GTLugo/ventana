@@ -76,7 +76,7 @@ impl Win32Window {
     if let Flow::Wait = flow {
       let no_events = self.internal.event_lock().is_none();
       if no_events {
-        self.internal.sync.wait_on_new_event();
+        self.internal.sync.new_event.wait().unwrap();
       }
     }
 
@@ -126,7 +126,7 @@ impl BackendWindow for Win32Window {
   }
 
   fn next_event(&self) -> Option<Event> {
-    self.internal.sync.signal_next_frame();
+    self.internal.sync.next_frame.signal().unwrap();
 
     let current_stage = self.internal.state_lock().stage;
 

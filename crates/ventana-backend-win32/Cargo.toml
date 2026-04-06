@@ -21,6 +21,7 @@ cfg_aliases = "0.2"
 [dependencies]
 log       = "0.4"
 thiserror = "2.0"
+synchronize = "1.0"
 
 bitflags = "2.9"
 cursor-icon = "1.2"
