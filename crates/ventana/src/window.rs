@@ -99,6 +99,10 @@ impl Window {
   pub fn next_event(&self) -> Option<Event> {
     self.window.next_event()
   }
+
+  pub fn close(&self) {
+    self.window.close()
+  }
 }
 
 #[derive(Clone)]
