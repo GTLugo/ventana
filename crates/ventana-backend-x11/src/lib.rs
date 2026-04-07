@@ -32,6 +32,7 @@ use {
     window::BackendWindow,
   },
   x11rb::{
+    atom_manager,
     connection::Connection,
     protocol::xproto::Screen,
     resource_manager::{
@@ -42,10 +43,20 @@ use {
   },
 };
 
+atom_manager! {
+  pub Atoms: AtomsCookie {
+    WM_PROTOCOLS,
+    WM_DELETE_WINDOW,
+    _NET_WM_NAME,
+    UTF8_STRING,
+  }
+}
+
 pub struct X11State {
   connection: RustConnection,
   default_screen_index: usize,
   database: Database,
+  atoms: Atoms,
 }
 
 #[derive(Clone)]
@@ -81,6 +92,10 @@ impl X11 {
       .get(self.0.default_screen_index)
       .unwrap()
   }
+
+  pub fn atoms(&self) -> &Atoms {
+    &self.0.atoms
+  }
 }
 
 impl Backend for X11 {
@@ -91,10 +106,12 @@ impl Backend for X11 {
     static INSTANCE: LazyLock<X11> = LazyLock::new(|| {
       let (connection, default_screen_index) = x11rb::connect(None).unwrap();
       let database = new_from_default(&connection).unwrap();
+      let atoms = Atoms::new(&connection).unwrap().reply().unwrap();
       X11(Arc::new(X11State {
         connection,
         default_screen_index,
         database,
+        atoms,
       }))
     });
     &INSTANCE

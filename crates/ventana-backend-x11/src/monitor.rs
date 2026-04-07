@@ -15,6 +15,7 @@ use {
   x11rb::protocol::randr::ConnectionExt,
 };
 
+#[allow(unused)]
 #[derive(Debug, Clone)]
 pub struct X11Monitor {
   id: u32,

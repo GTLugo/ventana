@@ -6,12 +6,20 @@ use {
     X11,
     event::map_native_event,
   },
-  std::sync::Arc,
+  std::sync::{
+    Arc,
+    Mutex,
+    MutexGuard,
+  },
   ventana_hal::{
     backend::Backend,
     error::{
       MapToOSError,
       RequestError,
+    },
+    event::{
+      Event,
+      WindowEvent,
     },
     settings::WindowSettings,
     window::{
@@ -35,16 +43,27 @@ use {
   },
 };
 
+pub struct State {
+  settings: WindowSettings,
+  running: bool,
+}
+
 pub struct X11Window {
   id: u32,
+  state: Arc<Mutex<State>>,
 }
 
 impl X11Window {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     let x11 = X11::instance();
+    let connection = x11.connection();
     let screen = x11.default_screen();
+    let id = connection.generate_id().map_to_os_err()?;
 
-    let id = x11.connection().generate_id().map_to_os_err()?;
+    let clear_color: u32 = settings
+      .clear_color
+      .map(|color| (color.r as u32) << 16 | (color.g as u32) << 8 | (color.b as u32))
+      .unwrap_or(screen.black_pixel);
 
     let values = CreateWindowAux::default()
       .event_mask(
@@ -58,15 +77,15 @@ impl X11Window {
           | EventMask::KEY_RELEASE,
       )
       .win_gravity(Gravity::NORTH_WEST)
-      .background_pixel(screen.black_pixel);
+      .background_pixel(clear_color);
     let scale_factor = x11.primary_monitor().map_to_os_err()?.scale_factor();
     let size = settings.size.to_logical(scale_factor);
     let position = settings
       .position
       .map(|p| p.to_logical(scale_factor))
       .unwrap_or_default();
-    x11
-      .connection()
+
+    connection
       .create_window(
         COPY_DEPTH_FROM_PARENT,
         id,
@@ -82,24 +101,39 @@ impl X11Window {
       )
       .map_to_os_err()?;
 
-    x11
-      .connection()
+    connection
       .change_property8(PropMode::REPLACE, id, AtomEnum::WM_NAME, AtomEnum::STRING, settings.title.as_bytes())
       .map_to_os_err()?;
-    x11
-      .connection()
+
+    connection
       .change_property8(PropMode::REPLACE, id, AtomEnum::WM_ICON_NAME, AtomEnum::STRING, settings.title.as_bytes())
       .map_to_os_err()?;
 
-    x11.connection().map_window(id).map_to_os_err()?;
-    x11.connection().flush().map_to_os_err()?;
+    connection
+      .change_property32(PropMode::REPLACE, id, x11.atoms().WM_PROTOCOLS, AtomEnum::ATOM, &[x11
+        .atoms()
+        .WM_DELETE_WINDOW])
+      .map_to_os_err()?;
+
+    connection.map_window(id).map_to_os_err()?;
+    connection.flush().map_to_os_err()?;
 
     // loop {
     //   let event = connection.wait_for_event().map_to_os_err()?;
     //   log::trace!("{:?}", event);
     // }
 
-    Ok(Self { id })
+    Ok(Self {
+      id,
+      state: Arc::new(Mutex::new(State {
+        settings,
+        running: true,
+      })),
+    })
+  }
+
+  fn state_lock(&self) -> MutexGuard<'_, State> {
+    self.state.lock().unwrap()
   }
 }
 
@@ -121,14 +155,25 @@ impl BackendWindow for X11Window {
   }
 
   fn next_event(&self) -> Option<ventana_hal::event::Event> {
+    if self.is_closing() {
+      return None;
+    }
+
     let x11 = X11::instance();
     let event = match x11.connection().wait_for_event() {
-      Ok(event) => map_native_event(&event),
+      Ok(event) => map_native_event(&event, self.id),
       Err(e) => {
         log::error!("{e}");
         return None;
       },
     };
+
+    if let Event::Window(WindowEvent::CloseRequest) = event
+      && self.state_lock().settings.close_on_x
+    {
+      self.close();
+    }
+
     Some(event)
   }
 
@@ -137,11 +182,11 @@ impl BackendWindow for X11Window {
   }
 
   fn close(&self) {
-    todo!()
+    self.state_lock().running = false;
   }
 
   fn is_closing(&self) -> bool {
-    todo!()
+    !self.state_lock().running
   }
 
   fn title(&self) -> String {

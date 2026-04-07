@@ -16,7 +16,9 @@ fn main() -> anyhow::Result<()> {
   })?;
 
   for event in &window {
-    log::info!("{window} | {event:?}");
+    if let Event::Window(event) = event {
+      log::info!("{window} | {event:?}");
+    }
   }
 
   Ok(())
