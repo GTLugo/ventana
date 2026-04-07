@@ -23,6 +23,7 @@ use {
     settings::WindowSettings,
     window::BackendWindow,
   },
+  win64::user::Monitor,
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -47,10 +48,14 @@ impl Backend for Win32 {
   }
 
   fn list_available_monitors(&self) -> VecDeque<Arc<dyn BackendMonitor>> {
-    Win32Monitor::list_available()
+    Monitor::available()
+      .into_iter()
+      .map(Win32Monitor)
+      .map(|m| Arc::new(m) as _)
+      .collect()
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
-    Ok(Arc::new(Win32Monitor::primary()))
+    Ok(Arc::new(Win32Monitor(Monitor::primary())))
   }
 }

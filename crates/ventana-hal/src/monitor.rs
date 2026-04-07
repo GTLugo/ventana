@@ -1,7 +1,4 @@
-use std::{
-  collections::VecDeque,
-  sync::Arc,
-};
+use std::collections::VecDeque;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MonitorId(usize);
@@ -24,14 +21,6 @@ impl std::fmt::Display for MonitorId {
 
 pub trait BackendMonitor: Send + Sync {
   fn id(&self) -> MonitorId;
-
-  fn list_available() -> VecDeque<Arc<dyn BackendMonitor>>
-  where
-    Self: Sized;
-
-  fn primary() -> impl BackendMonitor
-  where
-    Self: Sized;
 
   fn scale_factor(&self) -> f64;
 }
