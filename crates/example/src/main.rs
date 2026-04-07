@@ -1,7 +1,12 @@
-use ventana::prelude::*;
+use ventana::{
+  backend::Backend,
+  prelude::*,
+};
 
 fn main() -> anyhow::Result<()> {
   example::initialize_logger();
+
+  log::debug!("Backend: {}", Backend::auto().unwrap().name());
 
   let window = Window::new(WindowOptions {
     title: "Example",
