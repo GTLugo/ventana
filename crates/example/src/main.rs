@@ -11,7 +11,6 @@ fn main() -> anyhow::Result<()> {
   })?;
 
   for event in &window {
-    log::error!("NEW FRAME");
     log::info!("{window} | {event:?}");
   }
 

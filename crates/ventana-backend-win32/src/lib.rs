@@ -11,7 +11,10 @@ use {
   },
   std::{
     collections::VecDeque,
-    sync::Arc,
+    sync::{
+      Arc,
+      LazyLock,
+    },
   },
   ventana_hal::{
     backend::Backend,
@@ -27,11 +30,12 @@ pub struct Win32;
 
 #[allow(unused)]
 impl Backend for Win32 {
-  fn new() -> impl Backend
+  fn instance() -> &'static Self
   where
     Self: Sized,
   {
-    Self
+    static INSTANCE: LazyLock<Win32> = LazyLock::new(|| Win32);
+    &INSTANCE
   }
 
   fn name(&self) -> &'static str {

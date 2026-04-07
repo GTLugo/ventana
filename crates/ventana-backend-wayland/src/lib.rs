@@ -15,7 +15,10 @@ use {
   self::window::WaylandWindow,
   std::{
     collections::VecDeque,
-    sync::Arc,
+    sync::{
+      Arc,
+      LazyLock,
+    },
   },
   ventana_hal::{
     backend::Backend,
@@ -30,11 +33,12 @@ use {
 pub struct Wayland;
 
 impl Backend for Wayland {
-  fn new() -> impl Backend
+  fn instance() -> &'static Self
   where
     Self: Sized,
   {
-    Self
+    static INSTANCE: LazyLock<Wayland> = LazyLock::new(|| Wayland);
+    &INSTANCE
   }
 
   fn name(&self) -> &'static str {

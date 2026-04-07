@@ -1,7 +1,14 @@
+mod iter;
+
 use {
-  crate::event::map_native_event,
+  self::iter::X11EventIterator,
+  crate::{
+    X11,
+    event::map_native_event,
+  },
   std::sync::Arc,
   ventana_hal::{
+    backend::Backend,
     error::{
       MapToOSError,
       RequestError,
@@ -16,53 +23,83 @@ use {
     COPY_DEPTH_FROM_PARENT,
     connection::Connection,
     protocol::xproto::{
-      ConnectionExt,
+      AtomEnum,
+      ConnectionExt as _,
       CreateWindowAux,
+      EventMask,
+      Gravity,
+      PropMode,
       WindowClass,
     },
-    rust_connection::RustConnection,
+    wrapper::ConnectionExt as _,
   },
 };
 
 pub struct X11Window {
   id: u32,
-  connection: Arc<RustConnection>,
 }
 
 impl X11Window {
-  pub fn new(_settings: WindowSettings) -> Result<Self, RequestError> {
-    let (connection, screen_index) = x11rb::connect(None).map_to_os_err()?;
+  pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
+    let x11 = X11::instance();
+    let screen = x11.default_screen();
 
-    let screen = &connection.setup().roots[screen_index];
-    let id = connection.generate_id().map_to_os_err()?;
-    connection
+    let id = x11.connection().generate_id().map_to_os_err()?;
+
+    let values = CreateWindowAux::default()
+      .event_mask(
+        EventMask::EXPOSURE
+          | EventMask::BUTTON_PRESS
+          | EventMask::BUTTON_RELEASE
+          | EventMask::POINTER_MOTION
+          | EventMask::ENTER_WINDOW
+          | EventMask::LEAVE_WINDOW
+          | EventMask::KEY_PRESS
+          | EventMask::KEY_RELEASE,
+      )
+      .win_gravity(Gravity::NORTH_WEST)
+      .background_pixel(screen.black_pixel);
+    let scale_factor = x11.primary_monitor().map_to_os_err()?.scale_factor();
+    let size = settings.size.to_logical(scale_factor);
+    let position = settings
+      .position
+      .map(|p| p.to_logical(scale_factor))
+      .unwrap_or_default();
+    x11
+      .connection()
       .create_window(
         COPY_DEPTH_FROM_PARENT,
         id,
         screen.root,
-        0,
-        0,
-        800,
-        500,
+        position.x,
+        position.y,
+        size.width,
+        size.height,
         0,
         WindowClass::INPUT_OUTPUT,
         0,
-        &CreateWindowAux::new().background_pixel(screen.white_pixel),
+        &values,
       )
       .map_to_os_err()?;
 
-    connection.map_window(id).map_to_os_err()?;
-    connection.flush().map_to_os_err()?;
+    x11
+      .connection()
+      .change_property8(PropMode::REPLACE, id, AtomEnum::WM_NAME, AtomEnum::STRING, settings.title.as_bytes())
+      .map_to_os_err()?;
+    x11
+      .connection()
+      .change_property8(PropMode::REPLACE, id, AtomEnum::WM_ICON_NAME, AtomEnum::STRING, settings.title.as_bytes())
+      .map_to_os_err()?;
+
+    x11.connection().map_window(id).map_to_os_err()?;
+    x11.connection().flush().map_to_os_err()?;
 
     // loop {
     //   let event = connection.wait_for_event().map_to_os_err()?;
     //   log::trace!("{:?}", event);
     // }
 
-    Ok(Self {
-      id,
-      connection: Arc::new(connection),
-    })
+    Ok(Self { id })
   }
 }
 
@@ -84,19 +121,19 @@ impl BackendWindow for X11Window {
   }
 
   fn next_event(&self) -> Option<ventana_hal::event::Event> {
-    let _event = match self.connection.wait_for_event() {
+    let x11 = X11::instance();
+    let event = match x11.connection().wait_for_event() {
       Ok(event) => map_native_event(&event),
       Err(e) => {
         log::error!("{e}");
         return None;
       },
     };
-
-    todo!()
+    Some(event)
   }
 
   fn iter<'w>(&'w self) -> Box<dyn ventana_hal::window::BackendEventIterator<'w> + 'w> {
-    todo!()
+    Box::new(X11EventIterator::new(self))
   }
 
   fn close(&self) {

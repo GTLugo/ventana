@@ -34,4 +34,11 @@ path = "../ventana-hal"
 
 [dependencies.x11rb]
 version = "0.13"
-features = ["cursor", "extra-traits"]
+features = [
+  "cursor",
+  "extra-traits",
+  "randr",
+  "resource_manager",
+  "xinput",
+  "xkb",
+]

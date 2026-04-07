@@ -29,14 +29,12 @@ use {
 
 #[derive(Clone)]
 pub struct Backend {
-  backend: Arc<dyn BackendImpl>,
+  backend: &'static dyn BackendImpl,
 }
 
-impl<T: BackendImpl + 'static> From<T> for Backend {
-  fn from(backend: T) -> Self {
-    Self {
-      backend: Arc::new(backend),
-    }
+impl<T: BackendImpl + 'static> From<&'static T> for Backend {
+  fn from(backend: &'static T) -> Self {
+    Self { backend }
   }
 }
 
@@ -46,11 +44,11 @@ impl Backend {
     #[allow(unreachable_code)]
     {
       #[cfg(windows_platform)]
-      return Ok(Win32.into());
+      return Ok(Win32::instance().into());
       #[cfg(x11_platform)]
-      return Ok(X11.into());
+      return Ok(X11::instance().into());
       #[cfg(wayland_platform)]
-      return Ok(Wayland.into());
+      return Ok(Wayland::instance().into());
       Err(RequestError::NotSupported("No supported backend available to auto-select from."))
     }
   }

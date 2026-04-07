@@ -12,7 +12,7 @@ use {
 };
 
 pub trait Backend: Send + Sync {
-  fn new() -> impl Backend
+  fn instance() -> &'static Self
   where
     Self: Sized;
 
