@@ -28,13 +28,17 @@ use {
     backend::Backend,
     error::RequestError,
     monitor::BackendMonitor,
+    os_error,
     settings::WindowSettings,
     window::BackendWindow,
   },
   x11rb::{
     atom_manager,
     connection::Connection,
-    protocol::xproto::Screen,
+    protocol::{
+      randr::ConnectionExt,
+      xproto::Screen,
+    },
     resource_manager::{
       Database,
       new_from_default,
@@ -126,10 +130,45 @@ impl Backend for X11 {
   }
 
   fn list_available_monitors(&self) -> VecDeque<Arc<dyn BackendMonitor>> {
-    X11Monitor::list_available()
+    let x11 = X11::instance();
+    let screen = x11.default_screen();
+    let scale_factor = x11.get_xft_dpi() / X11Monitor::DEFAULT_DPI;
+    x11
+      .connection()
+      .randr_get_monitors(screen.root, true)
+      .unwrap()
+      .reply()
+      .unwrap()
+      .monitors
+      .into_iter()
+      .map(|info| {
+        Arc::new(X11Monitor {
+          id: info.name,
+          scale_factor,
+          primary: info.primary,
+          automatic: info.automatic,
+          x: info.x,
+          y: info.y,
+          width: info.width,
+          height: info.height,
+          width_in_millimeters: info.width_in_millimeters,
+          height_in_millimeters: info.height_in_millimeters,
+        }) as _
+      })
+      .collect()
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
-    Ok(Arc::new(X11Monitor::primary()))
+    let monitors = X11Monitor::list_available();
+    log::debug!("Available monitors: {monitors:?}");
+    let primary = monitors.iter().find(|m| m.primary);
+    log::debug!("Primary: {primary:?}");
+
+    Ok(Arc::new(
+      primary
+        .or_else(|| monitors.front())
+        .ok_or_else(|| os_error!("No available monitors to select from"))?
+        .clone(),
+    ))
   }
 }
