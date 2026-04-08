@@ -96,6 +96,10 @@ impl Window {
     self.window.outer_position()
   }
 
+  pub fn request_redraw(&self) {
+    self.window.request_redraw()
+  }
+
   pub fn next_event(&self) -> Option<Event> {
     self.window.next_event()
   }

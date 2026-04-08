@@ -80,6 +80,8 @@ impl WindowThread {
       .send(window)
       .expect("Failed to send window back to main thread");
 
+    internal.sync.next_frame.should_wait(true).unwrap();
+
     log::trace!("Entering message loop");
 
     MessageLoop::new().run();
@@ -128,10 +130,6 @@ impl Procedure {
   fn sync(&self) -> &SyncData {
     &self.0.sync
   }
-
-  fn set_ready(&self) {
-    self.0.sync.skip_wait(false);
-  }
 }
 
 impl WindowProcedure for Procedure {
@@ -140,21 +138,23 @@ impl WindowProcedure for Procedure {
 
     match (message, event) {
       (Message::Create(_), Some(WindowEvent::Created)) => {
+        log::trace!("{window:?} | {message:?}");
         window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
-
-        self.set_ready();
 
         self.event_lock().replace(Event::Window(WindowEvent::Created));
         self.sync().new_event.signal().unwrap();
       },
       (Message::SettingChange(_), _) => {
+        log::trace!("{window:?} | {message:?}");
         window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
       },
       (Message::Close, _) => {
+        log::trace!("{window:?} | {message:?}");
         self.0.send_event_to_main(Event::Window(WindowEvent::CloseRequest));
         return Some(LResult(0)); // We don't want defwindowproc to run since it'll auto-destroy the window
       },
       (Message::Destroy, _) => {
+        log::trace!("{window:?} | {message:?}");
         self.0.send_event_to_main(Event::Window(WindowEvent::Destroyed));
         window.quit(); // SHOULD BE CHANGED
       },
@@ -166,10 +166,11 @@ impl WindowProcedure for Procedure {
         }),
         _,
       ) => {
+        log::trace!("{window:?} | {message:?}");
         let command = Command::from_raw(w.0);
         match *command {
           Command::Destroy => {
-            log::debug!("Calling window.destroy()");
+            log::trace!("Calling window.destroy()");
             window.destroy().unwrap();
           },
           Command::Redraw => {
@@ -180,7 +181,7 @@ impl WindowProcedure for Procedure {
         }
       },
       (_, Some(event)) => {
-        log::trace!("{window:?} | {message:?} | {event:?}");
+        // log::trace!("{window:?} | {message:?} | {event:?}");
         self.0.send_event_to_main(Event::Window(event));
       },
       _ => (),

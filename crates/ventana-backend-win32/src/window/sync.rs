@@ -1,28 +1,22 @@
-use {
-  std::sync::{
-    Arc,
-    Mutex,
-  },
-  synchronize::Signal,
+use synchronize::{
+  ConditionalSignal,
+  Signal,
 };
 
 #[derive(Clone)]
 pub struct SyncData {
   pub new_event: Signal,
-  pub next_frame: Signal,
-  skip_wait: Arc<Mutex<bool>>,
+  pub next_frame: ConditionalSignal,
 }
 
 impl SyncData {
   pub fn new() -> Self {
+    let next_frame = ConditionalSignal::new();
+    next_frame.should_wait(false).unwrap();
+
     Self {
       new_event: Signal::new(),
-      next_frame: Signal::new(),
-      skip_wait: Arc::new(Mutex::new(true)),
+      next_frame,
     }
-  }
-
-  pub fn skip_wait(&self, should_skip: bool) {
-    *self.skip_wait.lock().unwrap() = should_skip;
   }
 }

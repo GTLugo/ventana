@@ -14,6 +14,9 @@ log = "0.4"
 env_logger = "0.11"
 anyhow = "1.0"
 
+wgpu     = "29.0"
+pollster = "0.4"
+
 [dependencies.ventana]
 version = "*"
 path = "../ventana"

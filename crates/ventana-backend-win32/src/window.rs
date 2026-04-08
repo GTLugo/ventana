@@ -133,7 +133,7 @@ impl BackendWindow for Win32Window {
     match current_stage {
       Stage::Setup => None,
       Stage::Quit => {
-        self.internal.sync.skip_wait(true);
+        self.internal.sync.next_frame.should_wait(false).unwrap();
         self.internal.thread.lock().unwrap().join().unwrap();
         None
       },
@@ -164,13 +164,17 @@ impl BackendWindow for Win32Window {
       return; // already closing
     }
 
-    log::trace!("[`{}`]: closing window", self.title());
+    // log::trace!("[`{}`]: closing window", self.title()); // TODO: this causes an internal deadlock I need to fix
     self.internal.state_lock().stage = Stage::Closing;
     Command::Destroy.post(self.hwnd);
   }
 
   fn is_closing(&self) -> bool {
     self.internal.state_lock().is_closing()
+  }
+
+  fn request_redraw(&self) {
+    self.hwnd.redraw().unwrap();
   }
 
   fn title(&self) -> String {

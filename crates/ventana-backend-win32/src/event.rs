@@ -34,6 +34,8 @@ pub fn map_native_event(native: &Message) -> Option<WindowEvent> {
         // is_composing: key_event,
       }
     },
+    Message::Size(message) => WindowEvent::Resized(message.physical_size()),
+    Message::Move(message) => WindowEvent::Moved(message.physical_position()),
     // ...todo
     _ => {
       // log::debug!("{message:?}");

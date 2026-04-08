@@ -82,7 +82,7 @@ impl Internal {
 
     // TODO: try inverting these locks so that they don't lock unless the main thread tells them to lock.
 
-    self.sync.next_frame.wait().unwrap();
+    self.sync.next_frame.wait().unwrap(); // This is problematic since it will cause a deadlock if the main thread sends any messages to the window thread
   }
 }
 

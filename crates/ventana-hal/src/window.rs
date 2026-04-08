@@ -58,6 +58,8 @@ pub trait BackendWindow: Send + Sync {
 
   fn is_closing(&self) -> bool;
 
+  fn request_redraw(&self);
+
   fn title(&self) -> String;
 
   fn scale_factor(&self) -> f64;
