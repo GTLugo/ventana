@@ -13,10 +13,7 @@ use {
   ::win64::Handle,
   std::sync::Arc,
   ventana_hal::{
-    dpi::{
-      Position,
-      Size,
-    },
+    self,
     error::RequestError,
     event::{
       Event,
@@ -185,20 +182,20 @@ impl BackendWindow for Win32Window {
     self.hwnd.scale_factor()
   }
 
-  fn inner_size(&self) -> Size {
-    self.hwnd.inner_size()
+  fn inner_size(&self) -> PhysicalSize<u32> {
+    self.hwnd.client_size()
   }
 
-  fn outer_size(&self) -> Size {
-    self.hwnd.outer_size()
+  fn outer_size(&self) -> PhysicalSize<u32> {
+    self.hwnd.window_size()
   }
 
-  fn inner_position(&self) -> Position {
-    self.hwnd.inner_position()
+  fn inner_position(&self) -> PhysicalPosition<i32> {
+    self.hwnd.client_position()
   }
 
-  fn outer_position(&self) -> Position {
-    self.hwnd.outer_position()
+  fn outer_position(&self) -> PhysicalPosition<i32> {
+    self.hwnd.window_position()
   }
 
   fn key(&self, keycode: Code) -> KeyState {

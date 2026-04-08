@@ -5,8 +5,8 @@ use {
     monitor::BackendMonitor,
   },
   dpi::{
-    Position,
-    Size,
+    PhysicalPosition,
+    PhysicalSize,
   },
   keyboard_types::{
     Code,
@@ -64,13 +64,13 @@ pub trait BackendWindow: Send + Sync {
 
   fn scale_factor(&self) -> f64;
 
-  fn inner_size(&self) -> Size;
+  fn inner_size(&self) -> PhysicalSize<u32>;
 
-  fn outer_size(&self) -> Size;
+  fn outer_size(&self) -> PhysicalSize<u32>;
 
-  fn inner_position(&self) -> Position;
+  fn inner_position(&self) -> PhysicalPosition<i32>;
 
-  fn outer_position(&self) -> Position;
+  fn outer_position(&self) -> PhysicalPosition<i32>;
 
   fn key(&self, keycode: Code) -> KeyState;
 

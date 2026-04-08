@@ -9,6 +9,8 @@ use {
   std::sync::Arc,
   ventana_hal::{
     dpi::{
+      PhysicalPosition,
+      PhysicalSize,
       Position,
       Size,
     },
@@ -80,19 +82,19 @@ impl Window {
     Monitor::new(self.window.monitor())
   }
 
-  pub fn inner_size(&self) -> Size {
+  pub fn inner_size(&self) -> PhysicalSize<u32> {
     self.window.inner_size()
   }
 
-  pub fn outer_size(&self) -> Size {
+  pub fn outer_size(&self) -> PhysicalSize<u32> {
     self.window.outer_size()
   }
 
-  pub fn inner_position(&self) -> Position {
+  pub fn inner_position(&self) -> PhysicalPosition<i32> {
     self.window.inner_position()
   }
 
-  pub fn outer_position(&self) -> Position {
+  pub fn outer_position(&self) -> PhysicalPosition<i32> {
     self.window.outer_position()
   }
 

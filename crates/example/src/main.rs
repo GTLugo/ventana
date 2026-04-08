@@ -14,7 +14,7 @@ fn main() -> anyhow::Result<()> {
   let window = Window::new(WindowOptions {
     title: "Example",
     size: Size::Logical((800, 500).into()),
-    clear_color: Some((255, 255, 255).into()),
+    clear_color: Some((80, 80, 80).into()),
     ..Default::default()
   })?;
 
@@ -23,10 +23,15 @@ fn main() -> anyhow::Result<()> {
   for event in &window {
     if let Event::Window(event) = event {
       // log::info!("{window} | {event:?}");
-
       match event {
-        WindowEvent::Draw => state.render(),
-        WindowEvent::Resized(physical_size) => state.resize(physical_size.width, physical_size.height),
+        WindowEvent::Draw => {
+          state.update();
+          state.draw();
+        },
+        WindowEvent::Resized(physical_size) => {
+          state.resize(physical_size.width, physical_size.height);
+          state.draw();
+        },
         _ => (),
       }
     }
