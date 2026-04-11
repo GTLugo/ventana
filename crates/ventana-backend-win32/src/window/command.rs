@@ -1,10 +1,10 @@
 use {
-  cursor_icon::CursorIcon,
   std::sync::atomic::{
     AtomicU64,
     Ordering,
   },
   ventana_hal::{
+    cursor_icon::CursorIcon,
     dpi::{
       Position,
       Size,

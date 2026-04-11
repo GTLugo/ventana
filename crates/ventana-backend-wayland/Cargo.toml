@@ -23,7 +23,6 @@ log       = "0.4"
 thiserror = "2.0"
 
 bitflags = "2.9"
-cursor-icon = "1.2"
 synchronize = "1.0"
 
 rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = ["std"], optional = true }
@@ -33,7 +32,7 @@ rwh_06 = { package = "raw-window-handle", version = "0.6", features = ["std"], o
 # xkbcommon = "0.9"
 
 [dependencies.ventana-hal]
-version = "0.0.1"
+version = "0.0.2"
 path = "../ventana-hal"
 
 # not sure why, but sctk still tries to compile build scripts on other targets, so this guard is necessary to avoid erroneous warnings from rust-analyzer

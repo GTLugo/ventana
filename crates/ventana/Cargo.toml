@@ -25,7 +25,6 @@ cfg_aliases = "0.2"
 
 [dependencies]
 log = "0.4"
-cursor-icon = "1.2"
 serde = { version = "1.0", optional = true }
 
 #hal = { package = "ventana-hal", version = "*", path = "hal" }
@@ -34,12 +33,12 @@ rwh_05 = { workspace = true, optional = true }
 rwh_06 = { workspace = true, optional = true }
 
 [dependencies.ventana-hal]
-version = "0.0.1"
+version = "0.0.2"
 path = "../ventana-hal"
 
 # # Windows
 [target.'cfg(target_os = "windows")'.dependencies]
-backend-win32 = { package = "ventana-backend-win32", version = "0.0.1", path = "../ventana-backend-win32" }
+backend-win32 = { package = "ventana-backend-win32", version = "0.0.2", path = "../ventana-backend-win32" }
 
 # Linux
 [target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies]
