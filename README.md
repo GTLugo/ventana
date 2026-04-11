@@ -1,7 +1,11 @@
-# <div align="center">`Ventana`</div>
+# <div align="center">Ventana</div>
 
-[![Crates.io Version](https://img.shields.io/crates/v/ventana?style=for-the-badge)](https://crates.io/crates/ventana)
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/R6R8PGIU6)
+<div align="center">
+  <a href="https://crates.io/crates/ventana"><img src="https://img.shields.io/crates/v/ventana?style=for-the-badge" alt="Crates.io"></a>
+  <a href="https://docs.rs/ventana"><img src="https://img.shields.io/docsrs/ventana?style=for-the-badge" alt="Docs.rs"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/crates/l/ventana?style=for-the-badge" alt="License"></a>
+  <a href="https://ko-fi.com/R6R8PGIU6"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="ko-fi"></a>
+</div>
 
 ```rust
 use ventana::prelude::*;
