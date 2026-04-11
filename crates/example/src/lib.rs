@@ -83,7 +83,7 @@ impl State {
   }
 
   pub fn resize(&mut self, width: u32, height: u32) {
-    log::info!("Resize: ({width}, {height})");
+    // log::info!("Resize: ({width}, {height})");
     if width > 0 && height > 0 {
       self.config.width = width;
       self.config.height = height;
