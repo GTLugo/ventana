@@ -8,10 +8,37 @@ use {
   self::{
     command::Command,
     iter::Win32EventIterator,
-    state::Internal,
+    state::SharedInternal,
+  },
+  crate::window::{
+    command::{
+      CommandEnvelope,
+      CommandId,
+      CommandResponse,
+    },
+    sync::{
+      AcknowledgementToken,
+      EventEnvelope,
+      ResponseEnvelope,
+      WindowToMain,
+    },
   },
   ::win64::Handle,
-  std::sync::Arc,
+  crossbeam_channel::{
+    Receiver,
+    Sender,
+    TryRecvError,
+  },
+  crossbeam_queue::SegQueue,
+  std::{
+    collections::{
+      HashMap,
+    },
+    sync::{
+      Arc,
+      Mutex,
+    },
+  },
   ventana_hal::{
     self,
     error::RequestError,
@@ -26,10 +53,7 @@ use {
     },
     monitor::BackendMonitor,
     settings::WindowSettings,
-    types::{
-      Flow,
-      Stage,
-    },
+    types::Flow,
     window::{
       BackendEventIterator,
       BackendWindow,
@@ -39,46 +63,130 @@ use {
   win64::prelude::*,
 };
 
+// No `Arc` necessary for fields other than `shared` as this will be inside an `Arc<dyn BackendWindow>`
 pub struct Win32Window {
   hwnd: Window,
-  internal: Arc<Internal>, // This is Arc so that it can be shared with the Window thread
+
+  msg_rx: Receiver<WindowToMain>,
+  cmd_tx: Sender<CommandEnvelope>,
+
+  event_backlog: SegQueue<EventEnvelope>,
+  pending_ack: Mutex<Option<AcknowledgementToken>>,
+
+  command_responses: Mutex<HashMap<CommandId, CommandResponse>>,
+
+  shared: Arc<SharedInternal>, // This is Arc so that it can be shared with the Window thread
+}
+
+impl Drop for Win32Window {
+  fn drop(&mut self) {
+    self.acknowledge_previous_event();
+    self.send_command(Command::Destroy);
+    log::trace!("Destroyed window");
+  }
 }
 
 impl Win32Window {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     set_process_dpi_awareness(DPIAwarenessContext::PerMonitorAwareV2);
 
-    let internal = Internal::new(settings.clone());
+    let (msg_tx, msg_rx) = crossbeam_channel::unbounded();
+    let (cmd_tx, cmd_rx) = crossbeam_channel::unbounded();
 
-    let (window_sender, window_receiver) = std::sync::mpsc::sync_channel(0);
-    internal
-      .thread
-      .lock()
-      .unwrap()
-      .spawn(window_sender, internal.clone(), settings)?;
+    // TODO: Rewrite this so that settings doesn't need to be cloned
+    let shared = SharedInternal::new(settings.clone(), msg_tx, cmd_rx);
+    let hwnd = shared.spawn_thread(settings)?;
 
-    log::trace!("Waiting to receive window handle back from window thread");
-
-    let hwnd = window_receiver
-      .recv()
-      .expect("Failed to receive window back from window thread");
-
-    log::trace!("Received window handle from window thread: `{hwnd:?}`");
-
-    Ok(Self { hwnd, internal })
+    Ok(Self {
+      hwnd,
+      msg_rx,
+      cmd_tx,
+      event_backlog: Default::default(),
+      pending_ack: Mutex::new(None),
+      command_responses: Default::default(),
+      shared,
+    })
   }
 
-  fn take_event(&self) -> Option<Event> {
-    let flow = self.internal.state_lock().flow;
-    if let Flow::Wait = flow {
-      let no_events = self.internal.event_lock().is_none();
-      if no_events {
-        self.internal.sync.new_event.wait().unwrap();
+  fn send_command(&self, command: Command) -> Option<CommandResponse> {
+    let envelope: CommandEnvelope = command.into();
+    let id = envelope.id;
+    self.cmd_tx.try_send(envelope).ok()?;
+
+    // Pump events while waiting to find response and queue them up in the backlog to be processed properly later
+    loop {
+      if let Some(response) = self.command_responses.lock().ok()?.remove(&id) {
+        return match response {
+          CommandResponse::Empty => None,
+          _ => Some(response),
+        };
+      }
+
+      match self.msg_rx.try_recv().ok()? {
+        WindowToMain::Event(EventEnvelope { event, ack }) => {
+          self.event_backlog.push(EventEnvelope { event, ack: None });
+          if let Some(ack) = ack {
+            ack.send();
+          }
+        },
+        WindowToMain::CommandResponse(ResponseEnvelope { id, response }) => {
+          self.command_responses.lock().ok()?.insert(id, response);
+        },
       }
     }
-
-    self.internal.event_lock().take().or(Some(Event::None))
   }
+
+  fn acknowledge_previous_event(&self) {
+    if let Some(token) = self.pending_ack.lock().unwrap().take() {
+      token.send();
+    }
+  }
+
+  fn receive_event(&self) -> Option<WindowToMain> {
+    let flow = self.shared.state_lock().flow;
+    match flow {
+      Flow::Wait => self.msg_rx.recv().ok(),
+      Flow::Poll => match self.msg_rx.try_recv() {
+        Ok(event) => Some(event),
+        Err(TryRecvError::Empty) => Some(WindowToMain::Event(EventEnvelope::empty())),
+        Err(TryRecvError::Disconnected) => None,
+      },
+    }
+  }
+
+  fn pump_event_and_block(&self) {
+    match self.receive_event() {
+      None => (),
+      Some(WindowToMain::Event(event)) => {
+        self.event_backlog.push(event);
+      },
+      Some(WindowToMain::CommandResponse(ResponseEnvelope { id, response })) => {
+        self.command_responses.lock().unwrap().insert(id, response);
+      },
+    }
+  }
+
+  // fn take_event(&self) -> Option<Event> {
+  //   let flow = self.internal.state_lock().flow;
+  //   if let Flow::Wait = flow {
+  //     let no_events = self.internal.thread.lock();
+  //     if no_events {
+  //       self.internal.sync.new_event.wait().unwrap();
+  //     }
+  //   }
+  //
+  //   self.internal.sync.pop_event().or(Some(Event::None))
+  // }
+
+  // fn take_event(&self) -> Option<Event> {
+  //   let flow = self.internal.state_lock().flow;
+  //   let event = match flow {
+  //       Flow::Wait => self.internal.event_rx.recv().unwrap(),
+  //       Flow::Poll => self.internal.event_rx.try_recv().unwrap_or(Event::None),
+  //   };
+
+  //   return Some(event);
+  // }
 }
 
 impl BackendWindow for Win32Window {
@@ -123,32 +231,33 @@ impl BackendWindow for Win32Window {
   }
 
   fn next_event(&self) -> Option<Event> {
-    self.internal.sync.next_frame.signal().unwrap();
+    self.acknowledge_previous_event();
 
-    let current_stage = self.internal.state_lock().stage;
+    if self.shared.should_close() {
+      return None;
+    }
 
-    match current_stage {
-      Stage::Setup => None,
-      Stage::Quit => {
-        self.internal.sync.next_frame.should_wait(false).unwrap();
-        self.internal.thread.lock().unwrap().join().unwrap();
-        None
-      },
-      Stage::Looping | Stage::Closing => {
-        let event = self.take_event();
-        if let Some(Event::Window(WindowEvent::CloseRequest)) = event {
-          let x = self.internal.state_lock().close_on_x;
+    loop {
+      if let Some(EventEnvelope { event, ack }) = self.event_backlog.pop() {
+        if let Some(ack) = ack {
+          self.pending_ack.lock().unwrap().replace(ack);
+        }
+
+        if let Event::Window(WindowEvent::CloseRequest) = event {
+          let x = self.shared.state_lock().close_on_x;
           if x {
             self.close();
           }
         }
-        event
-      },
+
+        return Some(event);
+      }
+
+      self.pump_event_and_block();
     }
   }
 
   fn iter<'w>(&'w self) -> Box<dyn BackendEventIterator<'w> + 'w> {
-    self.internal.state_lock().stage = Stage::Looping;
     Box::new(Win32EventIterator::new(self))
   }
 
@@ -157,25 +266,22 @@ impl BackendWindow for Win32Window {
   }
 
   fn close(&self) {
-    if self.is_closing() {
-      return; // already closing
-    }
-
-    // log::trace!("[`{}`]: closing window", self.title()); // TODO: this causes an internal deadlock I need to fix
-    self.internal.state_lock().stage = Stage::Closing;
-    Command::Destroy.post(self.hwnd);
+    self.shared.state_lock().is_running = false;
   }
 
   fn is_closing(&self) -> bool {
-    self.internal.state_lock().is_closing()
+    self.shared.should_close()
   }
 
   fn request_redraw(&self) {
-    self.hwnd.redraw().unwrap();
+    self.send_command(Command::Redraw);
   }
 
   fn title(&self) -> String {
-    self.hwnd.get_window_text().unwrap()
+    let Some(CommandResponse::GetWindowText(text)) = self.send_command(Command::GetWindowText) else {
+      return String::new();
+    };
+    text
   }
 
   fn scale_factor(&self) -> f64 {

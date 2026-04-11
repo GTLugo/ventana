@@ -1,31 +1,47 @@
 use {
-  super::{
-    sync::SyncData,
-    thread::WindowThread,
+  super::thread::WindowThread,
+  crate::window::{
+    command::CommandEnvelope,
+    sync::{
+      AcknowledgementToken,
+      EventEnvelope,
+      ResponseEnvelope,
+      WindowToMain,
+    },
+  },
+  crossbeam_channel::{
+    Receiver,
+    Sender,
   },
   std::sync::{
     Arc,
     Mutex,
     MutexGuard,
-  },
-  ventana_hal::{
-    event::Event,
-    settings::WindowSettings,
-    types::{
-      Flow,
-      Stage,
+    atomic::{
+      AtomicBool,
+      Ordering,
     },
   },
+  ventana_hal::{
+    error::RequestError,
+    event::Event,
+    settings::WindowSettings,
+    types::Flow,
+  },
+  win64::user::Window,
 };
 
-pub(crate) struct Internal {
-  pub state: Mutex<State>,
-  pub event: Mutex<Option<Event>>,
-  pub sync: SyncData,
-  pub thread: Mutex<WindowThread>,
+pub(crate) struct SharedInternal {
+  is_ready: AtomicBool,
+  state: Mutex<State>,
+
+  msg_tx: Sender<WindowToMain>,
+  cmd_rx: Receiver<CommandEnvelope>,
+
+  thread: Mutex<WindowThread>,
 }
 
-impl Drop for Internal {
+impl Drop for SharedInternal {
   fn drop(&mut self) {
     // let title = self.data_lock().title.clone();
 
@@ -45,14 +61,36 @@ impl Drop for Internal {
   }
 }
 
-impl Internal {
-  pub fn new(settings: WindowSettings) -> Arc<Self> {
+impl SharedInternal {
+  pub fn new(settings: WindowSettings, msg_tx: Sender<WindowToMain>, cmd_rx: Receiver<CommandEnvelope>) -> Arc<Self> {
     Arc::new(Self {
-      state: Mutex::new(State::new(settings)),
-      event: Mutex::new(None),
-      sync: SyncData::new(),
+      is_ready: AtomicBool::new(false),
+      state: Mutex::new(State::new(settings.clone())),
+      // event: Mutex::new(None),
+      // sync: SyncData::new(),
+      msg_tx,
+      cmd_rx,
       thread: Mutex::new(WindowThread::new()),
     })
+  }
+
+  pub fn spawn_thread(self: &Arc<Self>, settings: WindowSettings) -> Result<Window, RequestError> {
+    let mut thread = self.thread_lock();
+    let hwnd = thread.spawn(self.clone(), settings)?;
+
+    Ok(hwnd)
+  }
+
+  pub fn set_ready(&self) {
+    self.is_ready.store(true, Ordering::Release)
+  }
+
+  pub fn is_ready(&self) -> bool {
+    self.is_ready.load(Ordering::Acquire)
+  }
+
+  pub fn should_close(&self) -> bool {
+    !self.state_lock().is_running
   }
 
   // pub fn destroy(&self, hwnd: Window) {
@@ -63,31 +101,52 @@ impl Internal {
   //   }
   // }
 
-  pub fn event_lock(&self) -> MutexGuard<'_, Option<Event>> {
-    self.event.lock().unwrap()
-  }
+  // pub fn event_lock(&self) -> MutexGuard<'_, Option<Event>> {
+  //   self.event.lock().unwrap()
+  // }
 
   pub fn state_lock(&self) -> MutexGuard<'_, State> {
     self.state.lock().unwrap()
   }
 
-  pub fn send_event_to_main(&self, event: Event) {
-    let should_wait = self.event.lock().unwrap().is_some();
-    if should_wait {
-      self.sync.next_frame.wait().unwrap();
+  pub fn thread_lock(&self) -> MutexGuard<'_, WindowThread> {
+    self.thread.lock().unwrap()
+  }
+
+  pub fn are_commands_pending(&self) -> bool {
+    !self.cmd_rx.is_empty()
+  }
+
+  pub fn receive_command(&self) -> Option<CommandEnvelope> {
+    self.cmd_rx.try_recv().ok()
+  }
+
+  pub fn send_response(&self, response: ResponseEnvelope) {
+    self
+      .msg_tx
+      .try_send(WindowToMain::CommandResponse(response))
+      .expect("failed to send response");
+  }
+
+  pub fn send_event(&self, event: Event, should_block: bool) {
+    let (ack, receiver) = if should_block {
+      let (tx, rx) = AcknowledgementToken::new();
+      (Some(tx), Some(rx))
+    } else {
+      (None, None)
+    };
+    self
+      .msg_tx
+      .try_send(WindowToMain::Event(EventEnvelope { event, ack }))
+      .ok();
+    if let Some(receiver) = receiver {
+      receiver.recv().expect("failed to receive acknowledgement");
     }
-
-    self.event.lock().unwrap().replace(event);
-    self.sync.new_event.signal().unwrap();
-
-    // TODO: try inverting these locks so that they don't lock unless the main thread tells them to lock.
-
-    self.sync.next_frame.wait().unwrap(); // This is problematic since it will cause a deadlock if the main thread sends any messages to the window thread
   }
 }
 
 pub struct State {
-  pub(crate) stage: Stage,
+  pub(crate) is_running: bool,
   pub(crate) flow: Flow,
   pub(crate) close_on_x: bool,
 }
@@ -95,13 +154,9 @@ pub struct State {
 impl State {
   fn new(settings: WindowSettings) -> Self {
     Self {
-      stage: Stage::Setup,
+      is_running: true,
       flow: settings.flow,
       close_on_x: settings.close_on_x,
     }
-  }
-
-  pub fn is_closing(&self) -> bool {
-    matches!(self.stage, Stage::Closing | Stage::Quit)
   }
 }

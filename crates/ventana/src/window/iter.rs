@@ -7,7 +7,7 @@ use {
 };
 
 impl Window {
-  pub fn iter<'w>(&'w self) -> EventIterator<'w> {
+  pub fn iter(&'_ self) -> EventIterator<'_> {
     EventIterator(self.window.iter())
   }
 }

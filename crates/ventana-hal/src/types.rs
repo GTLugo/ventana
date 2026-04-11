@@ -1,13 +1,5 @@
 use strum::Display;
 
-#[derive(Debug, Display, Clone, Copy, PartialEq, Eq)]
-pub enum Stage {
-  Setup,
-  Looping,
-  Closing,
-  Quit,
-}
-
 #[derive(Debug, Display, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum Fullscreen {
   // Exclusive, // todo

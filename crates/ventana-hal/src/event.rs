@@ -27,8 +27,8 @@ pub enum Event {
   /// Artificial window messages sent by the window loop.
   /// Sent when the message pump is polled, but there are no messages.
   None,
-  /// Sent when the message pump is exiting.
-  LoopExiting,
+  // /// Sent when the message pump is exiting.
+  // LoopExiting,
   /// Messages sent by devices registered for raw input.
   RawInput(RawInputMessage),
   Window(WindowEvent),
@@ -36,11 +36,11 @@ pub enum Event {
 
 #[derive(Debug, Display, PartialEq, Clone)]
 pub enum WindowEvent {
-  /// Message sent when window is created.
-  Created,
-  /// Message sent when window is destroyed.
-  Destroyed,
-  /// Message sent when window X button is pressed.
+  // /// Message sent when the window is created.
+  // Created,
+  // /// Message sent when the window is destroyed.
+  // Destroyed,
+  /// Message sent when the window X button is pressed.
   CloseRequest,
   /// Message sent when Windows requests the window be repainted.
   Draw,
@@ -57,7 +57,7 @@ pub enum WindowEvent {
     modifiers: Modifiers,
     // True if the key is currently auto-repeated.
     repeat: bool,
-    // // Events with this flag should be ignored in a text editor
+    // // Events with this flag should be ignored in a text editor.
     // // and instead [composition events](CompositionEvent) should be used.
     // is_composing: bool,
   },
@@ -115,7 +115,7 @@ pub enum RawInputMessage {
 
 /*
   Adapted from `winit` according to Apache-2.0 license. (https://github.com/rust-windowing/winit/blob/master/src/platform_impl/windows/event_loop.rs#L2568)
-  Adapted for windows crate.
+  Adapted for Windows crate.
 */
 #[derive(Debug, Display, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CursorMoveKind {

@@ -1,5 +1,9 @@
 use {
   cursor_icon::CursorIcon,
+  std::sync::atomic::{
+    AtomicU64,
+    Ordering,
+  },
   ventana_hal::{
     dpi::{
       Position,
@@ -11,18 +15,38 @@ use {
       Visibility,
     },
   },
-  win64::user::{
-    Message,
-    UserMessage,
-    WParam,
-    Window,
-  },
 };
+
+#[derive(Debug, Clone)]
+pub struct CommandEnvelope {
+  pub id: CommandId,
+  pub command: Command,
+}
+
+impl From<Command> for CommandEnvelope {
+  fn from(command: Command) -> Self {
+    Self {
+      id: CommandId::next(),
+      command,
+    }
+  }
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Ord, PartialOrd, Eq, Hash)]
+pub struct CommandId(u64);
+
+impl CommandId {
+  pub fn next() -> Self {
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    Self(COUNTER.fetch_add(1, Ordering::Relaxed))
+  }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
   Destroy,
   Redraw,
+  GetWindowText,
   SetVisibility(Visibility),
   SetDecorations(Visibility),
   SetWindowText(String),
@@ -34,33 +58,8 @@ pub enum Command {
   SetCursorVisibility(Visibility),
 }
 
-impl Command {
-  pub const MESSAGE_ID: u32 = win64::sys::WM_USER + 69;
-
-  pub fn from_raw(raw: usize) -> Box<Self> {
-    unsafe { Box::from_raw(raw as *mut Command) }
-  }
-
-  pub fn post(self, window: Window) {
-    let command = Box::leak(Box::new(self));
-    let addr = command as *mut Command as usize;
-    window
-      .post_message(Message::User(UserMessage {
-        id: Self::MESSAGE_ID,
-        w: WParam(addr),
-        ..Default::default()
-      }))
-      .unwrap();
-  }
-
-  #[allow(unused)]
-  pub fn send(self, window: Window) {
-    let command = Box::leak(Box::new(self));
-    let addr = command as *mut Command as usize;
-    window.send_message(Message::User(UserMessage {
-      id: Self::MESSAGE_ID,
-      w: WParam(addr),
-      ..Default::default()
-    }));
-  }
+#[derive(Debug, Clone, PartialEq)]
+pub enum CommandResponse {
+  Empty,
+  GetWindowText(String),
 }

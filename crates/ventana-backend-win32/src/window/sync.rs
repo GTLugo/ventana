@@ -1,22 +1,53 @@
-use synchronize::{
-  ConditionalSignal,
-  Signal,
+use {
+  crate::window::command::{
+    CommandId,
+    CommandResponse,
+  },
+  crossbeam_channel::{
+    Receiver,
+    Sender,
+  },
+  ventana_hal::event::Event,
 };
 
-#[derive(Clone)]
-pub struct SyncData {
-  pub new_event: Signal,
-  pub next_frame: ConditionalSignal,
+#[derive(Debug, Clone)]
+pub struct AcknowledgementToken(Sender<()>);
+
+impl AcknowledgementToken {
+  pub fn new() -> (Self, Receiver<()>) {
+    let (ack_tx, ack_rx) = crossbeam_channel::bounded(0);
+    (Self(ack_tx), ack_rx)
+  }
+
+  pub fn send(self) {
+    self.0.send(()).unwrap();
+  }
 }
 
-impl SyncData {
-  pub fn new() -> Self {
-    let next_frame = ConditionalSignal::new();
-    next_frame.should_wait(false).unwrap();
+#[derive(Debug, Clone)]
+pub struct EventEnvelope {
+  pub event: Event,
+  pub ack: Option<AcknowledgementToken>,
+}
 
+impl EventEnvelope {
+  pub fn empty() -> Self {
     Self {
-      new_event: Signal::new(),
-      next_frame,
+      event: Event::None,
+      ack: None,
     }
   }
+}
+
+#[derive(Debug, Clone)]
+pub struct ResponseEnvelope {
+  pub id: CommandId,
+  pub response: CommandResponse,
+}
+
+#[derive(Debug)]
+pub enum WindowToMain {
+  // Ready(Result<ReadyInfo, RequestError>),
+  Event(EventEnvelope),
+  CommandResponse(ResponseEnvelope),
 }

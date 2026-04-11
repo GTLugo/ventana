@@ -20,10 +20,10 @@ cfg_aliases = "0.2"
 
 [dependencies]
 log       = "0.4"
-thiserror = "2.0"
 synchronize = "1.1"
+crossbeam-channel = "0.5"
+crossbeam-queue = "0.3"
 
-bitflags = "2.9"
 cursor-icon = "1.2"
 
 rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = ["std"], optional = true }
@@ -34,4 +34,4 @@ version = "0.0.1"
 path = "../ventana-hal"
 
 [dependencies.win64]
-version = "0.0.17"
+version = "0.0.18"

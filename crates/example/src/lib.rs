@@ -32,7 +32,7 @@ impl State {
       display: None,
     });
 
-    let surface = instance.create_surface(window.clone()).unwrap();
+    let surface = instance.create_surface(window.clone())?;
 
     let adapter = instance
       .request_adapter(&wgpu::RequestAdapterOptions {
@@ -107,7 +107,7 @@ impl State {
   }
 
   fn render(&mut self) -> anyhow::Result<()> {
-    self.window.request_redraw();
+    // self.window.request_redraw();
 
     // We can't render unless the surface is configured
     if !self.is_surface_configured {

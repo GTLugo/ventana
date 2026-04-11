@@ -70,9 +70,10 @@ impl Window {
     self.window.id()
   }
 
-  pub fn title(&self) -> String {
-    self.window.title()
-  }
+  // TODO: Buggy implementation. Needs revision. Win32 backend might be leaking title?
+  // pub fn title(&self) -> String {
+  //   self.window.title()
+  // }
 
   pub fn scale_factor(&self) -> f64 {
     self.window.scale_factor()
@@ -106,6 +107,9 @@ impl Window {
     self.window.next_event()
   }
 
+  // TODO: This should probably be named `Exit` or something similar as it exits the loop rather
+  //      than actually closing the window. The backend will handle closing the window when the
+  //      internal window is dropped.
   pub fn close(&self) {
     self.window.close()
   }

@@ -11,9 +11,9 @@ use {
 
 pub fn map_native_event(native: &Message) -> Option<WindowEvent> {
   Some(match native {
-    Message::Create(_) => WindowEvent::Created,
+    // Message::Create(_) => WindowEvent::Created,
     Message::Close => WindowEvent::CloseRequest,
-    Message::Destroy => WindowEvent::Destroyed,
+    // Message::Destroy => WindowEvent::Destroyed,
     Message::Paint => WindowEvent::Draw,
     Message::KeyDown(message) => {
       let key_event = message.event();
