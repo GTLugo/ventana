@@ -12,7 +12,7 @@ let window = Window::new(WindowOptions {
   ..Default::default()
 })?;
 
-for event in &window {
+for event in window {
   println!("{event:?}");
 }
 ```
