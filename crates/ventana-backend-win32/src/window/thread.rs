@@ -1,10 +1,7 @@
 use {
   super::{
     command::Command,
-    state::{
-      SharedInternal,
-      State,
-    },
+    state::SharedInternal,
   },
   crate::{
     event::map_native_event,
@@ -18,10 +15,7 @@ use {
   },
   crossbeam_channel::Sender,
   std::{
-    sync::{
-      Arc,
-      MutexGuard,
-    },
+    sync::Arc,
     thread::JoinHandle,
   },
   ventana_hal::{
@@ -105,34 +99,10 @@ impl WindowThread {
       .send(window)
       .expect("Failed to send window back to main thread");
     internal.set_ready();
-    // internal.send_event(Event::Window(WindowEvent::Created), true);
 
     log::trace!("Entering message loop");
 
     MessageLoop::new().run();
-    // loop {
-    //   let should_wait = !internal.sync.is_queue_empty();
-    //   /*should_wait && */
-    //   if let Some(_arrived) = msg_wait_for_multiple_events(&[internal.sync.next_frame]) {
-    //     peek_message(MessageLoopQueue::Thread, None, PeekMessageFlags::NoRemove);
-    //     continue;
-    //   }
-    //
-    //   match get_message(MessageLoopQueue::Thread, None) {
-    //     Ok(Msg {
-    //       message: Message::Quit(_),
-    //       ..
-    //     }) => break,
-    //     Ok(msg) => {
-    //       msg.translate();
-    //       msg.dispatch();
-    //     },
-    //     Err(e) => {
-    //       log::error!("{e}");
-    //       break;
-    //     },
-    //   }
-    // }
 
     log::trace!("Joining main thread");
     Ok(())
@@ -167,10 +137,6 @@ pub struct Procedure {
 }
 
 impl Procedure {
-  // fn event_lock(&self) -> MutexGuard<'_, Option<Event>> {
-  //   self.0.event_lock()
-  // }
-
   fn send_event(&self, event: Event) {
     self.internal.send_event(event, self.internal.is_ready());
   }
@@ -178,14 +144,6 @@ impl Procedure {
   fn receive_command(&self) -> Option<CommandEnvelope> {
     self.internal.receive_command()
   }
-
-  fn state_lock(&self) -> MutexGuard<'_, State> {
-    self.internal.state_lock()
-  }
-
-  // fn sync(&self) -> &SyncData {
-  //   &self.internal.sync
-  // }
 }
 
 impl WindowProcedure for Procedure {
@@ -226,30 +184,19 @@ impl WindowProcedure for Procedure {
 
     match (message, event) {
       (Message::Create(_), _) => {
-        // log::trace!("{window:?} | {message:?}");
         window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
-
-        // self.0.event_tx.send(Event::Window(WindowEvent::Created)).unwrap();
-        // self.event_lock().replace(Event::Window(WindowEvent::Created));
-        // self.internal.set_hwnd(*window);
-        // self.send_event(Event::Window(WindowEvent::Created));
-        // self.sync().new_event.signal().unwrap();
         None
       },
       (Message::SettingChange(_), _) => {
-        // log::trace!("{window:?} | {message:?}");
         window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
         None
       },
       (Message::Close, _) => {
-        // log::trace!("{window:?} | {message:?}");
         self.send_event(Event::Window(WindowEvent::CloseRequest));
         Some(LResult(0)) // We don't want defwindowproc to run since it'll auto-destroy the window
       },
       (Message::Destroy, _) => {
-        // log::trace!("{window:?} | {message:?}");
-        // self.send_event(Event::Window(WindowEvent::Destroyed));
-        window.quit(); // SHOULD BE CHANGED
+        window.quit();
         None
       },
       (_, Some(event)) => {

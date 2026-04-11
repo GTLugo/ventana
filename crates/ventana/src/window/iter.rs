@@ -37,23 +37,23 @@ impl<'a> IntoIterator for &'a Window {
   The issue I had was it immediately closing the window after returning None after first initialization.
 */
 
-// pub struct WindowIntoIterator {
-//   window: Window,
-// }
+pub struct WindowIntoIterator {
+  window: Window,
+}
 
-// impl Iterator for WindowIntoIterator {
-//   type Item = Event;
+impl Iterator for WindowIntoIterator {
+  type Item = Event;
 
-//   fn next(&mut self) -> Option<Self::Item> {
-//     self.window.next_event()
-//   }
-// }
+  fn next(&mut self) -> Option<Self::Item> {
+    self.window.next_event()
+  }
+}
 
-// impl IntoIterator for Window {
-//   type IntoIter = WindowIntoIterator;
-//   type Item = Event;
+impl IntoIterator for Window {
+  type IntoIter = WindowIntoIterator;
+  type Item = Event;
 
-//   fn into_iter(self) -> Self::IntoIter {
-//     WindowIntoIterator { window: self }
-//   }
-// }
+  fn into_iter(self) -> Self::IntoIter {
+    WindowIntoIterator { window: self }
+  }
+}

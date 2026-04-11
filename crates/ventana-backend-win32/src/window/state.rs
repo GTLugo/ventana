@@ -41,26 +41,6 @@ pub(crate) struct SharedInternal {
   thread: Mutex<WindowThread>,
 }
 
-impl Drop for SharedInternal {
-  fn drop(&mut self) {
-    // let title = self.data_lock().title.clone();
-
-    // if self.state_lock().stage == Stage::Destroyed {
-    //   return;
-    // } else {
-    //   self.state_lock().stage = Stage::Destroyed;
-    // }
-
-    // tracing::trace!("[`{}`]: destroying window", title);
-
-    // tracing::trace!("[`{}`]: unregistering window class", title);
-    // unsafe { UnregisterClassW(PCWSTR(self.class_atom as *const u16), self.hinstance) }
-    //   .unwrap();
-
-    // tracing::trace!("[`{}`]: destroyed window", title);
-  }
-}
-
 impl SharedInternal {
   pub fn new(settings: WindowSettings, msg_tx: Sender<WindowToMain>, cmd_rx: Receiver<CommandEnvelope>) -> Arc<Self> {
     Arc::new(Self {
@@ -92,18 +72,6 @@ impl SharedInternal {
   pub fn should_close(&self) -> bool {
     !self.state_lock().is_running
   }
-
-  // pub fn destroy(&self, hwnd: Window) {
-  //     Command::Destroy.post(hwnd);
-  //   if self.state_lock().stage != Stage::Destroyed {
-  //     self.state_lock().stage = Stage::Destroyed;
-  //     Command::Destroy.post(hwnd);
-  //   }
-  // }
-
-  // pub fn event_lock(&self) -> MutexGuard<'_, Option<Event>> {
-  //   self.event.lock().unwrap()
-  // }
 
   pub fn state_lock(&self) -> MutexGuard<'_, State> {
     self.state.lock().unwrap()

@@ -119,7 +119,7 @@ pub enum RawInputMessage {
 */
 #[derive(Debug, Display, Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CursorMoveKind {
-  /// Cursor entered to the window.
+  /// Cursor entered the window.
   Entered,
   /// Cursor left the window client area.
   Left,
