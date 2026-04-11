@@ -144,6 +144,43 @@ impl Default for WindowOptions {
   }
 }
 
+impl WindowOptions {
+  pub fn with_title(mut self, title: impl Into<&'static str>) -> Self {
+    self.title = title.into();
+    self
+  }
+
+  pub fn with_size(mut self, size: impl Into<Size>) -> Self {
+    self.size = size.into();
+    self
+  }
+
+  pub fn with_position(mut self, position: Option<impl Into<Position>>) -> Self {
+    self.position = position.map(Into::into);
+    self
+  }
+
+  pub fn with_visibility(mut self, visibility: Visibility) -> Self {
+    self.visibility = visibility;
+    self
+  }
+
+  pub fn with_flow(mut self, flow: Flow) -> Self {
+    self.flow = flow;
+    self
+  }
+
+  pub fn with_close_on_x(mut self, close_on_x: bool) -> Self {
+    self.close_on_x = close_on_x;
+    self
+  }
+
+  pub fn with_clear_color(mut self, clear_color: impl Into<RGB8>) -> Self {
+    self.clear_color = Some(clear_color.into());
+    self
+  }
+}
+
 impl From<WindowOptions> for WindowSettings {
   fn from(options: WindowOptions) -> Self {
     Self {

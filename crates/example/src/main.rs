@@ -11,12 +11,12 @@ fn main() -> anyhow::Result<()> {
 
   log::debug!("Backend: {}", Backend::auto()?.name());
 
-  let window = Window::new(WindowOptions {
-    title: "Example",
-    size: Size::Logical((800, 500).into()),
-    clear_color: Some((0, 0, 0).into()),
-    ..Default::default()
-  })?;
+  let window = Window::new(
+    WindowOptions::default()
+      .with_title("Example")
+      .with_size(LogicalSize::new(800, 500))
+      .with_clear_color((0, 0, 0)),
+  )?;
 
   let mut state = pollster::block_on(State::new(window.clone()))?;
 

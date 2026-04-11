@@ -10,11 +10,7 @@
 ```rust
 use ventana::prelude::*;
 
-let window = Window::new(WindowOptions {
-  title: "Example",
-  size: Size::Logical((800, 500).into()),
-  ..Default::default()
-})?;
+let window = Window::new(WindowOptions::default())?;
 
 for event in window {
   println!("{event:?}");
