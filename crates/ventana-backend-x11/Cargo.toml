@@ -25,6 +25,7 @@ version = "0.13"
 features = [
   "allow-unsafe-code",
   "raw-window-handle",
+  "dl-libxcb",
   "cursor",
   "extra-traits",
   "randr",
