@@ -1,4 +1,4 @@
-use ventana::window::Window;
+use ventana::{dpi::PhysicalSize, window::Window};
 
 pub fn initialize_logger() {
   env_logger::builder()
@@ -82,14 +82,19 @@ impl State {
     })
   }
 
-  pub fn resize(&mut self, width: u32, height: u32) {
-    // log::info!("Resize: ({width}, {height})");
-    if width > 0 && height > 0 {
-      self.config.width = width;
-      self.config.height = height;
-      self.surface.configure(&self.device, &self.config);
-      self.is_surface_configured = true;
+  pub fn resize(&mut self, size: PhysicalSize<u32>) {
+    log::info!("Resize: ({}, {})", size.width, size.height);
+    if size.width > 0 && size.height > 0 && (size.width != self.config.width || size.height != self.config.height) {
+      self.config.width = size.width;
+      self.config.height = size.height;
+      self.reconfigure();
     }
+    log::info!("New size: ({}, {})", self.config.width, self.config.height);
+  }
+
+  fn reconfigure(&mut self) {
+    self.surface.configure(&self.device, &self.config);
+    self.is_surface_configured = true;
   }
 
   pub fn update(&mut self) {
@@ -117,7 +122,7 @@ impl State {
     let output = match self.surface.get_current_texture() {
       wgpu::CurrentSurfaceTexture::Success(surface_texture) => surface_texture,
       wgpu::CurrentSurfaceTexture::Suboptimal(surface_texture) => {
-        self.is_surface_configured = false;
+        self.is_surface_configured = false; // Cannot reconfigure until current surface texture is dropped
         surface_texture
       },
       wgpu::CurrentSurfaceTexture::Timeout
@@ -127,7 +132,7 @@ impl State {
         return Ok(());
       },
       wgpu::CurrentSurfaceTexture::Outdated => {
-        self.surface.configure(&self.device, &self.config);
+        self.reconfigure();
         return Ok(());
       },
       wgpu::CurrentSurfaceTexture::Lost => {

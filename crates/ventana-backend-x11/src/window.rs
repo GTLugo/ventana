@@ -90,7 +90,7 @@ impl X11Window {
           | EventMask::KEYMAP_STATE
           | EventMask::STRUCTURE_NOTIFY
           | EventMask::FOCUS_CHANGE
-          | EventMask::RESIZE_REDIRECT
+          // | EventMask::RESIZE_REDIRECT
           | EventMask::PROPERTY_CHANGE
           | EventMask::VISIBILITY_CHANGE
           | EventMask::BUTTON_PRESS
@@ -268,16 +268,20 @@ impl BackendWindow for X11Window {
   }
 
   fn request_redraw(&self) {
-    X11::connection()
-      .send_event(false, self.id, EventMask::EXPOSURE, x11rb::protocol::xproto::ClientMessageEvent {
-        response_type: x11rb::protocol::xproto::CLIENT_MESSAGE_EVENT,
-        format: 32,
-        sequence: 0,
-        window: self.id,
-        type_: X11::atoms().VENTANA_REQUEST_REDRAW,
-        data: [0; 5].into(),
-      })
-      .unwrap();
+    // X11::connection()
+    //   .send_event(false, self.id, EventMask::EXPOSURE, x11rb::protocol::xproto::ClientMessageEvent {
+    //     response_type: x11rb::protocol::xproto::CLIENT_MESSAGE_EVENT,
+    //     format: 32,
+    //     sequence: 0,
+    //     window: self.id,
+    //     type_: X11::atoms().VENTANA_REQUEST_REDRAW,
+    //     data: [0; 5].into(),
+    //   })
+    //   .unwrap();
+    self.event_backlog
+      .lock()
+      .unwrap()
+      .push_back(Event::Window(WindowEvent::Draw));
   }
 
   fn close(&self) {
