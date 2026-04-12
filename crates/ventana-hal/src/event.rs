@@ -42,7 +42,7 @@ pub enum WindowEvent {
   // Destroyed,
   /// Message sent when the window X button is pressed.
   CloseRequest,
-  /// Message sent when Windows requests the window be repainted.
+  /// Message sent when the window requests itself be repainted.
   Draw,
   /// Message sent when a key is pressed, held, or released.
   Keyboard {
@@ -92,10 +92,6 @@ pub enum WindowEvent {
     outer_position: PhysicalPosition<i32>,
     outer_size: PhysicalSize<u32>,
   },
-  /// Message sent by Windows when certain actions are taken. WIP
-  Command,
-  /// Message sent by Windows when certain actions are taken. WIP
-  SystemCommand,
   /// Message sent when the window gains or loses focus.
   Focus(Focus),
   /// Message sent when the scale factor of the window has changed.
