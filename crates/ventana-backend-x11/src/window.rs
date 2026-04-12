@@ -5,6 +5,7 @@ use {
   },
   std::{
     num::NonZero,
+    ptr::NonNull,
     sync::{
       Arc,
       Mutex,
@@ -164,7 +165,11 @@ impl BackendWindow for X11Window {
   }
 
   fn raw_display_handle(&self) -> RawDisplayHandle {
-    XcbDisplayHandle::new(None, X11::default_screen_id() as _).into()
+    XcbDisplayHandle::new(
+      Some(unsafe { NonNull::new_unchecked(X11::connection().get_raw_xcb_connection()) }),
+      X11::default_screen_id() as _,
+    )
+    .into()
   }
 
   fn monitor(&self) -> Arc<dyn BackendMonitor> {

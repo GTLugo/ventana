@@ -23,7 +23,7 @@ path = "../ventana-hal"
 [dependencies.x11rb]
 version = "0.13"
 features = [
-  # "allow-unsafe-code",
+  "allow-unsafe-code",
   "raw-window-handle",
   "cursor",
   "extra-traits",

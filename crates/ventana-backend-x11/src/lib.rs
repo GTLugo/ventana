@@ -47,7 +47,7 @@ use {
       Database,
       new_from_default,
     },
-    rust_connection::RustConnection,
+    xcb_ffi::XCBConnection,
   },
 };
 
@@ -61,7 +61,7 @@ atom_manager! {
 }
 
 pub struct X11State {
-  connection: RustConnection,
+  connection: XCBConnection,
   default_screen_index: usize,
   database: Database,
   atoms: Atoms,
@@ -71,7 +71,7 @@ pub struct X11State {
 pub struct X11(Arc<X11State>);
 
 impl X11 {
-  pub fn connection() -> &'static RustConnection {
+  pub fn connection() -> &'static XCBConnection {
     &Self::instance().0.connection
   }
 
@@ -108,7 +108,7 @@ impl Backend for X11 {
     Self: Sized,
   {
     static INSTANCE: LazyLock<X11> = LazyLock::new(|| {
-      let (connection, default_screen_index) = x11rb::connect(None).unwrap();
+      let (connection, default_screen_index) = XCBConnection::connect(None).unwrap();
       let database = new_from_default(&connection).unwrap();
       let atoms = Atoms::new(&connection).unwrap().reply().unwrap();
       X11(Arc::new(X11State {
