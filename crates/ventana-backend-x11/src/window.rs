@@ -1,7 +1,6 @@
 use {
   crate::X11,
   std::{
-    collections::VecDeque,
     num::NonZero,
     ptr::NonNull,
     sync::{
@@ -61,7 +60,7 @@ pub struct State {
 pub struct X11Window {
   id: u32,
   visual: u32,
-  event_backlog: Mutex<VecDeque<Event>>,
+  // event_backlog: Mutex<VecDeque<Event>>,
   state: Mutex<State>,
 }
 
@@ -151,7 +150,7 @@ impl X11Window {
     Ok(Self {
       id,
       visual,
-      event_backlog: Mutex::new(VecDeque::new()),
+      // event_backlog: Mutex::new(VecDeque::new()),
       state: Mutex::new(State {
         settings,
         size,
@@ -171,11 +170,20 @@ impl X11Window {
       // X11Event::DestroyNotify(_) => Event::Window(WindowEvent::Destroyed),
       X11Event::ClientMessage(event) => {
         let data = event.data.as_data32();
-        if event.format == 32 && event.window == window_id && data[0] == X11::atoms().WM_DELETE_WINDOW {
-          Event::Window(WindowEvent::CloseRequest)
-        } else {
-          Event::None
+
+        if event.window != window_id || event.format != 32 {
+          return Event::None;
         }
+        
+        if data[0] == X11::atoms().WM_DELETE_WINDOW {
+          return Event::Window(WindowEvent::CloseRequest);
+        }
+
+        if event.type_ == X11::atoms().VENTANA_REQUEST_REDRAW {
+          return Event::Window(WindowEvent::Draw);
+        }
+
+        Event::None
       },
       X11Event::Expose(event) => {
         if event.window == window_id {
@@ -191,11 +199,11 @@ impl X11Window {
 
         if event.window == window_id && old_size != new_size {
           state.size = new_size;
-          self
-            .event_backlog
-            .lock()
-            .unwrap()
-            .push_back(Event::Window(WindowEvent::Draw));
+          // self
+          //   .event_backlog
+          //   .lock()
+          //   .unwrap()
+          //   .push_back(Event::Window(WindowEvent::Draw));
           return Event::Window(WindowEvent::Resized(new_size));
         }
 
@@ -246,11 +254,11 @@ impl BackendWindow for X11Window {
       return None;
     }
 
-    if let Ok(mut backlog) = self.event_backlog.lock()
-      && !backlog.is_empty()
-    {
-      return backlog.pop_front();
-    }
+    // if let Ok(mut backlog) = self.event_backlog.lock()
+    //   && !backlog.is_empty()
+    // {
+    //   return backlog.pop_front();
+    // }
 
     let x11_event = X11::connection()
       .wait_for_event()
@@ -268,20 +276,20 @@ impl BackendWindow for X11Window {
   }
 
   fn request_redraw(&self) {
-    // X11::connection()
-    //   .send_event(false, self.id, EventMask::EXPOSURE, x11rb::protocol::xproto::ClientMessageEvent {
-    //     response_type: x11rb::protocol::xproto::CLIENT_MESSAGE_EVENT,
-    //     format: 32,
-    //     sequence: 0,
-    //     window: self.id,
-    //     type_: X11::atoms().VENTANA_REQUEST_REDRAW,
-    //     data: [0; 5].into(),
-    //   })
-    //   .unwrap();
-    self.event_backlog
-      .lock()
-      .unwrap()
-      .push_back(Event::Window(WindowEvent::Draw));
+    X11::connection()
+      .send_event(false, self.id, EventMask::EXPOSURE, x11rb::protocol::xproto::ClientMessageEvent {
+        response_type: x11rb::protocol::xproto::CLIENT_MESSAGE_EVENT,
+        format: 32,
+        sequence: 0,
+        window: self.id,
+        type_: X11::atoms().VENTANA_REQUEST_REDRAW,
+        data: [0; 5].into(),
+      })
+      .unwrap();
+    // self.event_backlog
+    //   .lock()
+    //   .unwrap()
+    //   .push_back(Event::Window(WindowEvent::Draw));
   }
 
   fn close(&self) {
