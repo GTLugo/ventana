@@ -8,6 +8,15 @@
   ))
 ))] // TODO: Swap this out for a stub impl on other platforms.
 
+/*
+
+NOTE: Smithay Client Toolkit is nice, but the build script for some reason can't find the xkbcommon library.
+      This is causing the entire crate to fail to build, but Winit seems to have a workaround for this by inmplementing
+      certain functions themselves. Despite this, perhaps I should just use wayland-client directly and avoid SCTK altogether?
+      The major downside to this is obviously the insane amount of boilerplate I will need to rewrite to satisfy Wayland.
+
+*/
+
 // mod event;
 // pub mod window;
 
