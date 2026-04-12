@@ -61,13 +61,15 @@ impl Backend {
     self.backend.name()
   }
 
-  pub fn list_available_monitors(&self) -> VecDeque<Monitor> {
-    self
-      .backend
-      .list_available_monitors()
-      .into_iter()
-      .map(Monitor::new)
-      .collect()
+  pub fn list_available_monitors(&self) -> Result<VecDeque<Monitor>, RequestError> {
+    Ok(
+      self
+        .backend
+        .list_available_monitors()?
+        .into_iter()
+        .map(Monitor::new)
+        .collect(),
+    )
   }
 
   pub fn primary_monitor(&self) -> Result<Monitor, RequestError> {

@@ -121,6 +121,16 @@ impl Backend for X11 {
     &INSTANCE
   }
 
+  fn is_available() -> bool
+  where
+    Self: Sized,
+  {
+    cfg!(all(
+      unix,
+      not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))
+    )) && XCBConnection::connect(None).is_ok()
+  }
+
   fn name(&self) -> &'static str {
     "X11"
   }
@@ -129,11 +139,13 @@ impl Backend for X11 {
     Ok(Arc::new(X11Window::new(settings)?))
   }
 
-  fn list_available_monitors(&self) -> VecDeque<Arc<dyn BackendMonitor>> {
-    X11Monitor::list_available()
-      .into_iter()
-      .map(|m| Arc::new(m) as _)
-      .collect()
+  fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
+    Ok(
+      X11Monitor::list_available()
+        .into_iter()
+        .map(|m| Arc::new(m) as _)
+        .collect(),
+    )
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {

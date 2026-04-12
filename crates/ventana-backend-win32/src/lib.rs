@@ -39,6 +39,13 @@ impl Backend for Win32 {
     &INSTANCE
   }
 
+  fn is_available() -> bool
+  where
+    Self: Sized,
+  {
+    cfg!(target_os = "windows")
+  }
+
   fn name(&self) -> &'static str {
     "Win32"
   }
