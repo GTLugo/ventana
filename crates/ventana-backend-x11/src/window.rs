@@ -1,9 +1,7 @@
 use {
-  crate::{
-    X11,
-    event::map_native_event,
-  },
+  crate::X11,
   std::{
+    collections::VecDeque,
     num::NonZero,
     ptr::NonNull,
     sync::{
@@ -37,14 +35,17 @@ use {
   x11rb::{
     COPY_DEPTH_FROM_PARENT,
     connection::Connection,
-    protocol::xproto::{
-      AtomEnum,
-      ConnectionExt as _,
-      CreateWindowAux,
-      EventMask,
-      Gravity,
-      PropMode,
-      WindowClass,
+    protocol::{
+      Event as X11Event,
+      xproto::{
+        AtomEnum,
+        ConnectionExt as _,
+        CreateWindowAux,
+        EventMask,
+        Gravity,
+        PropMode,
+        WindowClass,
+      },
     },
     wrapper::ConnectionExt as _,
   },
@@ -52,12 +53,15 @@ use {
 
 pub struct State {
   settings: WindowSettings,
+  size: PhysicalSize<u32>,
+  position: PhysicalPosition<i32>,
   is_running: bool,
 }
 
 pub struct X11Window {
   id: u32,
   visual: u32,
+  event_backlog: Mutex<VecDeque<Event>>,
   state: Mutex<State>,
 }
 
@@ -83,6 +87,12 @@ impl X11Window {
     let values = CreateWindowAux::default()
       .event_mask(
         EventMask::EXPOSURE
+          | EventMask::KEYMAP_STATE
+          | EventMask::STRUCTURE_NOTIFY
+          | EventMask::FOCUS_CHANGE
+          | EventMask::RESIZE_REDIRECT
+          | EventMask::PROPERTY_CHANGE
+          | EventMask::VISIBILITY_CHANGE
           | EventMask::BUTTON_PRESS
           | EventMask::BUTTON_RELEASE
           | EventMask::POINTER_MOTION
@@ -94,10 +104,10 @@ impl X11Window {
       .win_gravity(Gravity::NORTH_WEST)
       .background_pixel(clear_color);
     let scale_factor = X11::instance().primary_monitor().map_to_os_err()?.scale_factor();
-    let size = settings.size.to_logical(scale_factor);
+    let size = settings.size.to_physical(scale_factor);
     let position = settings
       .position
-      .map(|p| p.to_logical(scale_factor))
+      .map(|p| p.to_physical(scale_factor))
       .unwrap_or_default();
 
     connection
@@ -105,10 +115,10 @@ impl X11Window {
         COPY_DEPTH_FROM_PARENT,
         id,
         screen.root,
-        position.x,
-        position.y,
-        size.width,
-        size.height,
+        position.x as i16,
+        position.y as i16,
+        size.width as u16,
+        size.height as u16,
         0,
         WindowClass::INPUT_OUTPUT,
         0,
@@ -141,8 +151,11 @@ impl X11Window {
     Ok(Self {
       id,
       visual,
+      event_backlog: Mutex::new(VecDeque::new()),
       state: Mutex::new(State {
         settings,
+        size,
+        position,
         is_running: true,
       }),
     })
@@ -150,6 +163,58 @@ impl X11Window {
 
   fn state_lock(&self) -> MutexGuard<'_, State> {
     self.state.lock().unwrap()
+  }
+
+  fn map_native_event(&self, native: &X11Event, window_id: u32) -> Event {
+    match native {
+      // X11Event::CreateNotify(_) => Event::Window(WindowEvent::Created),
+      // X11Event::DestroyNotify(_) => Event::Window(WindowEvent::Destroyed),
+      X11Event::ClientMessage(event) => {
+        let data = event.data.as_data32();
+        if event.format == 32 && event.window == window_id && data[0] == X11::atoms().WM_DELETE_WINDOW {
+          Event::Window(WindowEvent::CloseRequest)
+        } else {
+          Event::None
+        }
+      },
+      X11Event::Expose(event) => {
+        if event.window == window_id {
+          Event::Window(WindowEvent::Draw)
+        } else {
+          Event::None
+        }
+      },
+      X11Event::ConfigureNotify(event) => {
+        let mut state = self.state_lock();
+        let old_size = state.size;
+        let new_size = PhysicalSize::new(event.width as u32, event.height as u32);
+
+        if event.window == window_id && old_size != new_size {
+          state.size = new_size;
+          self
+            .event_backlog
+            .lock()
+            .unwrap()
+            .push_back(Event::Window(WindowEvent::Draw));
+          return Event::Window(WindowEvent::Resized(new_size));
+        }
+
+        let old_position = state.position;
+        let new_position = PhysicalPosition::new(event.x as i32, event.y as i32);
+
+        if event.window == window_id && old_position != new_position {
+          state.position = new_position;
+          return Event::Window(WindowEvent::Moved(new_position));
+        }
+
+        Event::None
+      },
+      X11Event::Error(error) => {
+        log::error!("{error:?}");
+        Event::None
+      },
+      _ => Event::None,
+    }
   }
 }
 
@@ -181,11 +246,17 @@ impl BackendWindow for X11Window {
       return None;
     }
 
+    if let Ok(mut backlog) = self.event_backlog.lock()
+      && !backlog.is_empty()
+    {
+      return backlog.pop_front();
+    }
+
     let x11_event = X11::connection()
       .wait_for_event()
       .inspect_err(|e| log::error!("{e}"))
       .ok()?;
-    let event = map_native_event(&x11_event, self.id);
+    let event = self.map_native_event(&x11_event, self.id);
 
     if let Event::Window(WindowEvent::CloseRequest) = event
       && self.state_lock().settings.close_on_x
@@ -197,7 +268,16 @@ impl BackendWindow for X11Window {
   }
 
   fn request_redraw(&self) {
-    todo!()
+    X11::connection()
+      .send_event(false, self.id, EventMask::EXPOSURE, x11rb::protocol::xproto::ClientMessageEvent {
+        response_type: x11rb::protocol::xproto::CLIENT_MESSAGE_EVENT,
+        format: 32,
+        sequence: 0,
+        window: self.id,
+        type_: X11::atoms().VENTANA_REQUEST_REDRAW,
+        data: [0; 5].into(),
+      })
+      .unwrap();
   }
 
   fn close(&self) {
@@ -217,9 +297,7 @@ impl BackendWindow for X11Window {
   }
 
   fn inner_size(&self) -> PhysicalSize<u32> {
-    X11::geometry()
-      .map(|geometry| PhysicalSize::new(geometry.width as u32, geometry.height as u32))
-      .unwrap_or_default()
+    self.state_lock().size
   }
 
   fn outer_size(&self) -> PhysicalSize<u32> {

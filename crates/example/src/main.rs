@@ -20,12 +20,13 @@ fn main() -> anyhow::Result<()> {
 
   let mut state = pollster::block_on(State::new(window.clone()))?;
 
-  for event in window {
+  for event in &window {
     if let Event::Window(event) = event {
       log::info!("{event:?}");
 
       match event {
         WindowEvent::Draw => {
+          log::info!("Surface size: {:?}", window.inner_size());
           state.update();
           state.draw();
         },

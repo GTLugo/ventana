@@ -57,6 +57,7 @@ atom_manager! {
     WM_DELETE_WINDOW,
     _NET_WM_NAME,
     UTF8_STRING,
+    VENTANA_REQUEST_REDRAW,
   }
 }
 
