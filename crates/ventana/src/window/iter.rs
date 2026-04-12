@@ -2,23 +2,32 @@ use {
   crate::window::Window,
   ventana_hal::{
     event::Event,
-    window::BackendEventIterator,
   },
 };
 
 impl Window {
   pub fn iter(&'_ self) -> EventIterator<'_> {
-    EventIterator(self.window.iter())
+    EventIterator { window: self }
   }
 }
 
-pub struct EventIterator<'w>(Box<dyn BackendEventIterator<'w> + 'w>);
+// impl Iterator for Window {
+//   type Item = Event;
+
+//   fn next(&mut self) -> Option<Self::Item> {
+//     self.next_event()
+//   }
+// }
+
+pub struct EventIterator<'w> {
+  window: &'w Window,
+}
 
 impl<'a> Iterator for EventIterator<'a> {
   type Item = Event;
 
   fn next(&mut self) -> Option<Self::Item> {
-    self.0.next()
+    self.window.next_event()
   }
 }
 
@@ -30,12 +39,6 @@ impl<'a> IntoIterator for &'a Window {
     self.iter()
   }
 }
-
-/*
-  IntoIterator for value type needs more work, but I'm too tired to debug it.
-
-  The issue I had was it immediately closing the window after returning None after first initialization.
-*/
 
 pub struct WindowIntoIterator {
   window: Window,

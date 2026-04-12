@@ -104,7 +104,7 @@ impl Window {
   }
 
   pub fn next_event(&self) -> Option<Event> {
-    self.window.next_event()
+    self.window.next()
   }
 
   // TODO: This should probably be named `Exit` or something similar as it exits the loop rather

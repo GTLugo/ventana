@@ -42,6 +42,7 @@ impl CommandId {
   }
 }
 
+#[allow(unused)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Command {
   Destroy,

@@ -38,19 +38,11 @@ impl std::fmt::Display for WindowId {
 pub trait BackendWindow: Send + Sync {
   fn id(&self) -> WindowId;
 
-  // #[cfg(raw_window_handle_v5)]
-  // fn raw_window_handle(&self) -> rwh_05::RawWindowHandle;
-
-  // #[cfg(raw_window_handle_v5)]
-  // fn raw_display_handle(&self) -> rwh_05::RawDisplayHandle;
-
   fn raw_window_handle(&self) -> crate::raw_window_handle::RawWindowHandle;
 
   fn raw_display_handle(&self) -> crate::raw_window_handle::RawDisplayHandle;
 
-  fn next_event(&self) -> Option<Event>;
-
-  fn iter<'w>(&'w self) -> Box<dyn BackendEventIterator<'w> + 'w>;
+  fn next(&self) -> Option<Event>;
 
   fn monitor(&self) -> Arc<dyn BackendMonitor>;
 
@@ -85,6 +77,6 @@ pub trait BackendWindow: Send + Sync {
   fn super_key(&self) -> KeyState;
 }
 
-pub trait BackendEventIterator<'window>: Send + Sync {
-  fn next(&mut self) -> Option<Event>;
-}
+// pub trait BackendEventIterator<'window>: Send + Sync {
+//   fn next(&mut self) -> Option<Event>;
+// }

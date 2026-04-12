@@ -1,5 +1,4 @@
 mod command;
-mod iter;
 mod state;
 mod sync;
 mod thread;
@@ -7,7 +6,6 @@ mod thread;
 use {
   self::{
     command::Command,
-    iter::Win32EventIterator,
     state::SharedInternal,
   },
   crate::window::{
@@ -53,7 +51,6 @@ use {
     settings::WindowSettings,
     types::Flow,
     window::{
-      BackendEventIterator,
       BackendWindow,
       WindowId,
     },
@@ -206,7 +203,7 @@ impl BackendWindow for Win32Window {
     }
   }
 
-  fn next_event(&self) -> Option<Event> {
+  fn next(&self) -> Option<Event> {
     self.acknowledge_previous_event();
 
     if self.shared.should_close() {
@@ -231,10 +228,6 @@ impl BackendWindow for Win32Window {
 
       self.pump_event_and_block();
     }
-  }
-
-  fn iter<'w>(&'w self) -> Box<dyn BackendEventIterator<'w> + 'w> {
-    Box::new(Win32EventIterator::new(self))
   }
 
   fn monitor(&self) -> Arc<dyn BackendMonitor> {
