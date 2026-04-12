@@ -1,4 +1,7 @@
-use ventana::{dpi::PhysicalSize, window::Window};
+use ventana::{
+  dpi::PhysicalSize,
+  window::Window,
+};
 
 pub fn initialize_logger() {
   env_logger::builder()
@@ -89,7 +92,6 @@ impl State {
       self.config.height = size.height;
       self.reconfigure();
     }
-    log::info!("New size: ({}, {})", self.config.width, self.config.height);
   }
 
   fn reconfigure(&mut self) {
@@ -112,7 +114,7 @@ impl State {
   }
 
   fn render(&mut self) -> anyhow::Result<()> {
-    self.window.request_redraw();
+    // self.window.request_redraw();
 
     // We can't render unless the surface is configured
     if !self.is_surface_configured {

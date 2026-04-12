@@ -174,7 +174,7 @@ impl X11Window {
         if event.window != window_id || event.format != 32 {
           return Event::None;
         }
-        
+
         if data[0] == X11::atoms().WM_DELETE_WINDOW {
           return Event::Window(WindowEvent::CloseRequest);
         }
@@ -309,7 +309,8 @@ impl BackendWindow for X11Window {
   }
 
   fn inner_size(&self) -> PhysicalSize<u32> {
-    self.state_lock().size
+    let geometry = X11::connection().get_geometry(self.id).unwrap().reply().unwrap();
+    PhysicalSize::new(geometry.width as u32, geometry.height as u32)
   }
 
   fn outer_size(&self) -> PhysicalSize<u32> {

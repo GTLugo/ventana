@@ -1,8 +1,6 @@
 use {
   crate::window::Window,
-  ventana_hal::{
-    event::Event,
-  },
+  ventana_hal::event::Event,
 };
 
 impl Window {

@@ -26,7 +26,6 @@ fn main() -> anyhow::Result<()> {
 
       match event {
         WindowEvent::Draw => {
-          log::info!("Surface size: {:?}", window.inner_size());
           state.update();
           state.draw();
         },

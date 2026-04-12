@@ -8,7 +8,6 @@
   ))
 ))] // TODO: Swap this out for a stub impl on other platforms.
 
-mod event;
 pub mod monitor;
 pub mod window;
 
