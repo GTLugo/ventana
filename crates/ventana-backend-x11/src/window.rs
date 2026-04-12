@@ -1,7 +1,4 @@
-mod iter;
-
 use {
-  self::iter::X11EventIterator,
   crate::{
     X11,
     event::map_native_event,
@@ -13,6 +10,10 @@ use {
   },
   ventana_hal::{
     backend::Backend,
+    dpi::{
+      PhysicalPosition,
+      PhysicalSize,
+    },
     error::{
       MapToOSError,
       RequestError,
@@ -21,6 +22,8 @@ use {
       Event,
       WindowEvent,
     },
+    monitor::BackendMonitor,
+    raw_window_handle::*,
     settings::WindowSettings,
     window::{
       BackendWindow,
@@ -45,19 +48,18 @@ use {
 
 pub struct State {
   settings: WindowSettings,
-  running: bool,
+  is_running: bool,
 }
 
 pub struct X11Window {
   id: u32,
-  state: Arc<Mutex<State>>,
+  state: Mutex<State>,
 }
 
 impl X11Window {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
-    let x11 = X11::instance();
-    let connection = x11.connection();
-    let screen = x11.default_screen();
+    let connection = X11::connection();
+    let screen = X11::default_screen();
     let id = connection.generate_id().map_to_os_err()?;
 
     let clear_color: u32 = settings
@@ -78,7 +80,7 @@ impl X11Window {
       )
       .win_gravity(Gravity::NORTH_WEST)
       .background_pixel(clear_color);
-    let scale_factor = x11.primary_monitor().map_to_os_err()?.scale_factor();
+    let scale_factor = X11::instance().primary_monitor().map_to_os_err()?.scale_factor();
     let size = settings.size.to_logical(scale_factor);
     let position = settings
       .position
@@ -110,9 +112,9 @@ impl X11Window {
       .map_to_os_err()?;
 
     connection
-      .change_property32(PropMode::REPLACE, id, x11.atoms().WM_PROTOCOLS, AtomEnum::ATOM, &[x11
-        .atoms()
-        .WM_DELETE_WINDOW])
+      .change_property32(PropMode::REPLACE, id, X11::atoms().WM_PROTOCOLS, AtomEnum::ATOM, &[
+        X11::atoms().WM_DELETE_WINDOW
+      ])
       .map_to_os_err()?;
 
     connection.map_window(id).map_to_os_err()?;
@@ -125,10 +127,10 @@ impl X11Window {
 
     Ok(Self {
       id,
-      state: Arc::new(Mutex::new(State {
+      state: Mutex::new(State {
         settings,
-        running: true,
-      })),
+        is_running: true,
+      }),
     })
   }
 
@@ -142,31 +144,28 @@ impl BackendWindow for X11Window {
     WindowId::from_raw(self.id as usize)
   }
 
-  fn raw_window_handle(&self) -> ventana_hal::raw_window_handle::RawWindowHandle {
+  fn raw_window_handle(&self) -> RawWindowHandle {
     todo!()
   }
 
-  fn raw_display_handle(&self) -> ventana_hal::raw_window_handle::RawDisplayHandle {
+  fn raw_display_handle(&self) -> RawDisplayHandle {
     todo!()
   }
 
-  fn monitor(&self) -> Arc<dyn ventana_hal::monitor::BackendMonitor> {
+  fn monitor(&self) -> Arc<dyn BackendMonitor> {
     todo!()
   }
 
-  fn next_event(&self) -> Option<ventana_hal::event::Event> {
+  fn next(&self) -> Option<Event> {
     if self.is_closing() {
       return None;
     }
 
-    let x11 = X11::instance();
-    let event = match x11.connection().wait_for_event() {
-      Ok(event) => map_native_event(&event, self.id),
-      Err(e) => {
-        log::error!("{e}");
-        return None;
-      },
-    };
+    let x11_event = X11::connection()
+      .wait_for_event()
+      .inspect_err(|e| log::error!("{e}"))
+      .ok()?;
+    let event = map_native_event(&x11_event, self.id);
 
     if let Event::Window(WindowEvent::CloseRequest) = event
       && self.state_lock().settings.close_on_x
@@ -177,16 +176,16 @@ impl BackendWindow for X11Window {
     Some(event)
   }
 
-  fn iter<'w>(&'w self) -> Box<dyn ventana_hal::window::BackendEventIterator<'w> + 'w> {
-    Box::new(X11EventIterator::new(self))
+  fn request_redraw(&self) {
+    todo!()
   }
 
   fn close(&self) {
-    self.state_lock().running = false;
+    self.state_lock().is_running = false;
   }
 
   fn is_closing(&self) -> bool {
-    !self.state_lock().running
+    !self.state_lock().is_running
   }
 
   fn title(&self) -> String {
@@ -197,19 +196,19 @@ impl BackendWindow for X11Window {
     todo!()
   }
 
-  fn inner_size(&self) -> ventana_hal::dpi::Size {
+  fn inner_size(&self) -> PhysicalSize<u32> {
     todo!()
   }
 
-  fn outer_size(&self) -> ventana_hal::dpi::Size {
+  fn outer_size(&self) -> PhysicalSize<u32> {
     todo!()
   }
 
-  fn inner_position(&self) -> ventana_hal::dpi::Position {
+  fn inner_position(&self) -> PhysicalPosition<i32> {
     todo!()
   }
 
-  fn outer_position(&self) -> ventana_hal::dpi::Position {
+  fn outer_position(&self) -> PhysicalPosition<i32> {
     todo!()
   }
 

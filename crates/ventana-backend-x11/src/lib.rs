@@ -35,10 +35,7 @@ use {
   x11rb::{
     atom_manager,
     connection::Connection,
-    protocol::{
-      randr::ConnectionExt,
-      xproto::Screen,
-    },
+    protocol::xproto::Screen,
     resource_manager::{
       Database,
       new_from_default,
@@ -67,38 +64,20 @@ pub struct X11State {
 pub struct X11(Arc<X11State>);
 
 impl X11 {
-  // fn state_lock(&self) -> MutexGuard<'_, X11State> {
-  //   self.0.lock().unwrap()
-  // }
-
-  pub fn get_xft_dpi(&self) -> f64 {
-    self
-      .0
-      .database
-      .get_value::<f64>("Xft.dpi", "")
-      .ok()
-      .flatten()
-      .or_else(|| self.0.database.get_value::<f64>("Xft/DPI", "").ok().flatten())
-      .map(|dpi| if dpi > 0.0 { dpi } else { 96.0 })
-      .unwrap_or(96.0)
+  pub fn connection() -> &'static RustConnection {
+    &Self::instance().0.connection
   }
 
-  pub fn connection(&self) -> &RustConnection {
-    &self.0.connection
+  pub fn default_screen() -> &'static Screen {
+    &Self::connection().setup().roots[Self::instance().0.default_screen_index]
   }
 
-  pub fn default_screen(&self) -> &Screen {
-    self
-      .0
-      .connection
-      .setup()
-      .roots
-      .get(self.0.default_screen_index)
-      .unwrap()
+  pub fn database() -> &'static Database {
+    &Self::instance().0.database
   }
 
-  pub fn atoms(&self) -> &Atoms {
-    &self.0.atoms
+  pub fn atoms() -> &'static Atoms {
+    &Self::instance().0.atoms
   }
 }
 
@@ -130,31 +109,9 @@ impl Backend for X11 {
   }
 
   fn list_available_monitors(&self) -> VecDeque<Arc<dyn BackendMonitor>> {
-    let x11 = X11::instance();
-    let screen = x11.default_screen();
-    let scale_factor = x11.get_xft_dpi() / X11Monitor::DEFAULT_DPI;
-    x11
-      .connection()
-      .randr_get_monitors(screen.root, true)
-      .unwrap()
-      .reply()
-      .unwrap()
-      .monitors
+    X11Monitor::list_available()
       .into_iter()
-      .map(|info| {
-        Arc::new(X11Monitor {
-          id: info.name,
-          scale_factor,
-          primary: info.primary,
-          automatic: info.automatic,
-          x: info.x,
-          y: info.y,
-          width: info.width,
-          height: info.height,
-          width_in_millimeters: info.width_in_millimeters,
-          height_in_millimeters: info.height_in_millimeters,
-        }) as _
-      })
+      .map(|m| Arc::new(m) as _)
       .collect()
   }
 

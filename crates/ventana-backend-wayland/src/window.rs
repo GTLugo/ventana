@@ -1,253 +1,255 @@
-mod iter;
-mod state;
 
-use {
-  self::{
-    iter::WaylandEventIterator,
-    state::{
-      SharedState,
-      WaylandState,
-    },
-  },
-  sctk::{
-    reexports::{
-      calloop::{
-        EventLoop,
-        LoopSignal,
-      },
-      calloop_wayland_source::WaylandSource,
-      client::{
-        Connection,
-        globals::{
-          self,
-        },
-      },
-    },
-    shell::xdg::window::Window,
-  },
-  std::sync::{
-    Arc,
-    Mutex,
-    MutexGuard,
-  },
-  synchronize::Signal,
-  ventana_hal::{
-    error::{
-      MapToOSError,
-      RequestError,
-    },
-    event::{
-      Event,
-      WindowEvent,
-    },
-    settings::WindowSettings,
-    types::Flow,
-    window::{
-      BackendEventIterator,
-      BackendWindow,
-      WindowId,
-    },
-  },
-};
+// mod state;
 
-pub struct CreateInfo {
-  pub id: WindowId,
-  pub window: Window,
-  pub loop_signal: LoopSignal,
-}
+// use {
+//   self::{
+//     state::{
+//       SharedState,
+//       WaylandState,
+//     },
+//   },
+//   sctk::{
+//     reexports::{
+//       calloop::{
+//         EventLoop,
+//         LoopSignal,
+//       },
+//       calloop_wayland_source::WaylandSource,
+//       client::{
+//         Connection,
+//         globals::{
+//           self,
+//         },
+//       },
+//     },
+//     shell::xdg::window::Window,
+//   },
+//   std::sync::{
+//     Arc,
+//     Mutex,
+//     MutexGuard,
+//   },
+//   synchronize::Signal,
+//   ventana_hal::{
+//     dpi::{
+//       PhysicalPosition,
+//       PhysicalSize,
+//     },
+//     error::{
+//       MapToOSError,
+//       RequestError,
+//     },
+//     event::{
+//       Event,
+//       WindowEvent,
+//     },
+//     settings::WindowSettings,
+//     types::Flow,
+//     window::{
+//       BackendWindow,
+//       WindowId,
+//     },
+//   },
+// };
 
-pub struct WaylandWindow {
-  id: WindowId,
-  window: Window,
-  state: Arc<Mutex<SharedState>>,
-  loop_signal: LoopSignal,
-  event_signal: Signal,
-  iteration_signal: Signal,
-}
+// pub struct CreateInfo {
+//   pub id: WindowId,
+//   pub window: Window,
+//   pub loop_signal: LoopSignal,
+// }
 
-impl WaylandWindow {
-  pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
-    // I can't find any decent beginner materials on how to actually make a Wayland window and read events,
-    // so this is HEAVILY based on Winit. If there are any quirks, it's probably because of me
-    // trying to warp Winit's implementation.
+// pub struct WaylandWindow {
+//   id: WindowId,
+//   window: Window,
+//   state: Arc<Mutex<SharedState>>,
+//   loop_signal: LoopSignal,
+//   event_signal: Signal,
+//   iteration_signal: Signal,
+// }
 
-    // let (event_tx, event_rx) = std::sync::mpsc::sync_channel(0);
-    let event_signal = Signal::new();
-    let iteration_signal = Signal::new();
-    let state = Arc::new(Mutex::new(SharedState {
-      id: WindowId::from_raw(0),
-      width: 0,
-      height: 0,
-      should_exit: false,
-      event: None,
-      event_signal: event_signal.clone(),
-      iteration_signal: iteration_signal.clone(),
-      flow: settings.flow,
-      close_on_x: settings.close_on_x,
-    }));
-    let shared_state = state.clone();
-    let shared_settings = settings.clone();
+// impl WaylandWindow {
+//   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
+//     // I can't find any decent beginner materials on how to actually make a Wayland window and read events,
+//     // so this is HEAVILY based on Winit. If there are any quirks, it's probably because of me
+//     // trying to warp Winit's implementation.
 
-    let connection = Connection::connect_to_env().map_to_os_err()?;
-    let (globals, event_queue) = globals::registry_queue_init(&connection).map_to_os_err()?;
-    let queue_handle = event_queue.handle();
+//     // let (event_tx, event_rx) = std::sync::mpsc::sync_channel(0);
+//     let event_signal = Signal::new();
+//     let iteration_signal = Signal::new();
+//     let state = Arc::new(Mutex::new(SharedState {
+//       id: WindowId::from_raw(0),
+//       width: 0,
+//       height: 0,
+//       should_exit: false,
+//       event: None,
+//       event_signal: event_signal.clone(),
+//       iteration_signal: iteration_signal.clone(),
+//       flow: settings.flow,
+//       close_on_x: settings.close_on_x,
+//     }));
+//     let shared_state = state.clone();
+//     let shared_settings = settings.clone();
 
-    let (info_tx, info_rx) = std::sync::mpsc::sync_channel(0);
+//     let connection = Connection::connect_to_env().map_to_os_err()?;
+//     let (globals, event_queue) = globals::registry_queue_init(&connection).map_to_os_err()?;
+//     let queue_handle = event_queue.handle();
 
-    std::thread::Builder::new()
-      .name("window".into())
-      .spawn(move || -> Result<(), RequestError> {
-        let mut event_loop: EventLoop<WaylandState> = EventLoop::try_new().map_to_os_err()?;
+//     let (info_tx, info_rx) = std::sync::mpsc::sync_channel(0);
 
-        WaylandSource::new(connection.clone(), event_queue)
-          .insert(event_loop.handle())
-          .map_to_os_err()?;
+//     std::thread::Builder::new()
+//       .name("window".into())
+//       .spawn(move || -> Result<(), RequestError> {
+//         let mut event_loop: EventLoop<WaylandState> = EventLoop::try_new().map_to_os_err()?;
 
-        let mut wayland_state =
-          WaylandState::new(&globals, &queue_handle, shared_state, event_loop.handle(), shared_settings)?;
+//         WaylandSource::new(connection.clone(), event_queue)
+//           .insert(event_loop.handle())
+//           .map_to_os_err()?;
 
-        info_tx
-          .send(CreateInfo {
-            id: wayland_state.id(),
-            window: wayland_state.window(),
-            loop_signal: event_loop.get_signal(),
-          })
-          .map_to_os_err()?;
+//         let mut wayland_state =
+//           WaylandState::new(&globals, &queue_handle, shared_state, event_loop.handle(), shared_settings)?;
 
-        loop {
-          if let Err(error) = event_loop.dispatch(None, &mut wayland_state) {
-            log::error!("{error}");
-          }
+//         info_tx
+//           .send(CreateInfo {
+//             id: wayland_state.id(),
+//             window: wayland_state.window(),
+//             loop_signal: event_loop.get_signal(),
+//           })
+//           .map_to_os_err()?;
 
-          if wayland_state.state_lock().should_exit {
-            break Ok(());
-          }
-        }
-      })
-      .map_to_os_err()?;
+//         loop {
+//           if let Err(error) = event_loop.dispatch(None, &mut wayland_state) {
+//             log::error!("{error}");
+//           }
 
-    let CreateInfo {
-      id,
-      window,
-      loop_signal,
-    } = info_rx.recv().map_to_os_err()?;
+//           if wayland_state.state_lock().should_exit {
+//             break Ok(());
+//           }
+//         }
+//       })
+//       .map_to_os_err()?;
 
-    Ok(Self {
-      id,
-      window,
-      state,
-      loop_signal,
-      event_signal,
-      iteration_signal,
-    })
-  }
+//     let CreateInfo {
+//       id,
+//       window,
+//       loop_signal,
+//     } = info_rx.recv().map_to_os_err()?;
 
-  pub fn state_lock(&self) -> MutexGuard<'_, SharedState> {
-    self.state.lock().unwrap()
-  }
+//     Ok(Self {
+//       id,
+//       window,
+//       state,
+//       loop_signal,
+//       event_signal,
+//       iteration_signal,
+//     })
+//   }
 
-  fn take_event(&self) -> Option<Event> {
-    let flow = self.state_lock().flow;
-    if let Flow::Wait = flow {
-      let no_events = self.state_lock().event.is_none();
-      if no_events {
-        self.event_signal.wait().unwrap();
-      }
-    }
+//   pub fn state_lock(&self) -> MutexGuard<'_, SharedState> {
+//     self.state.lock().unwrap()
+//   }
 
-    self.state_lock().event.take().or(Some(Event::None))
-  }
-}
+//   fn take_event(&self) -> Option<Event> {
+//     let flow = self.state_lock().flow;
+//     if let Flow::Wait = flow {
+//       let no_events = self.state_lock().event.is_none();
+//       if no_events {
+//         self.event_signal.wait().unwrap();
+//       }
+//     }
 
-impl BackendWindow for WaylandWindow {
-  fn id(&self) -> WindowId {
-    self.id
-  }
+//     self.state_lock().event.take().or(Some(Event::None))
+//   }
+// }
 
-  fn raw_window_handle(&self) -> ventana_hal::raw_window_handle::RawWindowHandle {
-    todo!()
-  }
+// impl BackendWindow for WaylandWindow {
+//   fn id(&self) -> WindowId {
+//     self.id
+//   }
 
-  fn raw_display_handle(&self) -> ventana_hal::raw_window_handle::RawDisplayHandle {
-    todo!()
-  }
+//   fn raw_window_handle(&self) -> ventana_hal::raw_window_handle::RawWindowHandle {
+//     todo!()
+//   }
 
-  fn monitor(&self) -> Arc<dyn ventana_hal::monitor::BackendMonitor> {
-    todo!()
-  }
+//   fn raw_display_handle(&self) -> ventana_hal::raw_window_handle::RawDisplayHandle {
+//     todo!()
+//   }
 
-  fn next_event(&self) -> Option<Event> {
-    self.iteration_signal.signal().unwrap();
-    let event = self.take_event();
+//   fn monitor(&self) -> Arc<dyn ventana_hal::monitor::BackendMonitor> {
+//     todo!()
+//   }
 
-    if let Some(Event::Window(WindowEvent::CloseRequest)) = event {
-      let x = self.state_lock().close_on_x;
-      if x {
-        self.close();
-      }
-    }
+//   fn next(&self) -> Option<Event> {
+//     self.iteration_signal.signal().unwrap();
+//     let event = self.take_event();
 
-    event
-  }
+//     if let Some(Event::Window(WindowEvent::CloseRequest)) = event {
+//       let x = self.state_lock().close_on_x;
+//       if x {
+//         self.close();
+//       }
+//     }
 
-  fn iter<'w>(&'w self) -> Box<dyn BackendEventIterator<'w> + 'w> {
-    Box::new(WaylandEventIterator::new(self))
-  }
+//     event
+//   }
 
-  fn close(&self) {
-    self.state_lock().should_exit = true;
-    self.loop_signal.wakeup();
-  }
+//   fn request_redraw(&self) {
+//     todo!()
+//   }
 
-  fn is_closing(&self) -> bool {
-    todo!()
-  }
+//   fn close(&self) {
+//     self.state_lock().should_exit = true;
+//     self.loop_signal.wakeup();
+//   }
 
-  fn title(&self) -> String {
-    todo!()
-  }
+//   fn is_closing(&self) -> bool {
+//     todo!()
+//   }
 
-  fn scale_factor(&self) -> f64 {
-    todo!()
-  }
+//   fn title(&self) -> String {
+//     todo!()
+//   }
 
-  fn inner_size(&self) -> ventana_hal::dpi::Size {
-    todo!()
-  }
+//   fn scale_factor(&self) -> f64 {
+//     todo!()
+//   }
 
-  fn outer_size(&self) -> ventana_hal::dpi::Size {
-    todo!()
-  }
+//   fn inner_size(&self) -> PhysicalSize<u32> {
+//     todo!()
+//   }
 
-  fn inner_position(&self) -> ventana_hal::dpi::Position {
-    todo!()
-  }
+//   fn outer_size(&self) -> PhysicalSize<u32> {
+//     todo!()
+//   }
 
-  fn outer_position(&self) -> ventana_hal::dpi::Position {
-    todo!()
-  }
+//   fn inner_position(&self) -> PhysicalPosition<i32> {
+//     todo!()
+//   }
 
-  fn key(&self, keycode: ventana_hal::keyboard::Code) -> ventana_hal::keyboard::KeyState {
-    todo!()
-  }
+//   fn outer_position(&self) -> PhysicalPosition<i32> {
+//     todo!()
+//   }
 
-  fn mouse(&self, button: ventana_hal::input::mouse::MouseButton) -> ventana_hal::keyboard::KeyState {
-    todo!()
-  }
+//   fn key(&self, keycode: ventana_hal::keyboard::Code) -> ventana_hal::keyboard::KeyState {
+//     todo!()
+//   }
 
-  fn shift_key(&self) -> ventana_hal::keyboard::KeyState {
-    todo!()
-  }
+//   fn mouse(&self, button: ventana_hal::input::mouse::MouseButton) -> ventana_hal::keyboard::KeyState {
+//     todo!()
+//   }
 
-  fn ctrl_key(&self) -> ventana_hal::keyboard::KeyState {
-    todo!()
-  }
+//   fn shift_key(&self) -> ventana_hal::keyboard::KeyState {
+//     todo!()
+//   }
 
-  fn alt_key(&self) -> ventana_hal::keyboard::KeyState {
-    todo!()
-  }
+//   fn ctrl_key(&self) -> ventana_hal::keyboard::KeyState {
+//     todo!()
+//   }
 
-  fn super_key(&self) -> ventana_hal::keyboard::KeyState {
-    todo!()
-  }
-}
+//   fn alt_key(&self) -> ventana_hal::keyboard::KeyState {
+//     todo!()
+//   }
+
+//   fn super_key(&self) -> ventana_hal::keyboard::KeyState {
+//     todo!()
+//   }
+// }

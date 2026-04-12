@@ -8,52 +8,52 @@
   ))
 ))] // TODO: Swap this out for a stub impl on other platforms.
 
-mod event;
-pub mod window;
+// mod event;
+// pub mod window;
 
-use {
-  self::window::WaylandWindow,
-  std::{
-    collections::VecDeque,
-    sync::{
-      Arc,
-      LazyLock,
-    },
-  },
-  ventana_hal::{
-    backend::Backend,
-    error::RequestError,
-    monitor::BackendMonitor,
-    settings::WindowSettings,
-    window::BackendWindow,
-  },
-};
+// use {
+//   self::window::WaylandWindow,
+//   std::{
+//     collections::VecDeque,
+//     sync::{
+//       Arc,
+//       LazyLock,
+//     },
+//   },
+//   ventana_hal::{
+//     backend::Backend,
+//     error::RequestError,
+//     monitor::BackendMonitor,
+//     settings::WindowSettings,
+//     window::BackendWindow,
+//   },
+// };
 
-#[derive(Clone)]
-pub struct Wayland;
+// #[derive(Clone)]
+// pub struct Wayland;
 
-impl Backend for Wayland {
-  fn instance() -> &'static Self
-  where
-    Self: Sized,
-  {
-    static INSTANCE: LazyLock<Wayland> = LazyLock::new(|| Wayland);
-    &INSTANCE
-  }
+// impl Backend for Wayland {
+//   fn instance() -> &'static Self
+//   where
+//     Self: Sized,
+//   {
+//     static INSTANCE: LazyLock<Wayland> = LazyLock::new(|| Wayland);
+//     &INSTANCE
+//   }
 
-  fn name(&self) -> &'static str {
-    "Wayland"
-  }
+//   fn name(&self) -> &'static str {
+//     "Wayland"
+//   }
 
-  fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    Ok(Arc::new(WaylandWindow::new(settings)?))
-  }
+//   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
+//     Ok(Arc::new(WaylandWindow::new(settings)?))
+//   }
 
-  fn list_available_monitors(&self) -> VecDeque<Arc<dyn BackendMonitor>> {
-    todo!()
-  }
+//   fn list_available_monitors(&self) -> VecDeque<Arc<dyn BackendMonitor>> {
+//     todo!()
+//   }
 
-  fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
-    todo!()
-  }
-}
+//   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
+//     todo!()
+//   }
+// }

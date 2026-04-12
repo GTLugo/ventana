@@ -1,12 +1,9 @@
 use {
   crate::X11,
   std::collections::VecDeque,
-  ventana_hal::{
-    backend::Backend,
-    monitor::{
-      BackendMonitor,
-      MonitorId,
-    },
+  ventana_hal::monitor::{
+    BackendMonitor,
+    MonitorId,
   },
   x11rb::protocol::randr::ConnectionExt,
 };
@@ -33,12 +30,9 @@ impl X11Monitor {
   where
     Self: Sized,
   {
-    let x11 = X11::instance();
-    let screen = x11.default_screen();
-    let scale_factor = x11.get_xft_dpi() / Self::DEFAULT_DPI;
-    x11
-      .connection()
-      .randr_get_monitors(screen.root, true)
+    let scale_factor = Self::get_xft_dpi() / Self::DEFAULT_DPI;
+    X11::connection()
+      .randr_get_monitors(X11::default_screen().root, true)
       .unwrap()
       .reply()
       .unwrap()
@@ -57,6 +51,16 @@ impl X11Monitor {
         height_in_millimeters: info.height_in_millimeters,
       })
       .collect()
+  }
+
+  pub fn get_xft_dpi() -> f64 {
+    X11::database()
+      .get_value::<f64>("Xft.dpi", "")
+      .ok()
+      .flatten()
+      .or_else(|| X11::database().get_value::<f64>("Xft/DPI", "").ok().flatten())
+      .map(|dpi| if dpi > 0.0 { dpi } else { X11Monitor::DEFAULT_DPI })
+      .unwrap_or(X11Monitor::DEFAULT_DPI)
   }
 }
 
