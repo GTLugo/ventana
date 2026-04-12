@@ -3,10 +3,13 @@ use {
     X11,
     event::map_native_event,
   },
-  std::sync::{
-    Arc,
-    Mutex,
-    MutexGuard,
+  std::{
+    num::NonZero,
+    sync::{
+      Arc,
+      Mutex,
+      MutexGuard,
+    },
   },
   ventana_hal::{
     backend::Backend,
@@ -53,7 +56,14 @@ pub struct State {
 
 pub struct X11Window {
   id: u32,
+  visual: u32,
   state: Mutex<State>,
+}
+
+impl Drop for X11Window {
+  fn drop(&mut self) {
+    let _ = X11::connection().destroy_window(self.id);
+  }
 }
 
 impl X11Window {
@@ -66,6 +76,8 @@ impl X11Window {
       .clear_color
       .map(|color| (color.r as u32) << 16 | (color.g as u32) << 8 | (color.b as u32))
       .unwrap_or(screen.black_pixel);
+
+    let visual = screen.root_visual;
 
     let values = CreateWindowAux::default()
       .event_mask(
@@ -127,6 +139,7 @@ impl X11Window {
 
     Ok(Self {
       id,
+      visual,
       state: Mutex::new(State {
         settings,
         is_running: true,
@@ -145,11 +158,13 @@ impl BackendWindow for X11Window {
   }
 
   fn raw_window_handle(&self) -> RawWindowHandle {
-    todo!()
+    let mut window_handle = XcbWindowHandle::new(unsafe { NonZero::new_unchecked(self.id) });
+    window_handle.visual_id = Some(unsafe { NonZero::new_unchecked(self.visual) });
+    window_handle.into()
   }
 
   fn raw_display_handle(&self) -> RawDisplayHandle {
-    todo!()
+    XcbDisplayHandle::new(None, X11::default_screen_id() as _).into()
   }
 
   fn monitor(&self) -> Arc<dyn BackendMonitor> {
@@ -197,7 +212,9 @@ impl BackendWindow for X11Window {
   }
 
   fn inner_size(&self) -> PhysicalSize<u32> {
-    todo!()
+    X11::geometry()
+      .map(|geometry| PhysicalSize::new(geometry.width as u32, geometry.height as u32))
+      .unwrap_or_default()
   }
 
   fn outer_size(&self) -> PhysicalSize<u32> {

@@ -1,7 +1,7 @@
 [package]
 name                 = "ventana-hal"
 description          = "A cross-platform, iterator-based windowing library"
-version              = "0.0.2"
+version              = "0.0.3"
 readme.workspace     = true
 edition.workspace    = true
 authors.workspace    = true
@@ -11,13 +11,8 @@ categories.workspace = true
 repository.workspace = true
 
 [features]
-default = ["rwh_06"]
-rwh_05  = ["dep:rwh_05"]
-rwh_06  = ["dep:rwh_06"]
+default = []
 serde   = ["dep:serde"]
-
-[build-dependencies]
-cfg_aliases = "0.2"
 
 [dependencies]
 log       = "0.4"
@@ -28,10 +23,8 @@ smol_str  = "0.3"
 strum     = { version = "0.28", features = ["derive"] }
 
 # Standard windowing types
-dpi            = "0.1"
-keyboard-types = "0.8"
-rgb            = "0.8"
-cursor-icon    = "1.2"
-
-rwh_05 = { package = "raw-window-handle", version = "0.5.2", features = ["std"], optional = true }
-rwh_06 = { package = "raw-window-handle", version = "0.6", features = ["std"], optional = true }
+dpi               = "0.1"
+keyboard-types    = "0.8"
+rgb               = "0.8"
+cursor-icon       = "1.2"
+raw-window-handle = "0.6"

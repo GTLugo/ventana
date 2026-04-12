@@ -26,7 +26,10 @@ use {
   },
   ventana_hal::{
     backend::Backend,
-    error::RequestError,
+    error::{
+      MapToOSError,
+      RequestError,
+    },
     monitor::BackendMonitor,
     os_error,
     settings::WindowSettings,
@@ -35,7 +38,11 @@ use {
   x11rb::{
     atom_manager,
     connection::Connection,
-    protocol::xproto::Screen,
+    protocol::xproto::{
+      ConnectionExt,
+      GetGeometryReply,
+      Screen,
+    },
     resource_manager::{
       Database,
       new_from_default,
@@ -68,6 +75,10 @@ impl X11 {
     &Self::instance().0.connection
   }
 
+  pub fn default_screen_id() -> usize {
+    Self::instance().0.default_screen_index
+  }
+
   pub fn default_screen() -> &'static Screen {
     &Self::connection().setup().roots[Self::instance().0.default_screen_index]
   }
@@ -78,6 +89,16 @@ impl X11 {
 
   pub fn atoms() -> &'static Atoms {
     &Self::instance().0.atoms
+  }
+
+  pub fn geometry() -> Result<GetGeometryReply, RequestError> {
+    Ok(
+      Self::connection()
+        .get_geometry(Self::default_screen().root)
+        .map_to_os_err()?
+        .reply()
+        .map_to_os_err()?,
+    )
   }
 }
 

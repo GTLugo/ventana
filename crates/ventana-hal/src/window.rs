@@ -12,6 +12,10 @@ use {
     Code,
     KeyState,
   },
+  raw_window_handle::{
+    RawDisplayHandle,
+    RawWindowHandle,
+  },
   std::sync::Arc,
 };
 
@@ -38,9 +42,9 @@ impl std::fmt::Display for WindowId {
 pub trait BackendWindow: Send + Sync {
   fn id(&self) -> WindowId;
 
-  fn raw_window_handle(&self) -> crate::raw_window_handle::RawWindowHandle;
+  fn raw_window_handle(&self) -> RawWindowHandle;
 
-  fn raw_display_handle(&self) -> crate::raw_window_handle::RawDisplayHandle;
+  fn raw_display_handle(&self) -> RawDisplayHandle;
 
   fn next(&self) -> Option<Event>;
 
