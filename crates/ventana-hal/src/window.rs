@@ -88,5 +88,3 @@ pub trait BackendWindow: Send + Sync {
 pub trait BackendEventIterator<'window>: Send + Sync {
   fn next(&mut self) -> Option<Event>;
 }
-
-pub trait RawWindowHandle {}
