@@ -55,7 +55,15 @@ use {
       WindowId,
     },
   },
-  win64::prelude::*,
+  win64::{
+    prelude::*,
+    raw_window_handle::{
+      RawDisplayHandle,
+      RawWindowHandle,
+      Win32WindowHandle,
+      WindowsDisplayHandle,
+    },
+  },
 };
 
 // No `Arc` necessary for fields other than `shared` as this will be inside an `Arc<dyn BackendWindow>`
@@ -167,40 +175,20 @@ impl BackendWindow for Win32Window {
     WindowId::from_raw(self.hwnd.to_ptr() as usize)
   }
 
-  fn raw_window_handle(&self) -> ventana_hal::raw_window_handle::RawWindowHandle {
-    #[cfg(raw_window_handle_v5)]
-    {
-      let mut handle = ventana_hal::raw_window_handle::Win32WindowHandle::empty();
-      handle.hwnd = self.hwnd.to_ptr();
-      handle.hinstance = self.hwnd.instance().to_ptr();
-      handle.into()
-    }
+  fn raw_window_handle(&self) -> RawWindowHandle {
+    let mut handle = Win32WindowHandle::new(
+      std::num::NonZeroIsize::new(self.hwnd.to_ptr() as isize).expect("window handle should not be zero"),
+    );
 
-    #[cfg(raw_window_handle_v6)]
-    {
-      let mut handle = ventana_hal::raw_window_handle::Win32WindowHandle::new(
-        std::num::NonZeroIsize::new(self.hwnd.to_ptr() as isize).expect("window handle should not be zero"),
-      );
-
-      let hinstance = std::num::NonZeroIsize::new(self.hwnd.instance().to_ptr() as isize)
-        .expect("instance handle should not be zero");
-      handle.hinstance = Some(hinstance);
-      handle.into()
-    }
+    let hinstance =
+      std::num::NonZeroIsize::new(self.hwnd.instance().to_ptr() as isize).expect("instance handle should not be zero");
+    handle.hinstance = Some(hinstance);
+    handle.into()
   }
 
-  fn raw_display_handle(&self) -> ventana_hal::raw_window_handle::RawDisplayHandle {
-    #[cfg(raw_window_handle_v5)]
-    {
-      let handle = ventana_hal::raw_window_handle::WindowsDisplayHandle::empty();
-      handle.into()
-    }
-
-    #[cfg(raw_window_handle_v6)]
-    {
-      let handle = ventana_hal::raw_window_handle::WindowsDisplayHandle::new();
-      handle.into()
-    }
+  fn raw_display_handle(&self) -> RawDisplayHandle {
+    let handle = WindowsDisplayHandle::new();
+    handle.into()
   }
 
   fn next(&self) -> Option<Event> {
