@@ -5,12 +5,65 @@ pub mod backend;
   Re-exports
 
 */
+#[cfg(wayland_platform)]
+pub use backend_wayland::Wayland;
+#[cfg(x11_platform)]
+pub use backend_x11::X11;
+use hal::backend::Backend;
 pub use {
   backend::*,
-  backend_wayland as wayland,
   backend_win32 as win32,
-  backend_x11 as x11,
-  wayland::Wayland,
   win32::Win32,
-  x11::X11,
 };
+
+struct Linux;
+
+impl Linux {
+  fn is_wayland_available() -> bool {
+    #[cfg(wayland_platform)]
+    {
+      crate::Wayland::is_available()
+    }
+    #[cfg(not(wayland_platform))]
+    false
+  }
+
+  fn is_x11_available() -> bool {
+    #[cfg(x11_platform)]
+    {
+      crate::X11::is_available()
+    }
+    #[cfg(not(x11_platform))]
+    false
+  }
+
+  fn is_available() -> bool {
+    Self::is_wayland_available() || Self::is_x11_available()
+  }
+
+  fn instance() -> Option<&'static dyn Backend> {
+    let wayland = {
+      #[cfg(wayland_platform)]
+      {
+        crate::Wayland::instance().map(|b| b as _)
+      }
+      #[cfg(not(wayland_platform))]
+      {
+        None
+      }
+    };
+
+    let x11 = {
+      #[cfg(x11_platform)]
+      {
+        || crate::X11::instance().map(|b| b as _)
+      }
+      #[cfg(not(x11_platform))]
+      {
+        || None
+      }
+    };
+
+    wayland.or_else(x11)
+  }
+}

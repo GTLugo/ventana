@@ -31,7 +31,7 @@ impl Backend for AutoBackend {
   where
     Self: Sized,
   {
-    crate::Win32::is_available() || crate::X11::is_available() || crate::Wayland::is_available()
+    crate::Linux::is_available()
   }
 
   fn name(&self) -> &'static str {
@@ -56,11 +56,7 @@ impl AutoBackend {
   fn auto() -> Result<&'static dyn Backend, RequestError> {
     crate::Win32::instance()
       .map(|b| b as _)
-      .or_else(|| {
-        crate::Wayland::instance()
-          .map(|b| b as _)
-          .or_else(|| crate::X11::instance().map(|b| b as _))
-      })
+      .or_else(|| crate::Linux::instance())
       .ok_or(RequestError::NotSupported("No supported backend available to auto-select from."))
   }
 }
