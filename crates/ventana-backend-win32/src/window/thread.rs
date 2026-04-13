@@ -110,7 +110,9 @@ impl WindowThread {
 
   fn create_window(internal: Arc<SharedInternal>, settings: WindowSettings) -> Result<Window, RequestError> {
     let class = {
-      let mut class = WindowClass::builder().with_name("Window Class");
+      let mut class = WindowClass::builder()
+        .with_name("Window Class")
+        .with_style(WindowClassStyle::DoubleClicks);
       if let Some(color) = settings.clear_color {
         class = class.with_background_brush(Brush::solid(color));
       }
