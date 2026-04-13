@@ -6,7 +6,7 @@
     target_os = "android",
     target_vendor = "apple"
   ))
-))] 
+))]
 
 use {
   crate::X11,

@@ -82,7 +82,10 @@ impl Backend for Wayland {
         target_vendor = "apple"
       ))
     )))]
-    Err(RequestError::NotSupported("Wayland backend is not supported"))
+    {
+      let _ = settings;
+      Err(RequestError::NotSupported("Wayland backend is not supported"))
+    }
   }
 
   fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {

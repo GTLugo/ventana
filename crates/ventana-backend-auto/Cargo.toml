@@ -30,6 +30,5 @@ hal = { package = "ventana-hal", version = "0.0.3", path = "../ventana-hal" }
 backend-win32 = { package = "ventana-backend-win32", version = "0.0.2", path = "../ventana-backend-win32" }
 
 # Linux
-[target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies]
 backend-wayland = { package = "ventana-backend-wayland", version = "0.0.1", path = "../ventana-backend-wayland", optional = true } # , optional = true
 backend-x11 = { package = "ventana-backend-x11", version = "0.0.2", path = "../ventana-backend-x11", optional = true } # , optional = true
