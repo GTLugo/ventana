@@ -6,10 +6,7 @@ mod window;
 use {
   std::{
     collections::VecDeque,
-    sync::{
-      Arc,
-      LazyLock,
-    },
+    sync::Arc,
   },
   ventana_hal::{
     backend::Backend,
@@ -31,7 +28,7 @@ impl Backend for Win32 {
   {
     #[cfg(target_os = "windows")]
     {
-      static INSTANCE: LazyLock<Win32> = LazyLock::new(|| Win32);
+      static INSTANCE: std::sync::LazyLock<Win32> = std::sync::LazyLock::new(|| Win32);
       Some(&INSTANCE)
     }
     #[cfg(not(target_os = "windows"))]

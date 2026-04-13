@@ -1,3 +1,13 @@
+#![cfg(all(
+  unix,
+  not(any(
+    target_os = "redox",
+    target_family = "wasm",
+    target_os = "android",
+    target_vendor = "apple"
+  ))
+))] 
+
 use {
   crate::X11,
   std::collections::VecDeque,

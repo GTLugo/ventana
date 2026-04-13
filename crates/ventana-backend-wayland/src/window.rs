@@ -1,3 +1,13 @@
+#![cfg(all(
+  unix,
+  not(any(
+    target_os = "redox",
+    target_family = "wasm",
+    target_os = "android",
+    target_vendor = "apple"
+  ))
+))]
+
 // mod state;
 
 // use {
@@ -240,10 +250,12 @@ impl BackendWindow for WaylandWindow {
   }
 
   fn key(&self, keycode: Code) -> KeyState {
+    let _ = keycode;
     todo!()
   }
 
   fn mouse(&self, button: MouseButton) -> KeyState {
+    let _ = button;
     todo!()
   }
 
