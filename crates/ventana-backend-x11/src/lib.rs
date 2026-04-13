@@ -48,6 +48,16 @@ impl Backend for X11 {
       static INSTANCE: std::sync::LazyLock<Option<X11>> = std::sync::LazyLock::new(X11::new);
       INSTANCE.as_ref()
     }
+    #[cfg(not(all(
+      unix,
+      not(any(
+        target_os = "redox",
+        target_family = "wasm",
+        target_os = "android",
+        target_vendor = "apple"
+      ))
+    )))]
+    None
   }
 
   fn is_available() -> bool
@@ -104,7 +114,10 @@ impl Backend for X11 {
         target_vendor = "apple"
       ))
     )))]
-    Err(RequestError::NotSupported("X11 backend is not supported"))
+    {
+      let _ = settings;
+      Err(RequestError::NotSupported("X11 backend is not supported"))
+    }
   }
 
   fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
