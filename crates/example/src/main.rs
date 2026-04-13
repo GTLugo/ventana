@@ -1,18 +1,16 @@
 use {
   example::State,
-  ventana::{
-    backend::Backend,
-    prelude::*,
-  },
+  ventana::prelude::*,
 };
 
 fn main() -> anyhow::Result<()> {
   example::initialize_logger();
 
-  log::debug!("Backend: {}", Backend::auto()?.name());
+  log::debug!("Backend: {}", AutoBackend::instance().unwrap().name());
 
   let window = Window::new(
     WindowOptions::default()
+      // .with_backend(AutoBackend::instance())
       .with_title("Example")
       .with_size(LogicalSize::new(800, 500))
       .with_clear_color((0, 0, 0)),

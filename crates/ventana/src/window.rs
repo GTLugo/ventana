@@ -2,12 +2,8 @@ pub mod iter;
 pub mod raw;
 
 use {
-  crate::{
+  hal::{
     backend::Backend,
-    monitor::Monitor,
-  },
-  std::sync::Arc,
-  ventana_hal::{
     dpi::{
       PhysicalPosition,
       PhysicalSize,
@@ -16,6 +12,7 @@ use {
     },
     error::RequestError,
     event::Event,
+    monitor::Monitor,
     rgb::RGB8,
     settings::WindowSettings,
     types::{
@@ -27,6 +24,7 @@ use {
       WindowId,
     },
   },
+  std::sync::Arc,
 };
 
 #[derive(Clone)]
@@ -34,7 +32,7 @@ pub struct Window
 where
   Self: Send + Sync,
 {
-  backend: Backend,
+  backend: &'static dyn Backend,
   window: Arc<dyn BackendWindow>,
 }
 
@@ -117,7 +115,7 @@ impl Window {
 
 #[derive(Clone)]
 pub struct WindowOptions {
-  pub backend: Option<Backend>,
+  pub backend: Option<&'static dyn Backend>,
   pub title: &'static str,
   pub size: Size, // Maybe should make this optional and have backend handle None case
   pub position: Option<Position>,
@@ -131,7 +129,10 @@ pub struct WindowOptions {
 impl Default for WindowOptions {
   fn default() -> Self {
     Self {
-      backend: Backend::auto().ok(),
+      #[cfg(not(feature = "auto-backend"))]
+      backend: None,
+      #[cfg(feature = "auto-backend")]
+      backend: backend::AutoBackend::instance().map(|b| b as _),
       title: "Window",
       size: Size::Logical((800.0, 500.0).into()),
       position: None,
@@ -145,6 +146,11 @@ impl Default for WindowOptions {
 }
 
 impl WindowOptions {
+  pub fn with_backend(mut self, backend: Option<&'static impl Backend>) -> Self {
+    self.backend = backend.map(|b| b as _);
+    self
+  }
+
   pub fn with_title(mut self, title: impl Into<&'static str>) -> Self {
     self.title = title.into();
     self

@@ -1,4 +1,3 @@
-
 // mod state;
 
 // use {
@@ -57,6 +56,28 @@
 //   pub window: Window,
 //   pub loop_signal: LoopSignal,
 // }
+
+use {
+  std::sync::Arc,
+  ventana_hal::{
+    dpi::{
+      PhysicalPosition,
+      PhysicalSize,
+    },
+    event::Event,
+    input::mouse::MouseButton,
+    keyboard::{
+      Code,
+      KeyState,
+    },
+    window::{
+      BackendWindow,
+      WindowId,
+    },
+  },
+};
+
+pub struct WaylandWindow;
 
 // pub struct WaylandWindow {
 //   id: WindowId,
@@ -161,95 +182,84 @@
 //   }
 // }
 
-// impl BackendWindow for WaylandWindow {
-//   fn id(&self) -> WindowId {
-//     self.id
-//   }
+impl BackendWindow for WaylandWindow {
+  fn id(&self) -> WindowId {
+    todo!()
+  }
 
-//   fn raw_window_handle(&self) -> ventana_hal::raw_window_handle::RawWindowHandle {
-//     todo!()
-//   }
+  fn raw_window_handle(&self) -> ventana_hal::raw_window_handle::RawWindowHandle {
+    todo!()
+  }
 
-//   fn raw_display_handle(&self) -> ventana_hal::raw_window_handle::RawDisplayHandle {
-//     todo!()
-//   }
+  fn raw_display_handle(&self) -> ventana_hal::raw_window_handle::RawDisplayHandle {
+    todo!()
+  }
 
-//   fn monitor(&self) -> Arc<dyn ventana_hal::monitor::BackendMonitor> {
-//     todo!()
-//   }
+  fn monitor(&self) -> Arc<dyn ventana_hal::monitor::BackendMonitor> {
+    todo!()
+  }
 
-//   fn next(&self) -> Option<Event> {
-//     self.iteration_signal.signal().unwrap();
-//     let event = self.take_event();
+  fn next(&self) -> Option<Event> {
+    todo!()
+  }
 
-//     if let Some(Event::Window(WindowEvent::CloseRequest)) = event {
-//       let x = self.state_lock().close_on_x;
-//       if x {
-//         self.close();
-//       }
-//     }
+  fn request_redraw(&self) {
+    todo!()
+  }
 
-//     event
-//   }
+  fn close(&self) {
+    todo!()
+  }
 
-//   fn request_redraw(&self) {
-//     todo!()
-//   }
+  fn is_closing(&self) -> bool {
+    todo!()
+  }
 
-//   fn close(&self) {
-//     self.state_lock().should_exit = true;
-//     self.loop_signal.wakeup();
-//   }
+  fn title(&self) -> String {
+    todo!()
+  }
 
-//   fn is_closing(&self) -> bool {
-//     todo!()
-//   }
+  fn scale_factor(&self) -> f64 {
+    todo!()
+  }
 
-//   fn title(&self) -> String {
-//     todo!()
-//   }
+  fn inner_size(&self) -> PhysicalSize<u32> {
+    todo!()
+  }
 
-//   fn scale_factor(&self) -> f64 {
-//     todo!()
-//   }
+  fn outer_size(&self) -> PhysicalSize<u32> {
+    todo!()
+  }
 
-//   fn inner_size(&self) -> PhysicalSize<u32> {
-//     todo!()
-//   }
+  fn inner_position(&self) -> PhysicalPosition<i32> {
+    todo!()
+  }
 
-//   fn outer_size(&self) -> PhysicalSize<u32> {
-//     todo!()
-//   }
+  fn outer_position(&self) -> PhysicalPosition<i32> {
+    todo!()
+  }
 
-//   fn inner_position(&self) -> PhysicalPosition<i32> {
-//     todo!()
-//   }
+  fn key(&self, keycode: Code) -> KeyState {
+    todo!()
+  }
 
-//   fn outer_position(&self) -> PhysicalPosition<i32> {
-//     todo!()
-//   }
+  fn mouse(&self, button: MouseButton) -> KeyState {
+    todo!()
+  }
 
-//   fn key(&self, keycode: ventana_hal::keyboard::Code) -> ventana_hal::keyboard::KeyState {
-//     todo!()
-//   }
+  fn shift_key(&self) -> KeyState {
+    todo!()
+  }
 
-//   fn mouse(&self, button: ventana_hal::input::mouse::MouseButton) -> ventana_hal::keyboard::KeyState {
-//     todo!()
-//   }
+  fn ctrl_key(&self) -> KeyState {
+    todo!()
+  }
 
-//   fn shift_key(&self) -> ventana_hal::keyboard::KeyState {
-//     todo!()
-//   }
+  fn alt_key(&self) -> KeyState {
+    todo!()
+  }
 
-//   fn ctrl_key(&self) -> ventana_hal::keyboard::KeyState {
-//     todo!()
-//   }
-
-//   fn alt_key(&self) -> ventana_hal::keyboard::KeyState {
-//     todo!()
-//   }
-
-//   fn super_key(&self) -> ventana_hal::keyboard::KeyState {
-//     todo!()
-//   }
-// }
+  fn super_key(&self) -> KeyState {
+    todo!()
+  }
+}

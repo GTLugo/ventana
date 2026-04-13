@@ -102,7 +102,11 @@ impl X11Window {
       )
       .win_gravity(Gravity::NORTH_WEST)
       .background_pixel(clear_color);
-    let scale_factor = X11::instance().primary_monitor().map_to_os_err()?.scale_factor();
+    let scale_factor = X11::instance()
+      .unwrap()
+      .primary_monitor()
+      .map_to_os_err()?
+      .scale_factor();
     let size = settings.size.to_physical(scale_factor);
     let position = settings
       .position

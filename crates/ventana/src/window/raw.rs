@@ -1,6 +1,6 @@
 use {
   super::Window,
-  ventana_hal::raw_window_handle::{
+  hal::raw_window_handle::{
     DisplayHandle,
     HandleError,
     HasDisplayHandle,

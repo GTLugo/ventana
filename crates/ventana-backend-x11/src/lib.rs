@@ -72,23 +72,23 @@ pub struct X11(Arc<X11State>);
 
 impl X11 {
   pub fn connection() -> &'static XCBConnection {
-    &Self::instance().0.connection
+    &Self::instance().unwrap().0.connection
   }
 
   pub fn default_screen_id() -> usize {
-    Self::instance().0.default_screen_index
+    Self::instance().unwrap().0.default_screen_index
   }
 
   pub fn default_screen() -> &'static Screen {
-    &Self::connection().setup().roots[Self::instance().0.default_screen_index]
+    &Self::connection().setup().roots[Self::instance().unwrap().0.default_screen_index]
   }
 
   pub fn database() -> &'static Database {
-    &Self::instance().0.database
+    &Self::instance().unwrap().0.database
   }
 
   pub fn atoms() -> &'static Atoms {
-    &Self::instance().0.atoms
+    &Self::instance().unwrap().0.atoms
   }
 
   pub fn geometry() -> Result<GetGeometryReply, RequestError> {
@@ -103,22 +103,22 @@ impl X11 {
 }
 
 impl Backend for X11 {
-  fn instance() -> &'static Self
+  fn instance() -> Option<&'static Self>
   where
     Self: Sized,
   {
-    static INSTANCE: LazyLock<X11> = LazyLock::new(|| {
-      let (connection, default_screen_index) = XCBConnection::connect(None).unwrap();
+    static INSTANCE: LazyLock<Option<X11>> = LazyLock::new(|| {
+      let (connection, default_screen_index) = XCBConnection::connect(None).ok()?;
       let database = new_from_default(&connection).unwrap();
       let atoms = Atoms::new(&connection).unwrap().reply().unwrap();
-      X11(Arc::new(X11State {
+      Some(X11(Arc::new(X11State {
         connection,
         default_screen_index,
         database,
         atoms,
-      }))
+      })))
     });
-    &INSTANCE
+    INSTANCE.as_ref()
   }
 
   fn is_available() -> bool

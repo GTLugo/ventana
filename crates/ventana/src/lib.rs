@@ -1,10 +1,10 @@
-pub mod backend;
-pub mod monitor;
 pub mod prelude;
 pub mod window;
 
-pub use ventana_hal::{
-  self as hal,
+#[cfg(feature = "auto-backend")]
+pub use backend;
+pub use hal::{
+  self,
   dpi,
   event,
   keyboard,

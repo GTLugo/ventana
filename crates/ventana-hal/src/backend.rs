@@ -14,7 +14,9 @@ use {
 pub trait Backend: Send + Sync {
   /// This should return a reference to a static instance of the backend, as opposed to creating a new instance every time.
   /// This is because some backends may need to maintain global state.
-  fn instance() -> &'static Self
+  /// 
+  /// This should return `None` if the backend is not available on the current platform.
+  fn instance() -> Option<&'static Self>
   where
     Self: Sized;
 

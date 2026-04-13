@@ -1,0 +1,36 @@
+[package]
+name                 = "ventana-backend-auto"
+description          = "A collection of first-party backends for Ventana"
+version              = "0.0.1"
+readme.workspace     = true
+edition.workspace    = true
+authors.workspace    = true
+license.workspace    = true
+keywords.workspace   = true
+categories.workspace = true
+repository.workspace = true
+
+[features]
+default = ["x11", "wayland"]
+serde = ["dep:serde", "hal/serde"]
+
+x11 = ["dep:backend-x11"]
+wayland = ["dep:backend-wayland"]
+
+[build-dependencies]
+cfg_aliases = "0.2"
+
+[dependencies]
+log = "0.4"
+serde = { version = "1.0", optional = true }
+
+hal = { package = "ventana-hal", version = "0.0.3", path = "../ventana-hal" }
+
+# # Windows
+[target.'cfg(target_os = "windows")'.dependencies]
+backend-win32 = { package = "ventana-backend-win32", version = "0.0.2", path = "../ventana-backend-win32" }
+
+# Linux
+[target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies]
+backend-wayland = { package = "ventana-backend-wayland", version = "0.0.1", path = "../ventana-backend-wayland", optional = true } # , optional = true
+backend-x11 = { package = "ventana-backend-x11", version = "0.0.2", path = "../ventana-backend-x11", optional = true } # , optional = true

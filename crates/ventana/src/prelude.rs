@@ -1,9 +1,12 @@
+#[cfg(feature = "auto-backend")]
+pub use backend::AutoBackend;
 pub use {
   crate::window::{
     Window,
     WindowOptions,
   },
-  ventana_hal::{
+  hal::{
+    backend::Backend,
     dpi::{
       LogicalPosition,
       LogicalSize,
