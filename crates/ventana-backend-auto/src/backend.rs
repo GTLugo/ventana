@@ -33,13 +33,12 @@ impl Backend for AutoBackend {
   {
     #[allow(unreachable_code)]
     {
-      #[cfg(windows_platform)]
-      return crate::Win32::is_available();
+      let windows = crate::Win32::is_available();
       #[cfg(x11_platform)]
-      return crate::X11::is_available();
+      return windows || crate::X11::is_available();
       #[cfg(wayland_platform)]
-      return crate::Wayland::is_available();
-      false
+      return windows || crate::Wayland::is_available();
+      windows
     }
   }
 
@@ -63,16 +62,16 @@ impl Backend for AutoBackend {
 impl AutoBackend {
   /// Attempts to select a backend from the first-party backend implementations. Returns `RequestError::NotSupported` if none are available.
   fn auto() -> Result<&'static dyn Backend, RequestError> {
-    let err = RequestError::NotSupported("No supported backend available to auto-select from.");
-    #[allow(unreachable_code)]
-    {
-      #[cfg(windows_platform)]
-      return crate::Win32::instance().ok_or(err).map(|b| b as _);
-      #[cfg(x11_platform)]
-      return crate::X11::instance().ok_or(err).map(|b| b as _);
-      #[cfg(wayland_platform)]
-      return crate::Wayland::instance().ok_or(err).map(|b| b as _);
-      Err(err)
-    }
+    #[allow(clippy::unnecessary_lazy_evaluations)]
+    crate::Win32::instance()
+      .map(|b| b as _)
+      .or_else(|| {
+        #[cfg(x11_platform)]
+        return crate::X11::instance().map(|b| b as _);
+        #[cfg(wayland_platform)]
+        return crate::Wayland::instance().map(|b| b as _);
+        None
+      })
+      .ok_or(RequestError::NotSupported("No supported backend available to auto-select from."))
   }
 }

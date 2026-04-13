@@ -1,3 +1,5 @@
+#![cfg(target_os = "windows")]
+
 use {
   ventana_hal::monitor::{
     BackendMonitor,

@@ -1,14 +1,9 @@
-#![cfg(target_os = "windows")] // TODO: Swap this out for a stub impl on other platforms.
-
+mod backend;
 mod event;
 mod monitor;
-pub mod window;
+mod window;
 
 use {
-  self::{
-    monitor::Win32Monitor,
-    window::Win32Window,
-  },
   std::{
     collections::VecDeque,
     sync::{
@@ -23,7 +18,6 @@ use {
     settings::WindowSettings,
     window::BackendWindow,
   },
-  win64::user::Monitor,
 };
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -35,8 +29,13 @@ impl Backend for Win32 {
   where
     Self: Sized,
   {
-    static INSTANCE: LazyLock<Win32> = LazyLock::new(|| Win32);
-    Some(&INSTANCE)
+    #[cfg(target_os = "windows")]
+    {
+      static INSTANCE: LazyLock<Win32> = LazyLock::new(|| Win32);
+      Some(&INSTANCE)
+    }
+    #[cfg(not(target_os = "windows"))]
+    None
   }
 
   fn is_available() -> bool
@@ -51,20 +50,29 @@ impl Backend for Win32 {
   }
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    Ok(Arc::new(Win32Window::new(settings)?))
+    #[cfg(target_os = "windows")]
+    {
+      backend::create_window(settings)
+    }
+    #[cfg(not(target_os = "windows"))]
+    Err(RequestError::NotSupported("Win32 backend is only supported on Windows"))
   }
 
   fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
-    Ok(
-      Monitor::available()
-        .into_iter()
-        .map(Win32Monitor)
-        .map(|m| Arc::new(m) as _)
-        .collect(),
-    )
+    #[cfg(target_os = "windows")]
+    {
+      backend::list_available_monitors()
+    }
+    #[cfg(not(target_os = "windows"))]
+    Err(RequestError::NotSupported("Win32 backend is only supported on Windows"))
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
-    Ok(Arc::new(Win32Monitor(Monitor::primary())))
+    #[cfg(target_os = "windows")]
+    {
+      backend::primary_monitor()
+    }
+    #[cfg(not(target_os = "windows"))]
+    Err(RequestError::NotSupported("Win32 backend is only supported on Windows"))
   }
 }
