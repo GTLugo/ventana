@@ -77,6 +77,7 @@ pub struct X11Window {
 impl Drop for X11Window {
   fn drop(&mut self) {
     let _ = X11::connection().destroy_window(self.id);
+    log::trace!("Destroyed window");
   }
 }
 
