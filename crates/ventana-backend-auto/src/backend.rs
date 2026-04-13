@@ -34,7 +34,7 @@ impl Backend for AutoBackend {
     #[allow(unreachable_code)]
     {
       #[cfg(windows_platform)]
-      return Win32::is_available();
+      return crate::Win32::is_available();
       #[cfg(x11_platform)]
       return crate::X11::is_available();
       #[cfg(wayland_platform)]

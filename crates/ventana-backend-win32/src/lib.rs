@@ -31,12 +31,12 @@ pub struct Win32;
 
 #[allow(unused)]
 impl Backend for Win32 {
-  fn instance() -> &'static Self
+  fn instance() -> Option<&'static Self>
   where
     Self: Sized,
   {
     static INSTANCE: LazyLock<Win32> = LazyLock::new(|| Win32);
-    &INSTANCE
+    Some(&INSTANCE)
   }
 
   fn is_available() -> bool
@@ -54,12 +54,14 @@ impl Backend for Win32 {
     Ok(Arc::new(Win32Window::new(settings)?))
   }
 
-  fn list_available_monitors(&self) -> VecDeque<Arc<dyn BackendMonitor>> {
-    Monitor::available()
-      .into_iter()
-      .map(Win32Monitor)
-      .map(|m| Arc::new(m) as _)
-      .collect()
+  fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
+    Ok(
+      Monitor::available()
+        .into_iter()
+        .map(Win32Monitor)
+        .map(|m| Arc::new(m) as _)
+        .collect(),
+    )
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
