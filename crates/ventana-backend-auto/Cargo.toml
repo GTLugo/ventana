@@ -27,8 +27,8 @@ serde = { version = "1.0", optional = true }
 hal = { package = "ventana-hal", version = "0.0.3", path = "../ventana-hal" }
 
 # # Windows
-backend-win32 = { package = "ventana-backend-win32", version = "0.0.2", path = "../ventana-backend-win32" }
+backend-win32 = { package = "ventana-backend-win32", version = "0.0.3", path = "../ventana-backend-win32" }
 
 # Linux
-backend-wayland = { package = "ventana-backend-wayland", version = "0.0.1", path = "../ventana-backend-wayland", optional = true } # , optional = true
+backend-wayland = { package = "ventana-backend-wayland", version = "0.0.2", path = "../ventana-backend-wayland", optional = true } # , optional = true
 backend-x11 = { package = "ventana-backend-x11", version = "0.0.2", path = "../ventana-backend-x11", optional = true } # , optional = true
