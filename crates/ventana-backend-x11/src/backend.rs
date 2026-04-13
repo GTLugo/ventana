@@ -89,11 +89,11 @@ pub fn primary_monitor() -> Result<Arc<dyn BackendMonitor>, RequestError> {
 impl X11 {
   pub(crate) fn new() -> Option<Self> {
     let (connection, default_screen_index) = match XCBConnection::connect(None) {
-        Ok(connection) => connection,
-        Err(error) => {
-          log::error!("Failed to connect to X server: {error}");
-          return None;
-        },
+      Ok(connection) => connection,
+      Err(error) => {
+        log::error!("Failed to connect to X server: {error}");
+        return None;
+      },
     };
     let database = new_from_default(&connection).unwrap();
     let atoms = Atoms::new(&connection).unwrap().reply().unwrap();
