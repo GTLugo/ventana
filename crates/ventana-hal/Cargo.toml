@@ -25,6 +25,7 @@ strum     = { version = "0.28", features = ["derive"] }
 # Standard windowing types
 dpi               = "0.1"
 keyboard-types    = "0.8"
+mouse-types       = "0.2"
 rgb               = "0.8"
 cursor-icon       = "1.2"
 raw-window-handle = "0.6"

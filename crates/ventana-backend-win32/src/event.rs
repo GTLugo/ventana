@@ -7,6 +7,7 @@ use {
       Key,
       NamedKey,
     },
+    mouse::event::MouseEvent,
   },
   win64::user::{
     KeyEvent,
@@ -22,6 +23,18 @@ pub fn map_native_event(native: &Message) -> Option<WindowEvent> {
     Message::Paint => WindowEvent::Draw,
     Message::KeyDown(message) => key_event_to_window_event(message.event()),
     Message::KeyUp(message) => key_event_to_window_event(message.event()),
+    Message::LButtonDown(message) => mouse_event_to_window_event(message.event()),
+    Message::LButtonUp(message) => mouse_event_to_window_event(message.event()),
+    Message::LButtonDblClk(message) => mouse_event_to_window_event(message.event()),
+    Message::RButtonDown(message) => mouse_event_to_window_event(message.event()),
+    Message::RButtonUp(message) => mouse_event_to_window_event(message.event()),
+    Message::RButtonDblClk(message) => mouse_event_to_window_event(message.event()),
+    Message::MButtonDown(message) => mouse_event_to_window_event(message.event()),
+    Message::MButtonUp(message) => mouse_event_to_window_event(message.event()),
+    Message::MButtonDblClk(message) => mouse_event_to_window_event(message.event()),
+    Message::XButtonDown(message) => mouse_event_to_window_event(message.event()),
+    Message::XButtonUp(message) => mouse_event_to_window_event(message.event()),
+    Message::XButtonDblClk(message) => mouse_event_to_window_event(message.event()),
     Message::Size(message) => WindowEvent::Resized(message.physical_size()),
     Message::Move(message) => WindowEvent::Moved(message.physical_position()),
     // ...todo
@@ -48,5 +61,14 @@ fn key_event_to_window_event(key_event: KeyEvent) -> WindowEvent {
     modifiers: key_event.modifiers,
     repeat: key_event.repeat,
     // is_composing: key_event,
+  }
+}
+
+fn mouse_event_to_window_event(mouse_event: MouseEvent) -> WindowEvent {
+  WindowEvent::MouseButton {
+    button: mouse_event.button,
+    state: mouse_event.state,
+    position: mouse_event.position,
+    is_double_click: mouse_event.is_double_click,
   }
 }

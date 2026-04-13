@@ -75,10 +75,13 @@ use {
       PhysicalSize,
     },
     event::Event,
-    input::mouse::MouseButton,
     keyboard::{
       Code,
       KeyState,
+    },
+    mouse::{
+      button::MouseButton,
+      state::ButtonState,
     },
     window::{
       BackendWindow,
@@ -254,7 +257,7 @@ impl BackendWindow for WaylandWindow {
     todo!()
   }
 
-  fn mouse(&self, button: MouseButton) -> KeyState {
+  fn mouse(&self, button: MouseButton) -> ButtonState {
     let _ = button;
     todo!()
   }

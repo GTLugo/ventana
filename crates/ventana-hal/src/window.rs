@@ -1,7 +1,6 @@
 use {
   crate::{
     event::Event,
-    input::mouse::MouseButton,
     monitor::BackendMonitor,
   },
   dpi::{
@@ -11,6 +10,10 @@ use {
   keyboard_types::{
     Code,
     KeyState,
+  },
+  mouse_types::{
+    button::MouseButton,
+    state::ButtonState,
   },
   raw_window_handle::{
     RawDisplayHandle,
@@ -70,7 +73,7 @@ pub trait BackendWindow: Send + Sync {
 
   fn key(&self, keycode: Code) -> KeyState;
 
-  fn mouse(&self, button: MouseButton) -> KeyState;
+  fn mouse(&self, button: MouseButton) -> ButtonState;
 
   fn shift_key(&self) -> KeyState;
 

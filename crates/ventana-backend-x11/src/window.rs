@@ -344,7 +344,7 @@ impl BackendWindow for X11Window {
     todo!()
   }
 
-  fn mouse(&self, _button: ventana_hal::input::mouse::MouseButton) -> ventana_hal::keyboard::KeyState {
+  fn mouse(&self, _button: ventana_hal::mouse::button::MouseButton) -> ventana_hal::mouse::state::ButtonState {
     todo!()
   }
 

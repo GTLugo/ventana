@@ -3,14 +3,10 @@
 */
 
 use {
-  crate::{
-    input::mouse::MouseButton,
-    types::Focus,
-  },
+  crate::types::Focus,
   dpi::{
     PhysicalPosition,
     PhysicalSize,
-    Position,
   },
   keyboard_types::{
     Code,
@@ -18,6 +14,10 @@ use {
     KeyState,
     Location,
     Modifiers,
+  },
+  mouse_types::{
+    button::MouseButton,
+    state::ButtonState,
   },
   strum::Display,
 };
@@ -70,8 +70,8 @@ pub enum WindowEvent {
   /// Message sent when a mouse button is pressed or released.
   MouseButton {
     button: MouseButton,
-    state: KeyState,
-    position: Position,
+    state: ButtonState,
+    position: PhysicalPosition<i32>,
     is_double_click: bool,
   },
   /// Message sent when the scroll wheel is actuated.
@@ -103,7 +103,7 @@ pub enum RawInputMessage {
   /// Raw keyboard input
   Keyboard { physical_key: Code, state: KeyState },
   /// Raw mouse button input
-  MouseButton { button: MouseButton, state: KeyState },
+  MouseButton { button: MouseButton, state: ButtonState },
   /// Raw mouse motion. Use this for mouse input in cases such as first-person
   /// cameras.
   MouseMove { delta_x: f32, delta_y: f32 },

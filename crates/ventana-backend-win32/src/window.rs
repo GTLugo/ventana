@@ -44,12 +44,15 @@ use {
       Event,
       WindowEvent,
     },
-    input::mouse::MouseButton,
     keyboard::{
       Code,
       KeyState,
     },
     monitor::BackendMonitor,
+    mouse::{
+      button::MouseButton,
+      state::ButtonState,
+    },
     settings::WindowSettings,
     types::Flow,
     window::{
@@ -268,7 +271,7 @@ impl BackendWindow for Win32Window {
     todo!()
   }
 
-  fn mouse(&self, button: MouseButton) -> KeyState {
+  fn mouse(&self, button: MouseButton) -> ButtonState {
     log::debug!("Checking {button:?}...");
     todo!()
   }
