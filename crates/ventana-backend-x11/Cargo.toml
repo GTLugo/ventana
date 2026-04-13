@@ -32,17 +32,3 @@ x11rb = { version = "0.13", features = [
   "xinput",
   "xkb",
 ]}
-
-[target.'cfg(not(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple")))))'.dependencies]
-x11rb = { version = "0.13", features = [
-  "allow-unsafe-code",
-  "raw-window-handle",
-  # "dl-libxcb",
-  "cursor",
-  "extra-traits",
-  "randr",
-  "resource_manager",
-  "xinput",
-  "xkb",
-]}
-
