@@ -42,6 +42,7 @@ impl Linux {
   }
 
   fn instance() -> Option<&'static dyn Backend> {
+    log::info!("Wayland available: {}", Self::is_wayland_available());
     let wayland = {
       #[cfg(wayland_platform)]
       {
@@ -53,6 +54,7 @@ impl Linux {
       }
     };
 
+    log::info!("X11 available: {}", Self::is_x11_available());
     let x11 = {
       #[cfg(x11_platform)]
       {
