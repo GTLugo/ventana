@@ -19,9 +19,11 @@ for event in window {
 
 ## An iterator-based windowing library built in Rust
 
-The two key features for this library are the iterator API and backend extensibility. As there are many different platforms, each with their own unique windowing APIs, Ventana is designed such that users may implement their own backends to replace the ones built into the core library.
+A key feature for this library is the iterator API. Working with callbacks and traits is nice, but can be a little intense for a simple application. The iterator API in Rust is easy-to-use and fits very naturally with how one might perceive events as arriving in a window like letters in a mailbox. This library allows users to take advantage of that elegance.
 
-Please note, as I am only one person working on this in his free time, Ventana is likely hilariously unoptimized in certain places. Certain performance liberties are taken in the name of maintainability and ease-of-use, but I am completely open to feedback concerning particularly problematic code.
+## Bring your own backend (or use Ventana's)
+
+As there are many different platforms, each with their own unique windowing APIs, Ventana is designed such that users may implement their own backends to replace the ones built into the core library. If you don't like the way the default backends work, you can disable the `auto-backend` feature and plug your own into the `WindowOptions` struct. You can also do this if you are working on an unsupported platform and prefer to keep your builds lean.
 
 ## Backends
 
@@ -39,6 +41,10 @@ MacOS | ❌
 ###### ⚠️ - Partial
 ###### 🚧 - In development
 ###### ❌ - No first-party support planned
+
+## Final words 
+
+Please note, as I am only one person working on this in his free time, Ventana is likely hilariously unoptimized in certain places. Certain performance liberties are taken in the name of maintainability and ease-of-use, but I am completely open to feedback concerning particularly problematic code.
 
 ## Credits
 
