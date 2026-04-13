@@ -15,6 +15,7 @@ use {
   },
 };
 
+// TODO: Add a way to specify a preferred backend selection order
 #[derive(Clone)]
 pub struct AutoBackend(&'static dyn Backend);
 
