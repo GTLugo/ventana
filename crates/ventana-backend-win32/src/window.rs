@@ -2,44 +2,22 @@
 
 mod command;
 mod state;
-mod sync;
 mod thread;
 
 use {
   self::{
     command::Command,
     state::SharedInternal,
+    thread::Procedure,
   },
-  crate::window::{
-    command::{
-      CommandEnvelope,
-      CommandId,
-      CommandResponse,
-    },
-    sync::{
-      AcknowledgementToken,
-      EventEnvelope,
-      ResponseEnvelope,
-      WindowToMain,
-    },
-  },
+  crate::window::command::CommandResponse,
   ::win64::Handle,
-  crossbeam_channel::{
-    Receiver,
-    Sender,
-    TryRecvError,
-  },
-  crossbeam_queue::SegQueue,
-  std::{
-    collections::HashMap,
-    sync::{
-      Arc,
-      Mutex,
-    },
-  },
+  std::sync::Arc,
   ventana_hal::{
-    self,
-    error::RequestError,
+    error::{
+      MapToOSError,
+      RequestError,
+    },
     event::{
       Event,
       WindowEvent,
@@ -53,8 +31,13 @@ use {
       button::MouseButton,
       state::ButtonState,
     },
+    os_error_fmt,
     settings::WindowSettings,
-    types::Flow,
+    thread::{
+      ThreadLoop,
+      server::Server,
+      signal::StopSignal,
+    },
     window::{
       BackendWindow,
       WindowId,
@@ -75,21 +58,19 @@ use {
 pub struct Win32Window {
   hwnd: Window,
 
-  msg_rx: Receiver<WindowToMain>,
-  cmd_tx: Sender<CommandEnvelope>,
-
-  event_backlog: SegQueue<EventEnvelope>,
-  pending_ack: Mutex<Option<AcknowledgementToken>>,
-
-  command_responses: Mutex<HashMap<CommandId, CommandResponse>>,
+  thread: ThreadLoop<Window, Command, CommandResponse>,
+  stop_signal: StopSignal,
 
   shared: Arc<SharedInternal>, // This is Arc so that it can be shared with the Window thread
 }
 
 impl Drop for Win32Window {
   fn drop(&mut self) {
-    self.acknowledge_previous_event();
-    self.send_command(Command::Destroy);
+    log::trace!("Dropping Win32Window");
+    self
+      .thread
+      .join()
+      .expect("panicked when attempting to join Window thread");
     log::trace!("Destroyed window");
   }
 }
@@ -98,80 +79,97 @@ impl Win32Window {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     set_process_dpi_awareness(DPIAwarenessContext::PerMonitorAwareV2);
 
-    let (msg_tx, msg_rx) = crossbeam_channel::unbounded();
-    let (cmd_tx, cmd_rx) = crossbeam_channel::unbounded();
-
-    // TODO: Rewrite this so that settings doesn't need to be cloned
-    let shared = SharedInternal::new(settings.clone(), msg_tx, cmd_rx);
-    let hwnd = shared.spawn_thread(settings)?;
+    let shared = SharedInternal::new(settings.clone());
+    let mut thread = ThreadLoop::new(
+      settings.flow,
+      |client| {
+        // On drop
+        client.send_command(Command::Destroy);
+      },
+      |window: &Window| {
+        // On wake
+        const WAKE_MESSAGE: u32 = Message::APP + 67;
+        window
+          .post_message(Message::App(AppMessage::empty(WAKE_MESSAGE)))
+          .unwrap();
+      },
+    );
+    let stop_signal = thread.loop_signal();
+    let hwnd = Self::start_thread(&mut thread, shared.clone(), settings)?;
 
     Ok(Self {
       hwnd,
-      msg_rx,
-      cmd_tx,
-      event_backlog: Default::default(),
-      pending_ack: Mutex::new(None),
-      command_responses: Default::default(),
+      thread,
       shared,
+      stop_signal,
     })
   }
 
-  fn send_command(&self, command: Command) -> Option<CommandResponse> {
-    let envelope: CommandEnvelope = command.into();
-    let id = envelope.id;
-    self.cmd_tx.try_send(envelope).ok()?;
+  fn start_thread(
+    thread: &mut ThreadLoop<Window, Command, CommandResponse>,
+    shared: Arc<SharedInternal>,
+    settings: WindowSettings,
+  ) -> Result<Window, RequestError> {
+    let (window_tx, window_rx) = crossbeam_channel::bounded(0);
+    thread.run(move |server| {
+      log::trace!("Starting window thread");
 
-    // Pump events while waiting to find response and queue them up in the backlog to be processed properly later
-    loop {
-      if let Some(response) = self.command_responses.lock().ok()?.remove(&id) {
-        return match response {
-          CommandResponse::Empty => None,
-          _ => Some(response),
-        };
+      let window = Self::create_window(server, shared.clone(), settings)?;
+      window_tx
+        .send(window)
+        .map_err(|e| os_error_fmt!("failed to send window handle: `{e}`"))?;
+
+      shared.set_ready(true);
+
+      log::trace!("Window is ready; entering message loop");
+
+      MessageLoop::new().run();
+
+      log::trace!("Joining main thread");
+
+      Ok(())
+    })?;
+
+    log::trace!("Waiting to receive window handle back from window thread");
+
+    let hwnd = window_rx
+      .recv()
+      .expect("Failed to receive window back from window thread");
+
+    thread.set_window(hwnd);
+
+    log::trace!("Received window handle from window thread: `{hwnd:?}`");
+
+    Ok(hwnd)
+  }
+
+  fn create_window(
+    server: Arc<Server<Command, CommandResponse>>,
+    internal: Arc<SharedInternal>,
+    settings: WindowSettings,
+  ) -> Result<Window, RequestError> {
+    let class = {
+      let mut class = WindowClass::builder()
+        .with_name("Window Class")
+        .with_style(WindowClassStyle::DoubleClicks);
+      if let Some(color) = settings.clear_color {
+        class = class.with_background_brush(Brush::solid(color));
       }
-
-      match self.msg_rx.try_recv().ok()? {
-        WindowToMain::Event(EventEnvelope { event, ack }) => {
-          self.event_backlog.push(EventEnvelope { event, ack: None });
-          if let Some(ack) = ack {
-            ack.send();
-          }
-        },
-        WindowToMain::CommandResponse(ResponseEnvelope { id, response }) => {
-          self.command_responses.lock().ok()?.insert(id, response);
-        },
-      }
+      class
     }
-  }
-
-  fn acknowledge_previous_event(&self) {
-    if let Some(token) = self.pending_ack.lock().unwrap().take() {
-      token.send();
-    }
-  }
-
-  fn receive_event(&self) -> Option<WindowToMain> {
-    let flow = self.shared.state_lock().flow;
-    match flow {
-      Flow::Wait => self.msg_rx.recv().ok(),
-      Flow::Poll => match self.msg_rx.try_recv() {
-        Ok(event) => Some(event),
-        Err(TryRecvError::Empty) => Some(WindowToMain::Event(EventEnvelope::empty())),
-        Err(TryRecvError::Disconnected) => None,
-      },
-    }
-  }
-
-  fn pump_event_and_block(&self) {
-    match self.receive_event() {
-      None => (),
-      Some(WindowToMain::Event(event)) => {
-        self.event_backlog.push(event);
-      },
-      Some(WindowToMain::CommandResponse(ResponseEnvelope { id, response })) => {
-        self.command_responses.lock().unwrap().insert(id, response);
-      },
-    }
+    .register()
+    .map_to_os_err()?;
+    log::debug!("{settings:?}");
+    let hwnd = class
+      .create_window()
+      .with_procedure(Procedure { server, internal })
+      .with_name(settings.title.clone())
+      .with_style(WindowStyle::OverlappedWindow | WindowStyle::Visible)
+      .with_position(settings.position)
+      .with_size(Some(settings.size))
+      .create()
+      .map_to_os_err()?;
+    Ok(hwnd)
   }
 }
 
@@ -197,30 +195,16 @@ impl BackendWindow for Win32Window {
   }
 
   fn next(&self) -> Option<Event> {
-    self.acknowledge_previous_event();
+    let event = self.thread.next_event()?;
 
-    if self.shared.should_close() {
-      return None;
-    }
-
-    loop {
-      if let Some(EventEnvelope { event, ack }) = self.event_backlog.pop() {
-        if let Some(ack) = ack {
-          self.pending_ack.lock().unwrap().replace(ack);
-        }
-
-        if let Event::Window(WindowEvent::CloseRequest) = event {
-          let x = self.shared.state_lock().close_on_x;
-          if x {
-            self.close();
-          }
-        }
-
-        return Some(event);
+    if let Event::Window(WindowEvent::CloseRequest) = event {
+      let x = self.shared.state_lock().close_on_x;
+      if x {
+        self.close();
       }
-
-      self.pump_event_and_block();
     }
+
+    Some(event)
   }
 
   fn monitor(&self) -> Arc<dyn BackendMonitor> {
@@ -228,19 +212,19 @@ impl BackendWindow for Win32Window {
   }
 
   fn close(&self) {
-    self.shared.state_lock().is_running = false;
+    self.stop_signal.stop();
   }
 
   fn is_closing(&self) -> bool {
-    self.shared.should_close()
+    self.stop_signal.should_stop()
   }
 
   fn request_redraw(&self) {
-    self.send_command(Command::Redraw);
+    self.thread.send_command(Command::Redraw);
   }
 
   fn title(&self) -> String {
-    let Some(CommandResponse::GetWindowText(text)) = self.send_command(Command::GetWindowText) else {
+    let Some(CommandResponse::GetWindowText(text)) = self.thread.send_command(Command::GetWindowText) else {
       return String::new();
     };
     text

@@ -5,6 +5,7 @@ pub mod event;
 pub mod input;
 pub mod monitor;
 pub mod settings;
+pub mod thread;
 pub mod types;
 pub mod window;
 

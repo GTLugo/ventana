@@ -23,4 +23,4 @@ version = "0.0.3"
 path = "../ventana-hal"
 
 [target.'cfg(target_os = "windows")'.dependencies]
-win64 = "0.0.19"
+win64 = "0.0.22"

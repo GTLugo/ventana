@@ -73,3 +73,9 @@ where
 macro_rules! os_error {
   ($error:expr) => {{ $crate::error::OsError::new(line!(), file!(), $error) }};
 }
+
+#[allow(unused_macros)]
+#[macro_export]
+macro_rules! os_error_fmt {
+  ($error:expr) => {{ $crate::os_error!(format!($error)) }};
+}
