@@ -30,8 +30,4 @@ synchronize = "1.0"
 version = "0.0.3"
 path = "../ventana-hal"
 
-# not sure why, but sctk still tries to compile build scripts on other targets, so this guard is necessary to avoid erroneous warnings from rust-analyzer
-[target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies.sctk]
-package = "smithay-client-toolkit"
-default-features = false
-version = "0.20.0"
+[target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies]
