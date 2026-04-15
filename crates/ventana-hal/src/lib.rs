@@ -13,7 +13,7 @@ pub use {
   cursor_icon,
   dpi,
   keyboard_types as keyboard,
-  mouse_types as mouse,
+  pointer_types as pointer,
   raw_window_handle,
   rgb,
 };

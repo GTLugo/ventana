@@ -20,9 +20,9 @@ use {
       Code,
       KeyState,
     },
-    mouse::{
-      button::MouseButton,
-      state::ButtonState,
+    pointer::{
+      ButtonState,
+      mouse::MouseButton,
     },
     window::{
       BackendWindow,

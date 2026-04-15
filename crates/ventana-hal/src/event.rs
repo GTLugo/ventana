@@ -3,23 +3,16 @@
 */
 
 use {
-  crate::types::Focus,
-  dpi::{
+  crate::types::Focus, dpi::{
     PhysicalPosition,
     PhysicalSize,
-  },
-  keyboard_types::{
+  }, keyboard_types::{
     Code,
     Key,
     KeyState,
     Location,
     Modifiers,
-  },
-  mouse_types::{
-    button::MouseButton,
-    state::ButtonState,
-  },
-  strum::Display,
+  }, pointer_types::{ButtonState, mouse::MouseButton}, strum::Display
 };
 
 #[derive(Debug, Display, PartialEq, Clone)]

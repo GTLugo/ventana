@@ -3,9 +3,9 @@ use {
     Code,
     KeyState,
   },
-  mouse_types::{
-    button::MouseButton,
-    state::ButtonState,
+  pointer_types::{
+    ButtonState,
+    mouse::MouseButton,
   },
   std::collections::HashMap,
 };
