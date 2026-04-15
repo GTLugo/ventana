@@ -1,12 +1,4 @@
-#![cfg(all(
-  unix,
-  not(any(
-    target_os = "redox",
-    target_family = "wasm",
-    target_os = "android",
-    target_vendor = "apple"
-  ))
-))]
+#![cfg(linux_platform)]
 
 use {
   crate::{
@@ -86,12 +78,19 @@ pub fn primary_monitor() -> Result<Arc<dyn BackendMonitor>, RequestError> {
   ))
 }
 
+pub struct X11State {
+  connection: XCBConnection,
+  default_screen_index: usize,
+  database: Database,
+  atoms: Atoms,
+}
+
 impl X11 {
   pub(crate) fn new() -> Option<Self> {
     let (connection, default_screen_index) = match XCBConnection::connect(None) {
       Ok(connection) => connection,
       Err(error) => {
-        log::error!("Failed to connect to X server: {error}");
+        log::error!("Failed to connect to X server: `{error}`");
         return None;
       },
     };
@@ -134,11 +133,4 @@ impl X11 {
         .map_to_os_err()?,
     )
   }
-}
-
-pub struct X11State {
-  connection: XCBConnection,
-  default_screen_index: usize,
-  database: Database,
-  atoms: Atoms,
 }

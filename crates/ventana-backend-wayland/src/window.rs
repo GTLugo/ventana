@@ -1,12 +1,4 @@
-#![cfg(all(
-  unix,
-  not(any(
-    target_os = "redox",
-    target_family = "wasm",
-    target_os = "android",
-    target_vendor = "apple"
-  ))
-))]
+#![cfg(linux_platform)]
 
 use {
   std::sync::Arc,

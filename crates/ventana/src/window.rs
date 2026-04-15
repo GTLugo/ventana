@@ -55,7 +55,8 @@ impl Window {
   pub fn new(options: WindowOptions) -> Result<Self, RequestError> {
     let settings: WindowSettings = options.clone().into();
     let Some(backend) = options.backend else {
-      return Err(RequestError::NotSupported("No backend selected"));
+      log::warn!("No backend selected. Window creation request ignored.");
+      return Err(RequestError::Ignored);
     };
 
     log::trace!("Creating window `{}`", settings.title);

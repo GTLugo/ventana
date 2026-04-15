@@ -13,6 +13,9 @@ repository.workspace = true
 [features]
 default = []
 
+[build-dependencies]
+cfg_aliases = "0.2"
+
 [dependencies]
 log = "0.4"
 

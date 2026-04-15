@@ -7,9 +7,11 @@ NOTE: Smithay Client Toolkit is nice, but the build script for some reason can't
 
 */
 
-// mod event;
+mod backend;
+mod event;
 mod window;
 
+#[allow(unused)]
 use {
   std::{
     collections::VecDeque,
@@ -28,113 +30,43 @@ use {
 };
 
 #[derive(Clone)]
-pub struct Wayland;
-
-impl Wayland {
-  pub fn connect() -> Result<(), RequestError> {
-    Err(RequestError::Ignored)
-  }
-}
+pub struct Wayland(#[cfg(linux_platform)] Arc<self::backend::WaylandState>);
 
 impl Backend for Wayland {
+  #[cfg(linux_platform)]
   fn instance() -> Option<&'static Self>
   where
     Self: Sized,
   {
-    static INSTANCE: LazyLock<Option<Wayland>> = LazyLock::new(|| Wayland::connect().ok().map(|_| Wayland));
+    static INSTANCE: LazyLock<Option<Wayland>> = LazyLock::new(Wayland::new);
     INSTANCE.as_ref()
   }
 
+  #[cfg(linux_platform)]
   fn is_available() -> bool
   where
     Self: Sized,
   {
-    cfg!(all(
-      unix,
-      not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))
-    )) && Wayland::connect().is_ok()
+    Wayland::connect().is_ok()
   }
 
   fn name(&self) -> &'static str {
     "Wayland"
   }
 
+  #[cfg(linux_platform)]
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    #[cfg(all(
-      unix,
-      not(any(
-        target_os = "redox",
-        target_family = "wasm",
-        target_os = "android",
-        target_vendor = "apple"
-      ))
-    ))]
-    {
-      let _ = settings;
-      Ok(Arc::new(self::window::WaylandWindow))
-    }
-    #[cfg(not(all(
-      unix,
-      not(any(
-        target_os = "redox",
-        target_family = "wasm",
-        target_os = "android",
-        target_vendor = "apple"
-      ))
-    )))]
-    {
-      let _ = settings;
-      Err(RequestError::NotSupported("Wayland backend is not supported"))
-    }
+    let _ = settings;
+    Ok(Arc::new(self::window::WaylandWindow))
   }
 
+  #[cfg(linux_platform)]
   fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
-    #[cfg(all(
-      unix,
-      not(any(
-        target_os = "redox",
-        target_family = "wasm",
-        target_os = "android",
-        target_vendor = "apple"
-      ))
-    ))]
-    {
-      todo!()
-    }
-    #[cfg(not(all(
-      unix,
-      not(any(
-        target_os = "redox",
-        target_family = "wasm",
-        target_os = "android",
-        target_vendor = "apple"
-      ))
-    )))]
-    Err(RequestError::NotSupported("Wayland backend is not supported"))
+    todo!()
   }
 
+  #[cfg(linux_platform)]
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
-    #[cfg(all(
-      unix,
-      not(any(
-        target_os = "redox",
-        target_family = "wasm",
-        target_os = "android",
-        target_vendor = "apple"
-      ))
-    ))]
-    {
-      todo!()
-    }
-    #[cfg(not(all(
-      unix,
-      not(any(
-        target_os = "redox",
-        target_family = "wasm",
-        target_os = "android",
-        target_vendor = "apple"
-      ))
-    )))]
-    Err(RequestError::NotSupported("Wayland backend is not supported"))
+    todo!()
   }
 }

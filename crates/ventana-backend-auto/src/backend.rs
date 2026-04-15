@@ -58,6 +58,6 @@ impl AutoBackend {
     crate::Win32::instance()
       .map(|b| b as _)
       .or_else(|| crate::Linux::instance())
-      .ok_or(RequestError::NotSupported("No supported backend available to auto-select from."))
+      .ok_or(RequestError::not_supported("No supported backend available to auto-select from."))
   }
 }

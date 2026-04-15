@@ -2,6 +2,7 @@ mod event;
 mod monitor;
 mod window;
 
+#[allow(unused)]
 use {
   std::{
     collections::VecDeque,

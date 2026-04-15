@@ -38,21 +38,33 @@ pub trait Backend: Send + Sync {
   /// is called.
   fn is_available() -> bool
   where
-    Self: Sized;
+    Self: Sized,
+  {
+    false
+  }
 
   /// The name of the backend, used for logging and debugging purposes.
   fn name(&self) -> &'static str;
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     let _ = settings;
-    Err(RequestError::NotSupported("Backend is not available to create a window"))
+    Err(RequestError::not_supported(format!(
+      "`{}` backend is not available to create a window",
+      self.name()
+    )))
   }
 
   fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
-    Err(RequestError::NotSupported("Backend is not available to list available monitors"))
+    Err(RequestError::not_supported(format!(
+      "`{}` backend is not available to list available monitors",
+      self.name()
+    )))
   }
 
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
-    Err(RequestError::NotSupported("Backend is not available to get the primary monitor"))
+    Err(RequestError::not_supported(format!(
+      "`{}` backend is not available to get the primary monitor",
+      self.name()
+    )))
   }
 }

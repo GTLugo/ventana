@@ -5,18 +5,26 @@ use std::fmt::{
   Display,
 };
 
+use smol_str::SmolStr;
+
 /// A general error that may occur during a request to the windowing system.
 #[derive(thiserror::Error, Debug)]
 #[non_exhaustive]
 pub enum RequestError {
   /// The request is not supported.
   #[error("The request is not supported. `{0}`")]
-  NotSupported(&'static str),
+  NotSupported(SmolStr),
   #[error("The request was ignored by the OS")]
   Ignored,
   /// Got unspecified OS specific error during the request.
   #[error("OS specific error. `{0}`")]
   Os(#[from] OsError),
+}
+
+impl RequestError {
+  pub fn not_supported(message: impl Into<SmolStr>) -> Self {
+    Self::NotSupported(message.into())
+  }
 }
 
 /// Unclassified error from the OS.
