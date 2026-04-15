@@ -1,11 +1,12 @@
 // Taken directly from Winit under the Apache License 2.0 license https://github.com/rust-windowing/winit/blob/master/winit-core/src/error.rs
 
-use std::fmt::{
-  self,
-  Display,
+use {
+  smol_str::SmolStr,
+  std::fmt::{
+    self,
+    Display,
+  },
 };
-
-use smol_str::SmolStr;
 
 /// A general error that may occur during a request to the windowing system.
 #[derive(thiserror::Error, Debug)]
