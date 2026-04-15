@@ -7,7 +7,7 @@ use {
       Key,
       NamedKey,
     },
-    mouse::event::MouseEvent,
+    pointer::mouse::MouseEvent,
   },
   win64::user::{
     KeyEvent,
@@ -65,10 +65,5 @@ fn key_event_to_window_event(key_event: KeyEvent) -> WindowEvent {
 }
 
 fn mouse_event_to_window_event(mouse_event: MouseEvent) -> WindowEvent {
-  WindowEvent::MouseButton {
-    button: mouse_event.button,
-    state: mouse_event.state,
-    position: mouse_event.position,
-    is_double_click: mouse_event.is_double_click,
-  }
+  WindowEvent::Pointer(mouse_event.into())
 }

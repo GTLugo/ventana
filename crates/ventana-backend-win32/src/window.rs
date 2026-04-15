@@ -27,11 +27,11 @@ use {
       KeyState,
     },
     monitor::BackendMonitor,
-    mouse::{
-      button::MouseButton,
-      state::ButtonState,
-    },
     os_error_fmt,
+    pointer::{
+      ButtonState,
+      mouse::MouseButton,
+    },
     settings::WindowSettings,
     thread::{
       ThreadLoop,

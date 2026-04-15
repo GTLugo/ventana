@@ -3,16 +3,25 @@
 */
 
 use {
-  crate::types::Focus, dpi::{
+  crate::types::Focus,
+  dpi::{
     PhysicalPosition,
     PhysicalSize,
-  }, keyboard_types::{
+  },
+  keyboard_types::{
     Code,
     Key,
     KeyState,
     Location,
     Modifiers,
-  }, pointer_types::{ButtonState, mouse::MouseButton}, strum::Display
+  },
+  pointer_types::{
+    ButtonState,
+    PointerEvent,
+    mouse::MouseButton,
+    wheel::WheelEvent,
+  },
+  strum::Display,
 };
 
 #[derive(Debug, Display, PartialEq, Clone)]
@@ -60,15 +69,17 @@ pub enum WindowEvent {
     alt: KeyState,
     win: KeyState,
   },
-  /// Message sent when a mouse button is pressed or released.
-  MouseButton {
-    button: MouseButton,
-    state: ButtonState,
-    position: PhysicalPosition<i32>,
-    is_double_click: bool,
-  },
-  /// Message sent when the scroll wheel is actuated.
-  MouseWheel { delta_x: f32, delta_y: f32 },
+  Pointer(PointerEvent),
+  // /// Message sent when a mouse button is pressed or released.
+  // MouseButton {
+  //   button: MouseButton,
+  //   state: ButtonState,
+  //   position: PhysicalPosition<i32>,
+  //   is_double_click: bool,
+  // },
+  Wheel(WheelEvent),
+  // /// Message sent when the scroll wheel is actuated.
+  // MouseWheel { delta_x: f32, delta_y: f32 },
   /// Message sent when the cursor is moved within the window bounds. Don't
   /// use this for mouse input in cases such as first-person cameras as it is
   /// locked to the bounds of the window.

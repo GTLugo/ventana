@@ -11,14 +11,24 @@ use {
   },
 };
 
+///
+/// The primary backend trait.
+///
+/// This interface allows backends to be implemented for multiple platforms. Each backend should implement every function,
+/// but default implementations are provided that return `RequestError::NotSupported` so that cfg attributes can be used
+/// to avoid compiling code for unsupported platforms.
+///
 pub trait Backend: Send + Sync {
   /// This should return a reference to a static instance of the backend, as opposed to creating a new instance every time.
   /// This is because some backends may need to maintain global state.
   ///
-  /// This should return `None` if the backend is not available on the current platform.
+  /// This will return `None` if the backend is not implemented on the current platform.
   fn instance() -> Option<&'static Self>
   where
-    Self: Sized;
+    Self: Sized,
+  {
+    None
+  }
 
   /// This should be a quick check to see if the backend is available on the current platform. One should implement this with
   /// compile-time cfg checks and env var checks as necessary. Then, use cfgs to avoid compiling the methods of the backend if

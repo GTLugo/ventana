@@ -1,4 +1,3 @@
-mod backend;
 mod event;
 mod monitor;
 mod window;
@@ -22,17 +21,14 @@ pub struct Win32;
 
 #[allow(unused)]
 impl Backend for Win32 {
+  #[cfg(target_os = "windows")]
   fn instance() -> Option<&'static Self>
   where
     Self: Sized,
   {
-    #[cfg(target_os = "windows")]
-    {
-      static INSTANCE: std::sync::LazyLock<Win32> = std::sync::LazyLock::new(|| Win32);
-      Some(&INSTANCE)
-    }
-    #[cfg(not(target_os = "windows"))]
-    None
+    use std::sync::LazyLock;
+    static INSTANCE: LazyLock<Win32> = LazyLock::new(|| Win32);
+    Some(&INSTANCE)
   }
 
   fn is_available() -> bool
@@ -46,30 +42,24 @@ impl Backend for Win32 {
     "Win32"
   }
 
+  #[cfg(target_os = "windows")]
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    #[cfg(target_os = "windows")]
-    {
-      backend::create_window(settings)
-    }
-    #[cfg(not(target_os = "windows"))]
-    Err(RequestError::NotSupported("Win32 backend is only supported on Windows"))
+    Ok(Arc::new(self::window::Win32Window::new(settings)?))
   }
 
+  #[cfg(target_os = "windows")]
   fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
-    #[cfg(target_os = "windows")]
-    {
-      backend::list_available_monitors()
-    }
-    #[cfg(not(target_os = "windows"))]
-    Err(RequestError::NotSupported("Win32 backend is only supported on Windows"))
+    Ok(
+      win64::user::Monitor::available()
+        .into_iter()
+        .map(self::monitor::Win32Monitor)
+        .map(|m| Arc::new(m) as _)
+        .collect(),
+    )
   }
 
+  #[cfg(target_os = "windows")]
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
-    #[cfg(target_os = "windows")]
-    {
-      backend::primary_monitor()
-    }
-    #[cfg(not(target_os = "windows"))]
-    Err(RequestError::NotSupported("Win32 backend is only supported on Windows"))
+    Ok(Arc::new(self::monitor::Win32Monitor(win64::user::Monitor::primary())))
   }
 }

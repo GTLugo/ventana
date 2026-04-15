@@ -2,16 +2,24 @@ use {
   crate::{
     event::Event,
     monitor::BackendMonitor,
-  }, dpi::{
+  },
+  dpi::{
     PhysicalPosition,
     PhysicalSize,
-  }, keyboard_types::{
+  },
+  keyboard_types::{
     Code,
     KeyState,
-  }, pointer_types::{ButtonState, mouse::MouseButton}, raw_window_handle::{
+  },
+  pointer_types::{
+    ButtonState,
+    mouse::MouseButton,
+  },
+  raw_window_handle::{
     RawDisplayHandle,
     RawWindowHandle,
-  }, std::sync::Arc
+  },
+  std::sync::Arc,
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
