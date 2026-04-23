@@ -28,19 +28,16 @@ As there are many different platforms, each with their own unique windowing APIs
 ## Backends
 
 > [!IMPORTANT]
-> Alternate platforms not listed below can be implemented as third-party backends and fed into the `backend` field of `WindowOptions`. You may use Win32 and X11 as examples on how you might implement your own backend. While the library is designed to be cross-platform, the overall library is still in its infancy and support across the board is still work-in-progress. MacOS support is currently unplanned as I do not own any MacOS devices.
+> Alternate platforms not listed below can be implemented as third-party backends and fed into the `backend` field of `WindowOptions`.
 
 Platform | First-Party Support
 -|-
-Windows | ⚠️
-X11 | ⚠️
-Wayland | 🚧
-MacOS | ❌
+Windows | 🚧(WIP)
+X11 | 🚧(WIP)
+Wayland | 🚧(WIP)
+MacOS | ❌(Planned)
 
-###### ✅ - Implemented
-###### ⚠️ - Partial
-###### 🚧 - In development
-###### ❌ - No first-party support planned
+While the library is designed to be cross-platform, the overall library is still in its infancy and support across the board is still work-in-progress.
 
 ## Final words 
 
