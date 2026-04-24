@@ -6,9 +6,7 @@ use {
 fn main() -> anyhow::Result<()> {
   example::initialize_logger();
 
-  if let Some(instance) = AutoBackend::instance() {
-    log::debug!("Backend: {instance:?}");
-  }
+  AutoBackend::instance().inspect(|b| log::debug!("Backend: {b:?}"));
 
   let window = Window::new(
     WindowOptions::default()
