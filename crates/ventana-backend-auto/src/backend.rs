@@ -8,6 +8,7 @@ use {
   },
   std::{
     collections::VecDeque,
+    fmt::Debug,
     sync::{
       Arc,
       LazyLock,
@@ -18,6 +19,12 @@ use {
 // TODO: Add a way to specify a preferred backend selection order
 #[derive(Clone)]
 pub struct AutoBackend(&'static dyn Backend);
+
+impl Debug for AutoBackend {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.name())
+  }
+}
 
 impl Backend for AutoBackend {
   fn instance() -> Option<&'static Self>
