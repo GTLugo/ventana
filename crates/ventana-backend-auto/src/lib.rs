@@ -12,7 +12,9 @@ pub use backend_x11::X11;
 use hal::backend::Backend;
 pub use {
   backend::*,
+  backend_macos as macos,
   backend_win32 as win32,
+  macos::MacOS,
   win32::Win32,
 };
 

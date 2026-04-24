@@ -32,3 +32,6 @@ backend-win32 = { package = "ventana-backend-win32", version = "0.0.3", path = "
 # Linux
 backend-wayland = { package = "ventana-backend-wayland", version = "0.0.2", path = "../ventana-backend-wayland", optional = true } # , optional = true
 backend-x11 = { package = "ventana-backend-x11", version = "0.0.2", path = "../ventana-backend-x11", optional = true } # , optional = true
+
+# MacOS
+backend-macos = { package = "ventana-backend-macos", version = "0.0.1", path = "../ventana-backend-macos" }

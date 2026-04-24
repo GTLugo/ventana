@@ -1,0 +1,24 @@
+[package]
+name                 = "ventana-backend-macos"
+description          = "A cross-platform, iterator-based windowing library"
+version              = "0.0.1"
+readme.workspace     = true
+edition.workspace    = true
+authors.workspace    = true
+license.workspace    = true
+keywords.workspace   = true
+categories.workspace = true
+repository.workspace = true
+
+[features]
+default = []
+
+[dependencies]
+log       = "0.4"
+thiserror = "2.0"
+
+[dependencies.ventana-hal]
+version = "0.0.3"
+path = "../ventana-hal"
+
+[target.'cfg(target_os = "macos")'.dependencies]
