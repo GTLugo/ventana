@@ -47,8 +47,7 @@ impl Backend for MacOS {
 
   #[cfg(target_os = "macos")]
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    let _ = settings;
-    Ok(Arc::new(self::window::MacOSWindow))
+    Ok(Arc::new(self::window::MacOSWindow::new(settings)?))
   }
 
   #[cfg(target_os = "macos")]

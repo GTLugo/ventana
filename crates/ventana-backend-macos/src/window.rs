@@ -1,12 +1,22 @@
 #![cfg(target_os = "macos")]
 
 use {
+  cacao::appkit::{
+    App,
+    AppDelegate,
+    menu::{
+      Menu,
+      MenuItem,
+    },
+    window::Window,
+  },
   std::sync::Arc,
   ventana_hal::{
     dpi::{
       PhysicalPosition,
       PhysicalSize,
     },
+    error::RequestError,
     event::Event,
     keyboard::{
       Code,
@@ -16,6 +26,7 @@ use {
       ButtonState,
       mouse::MouseButton,
     },
+    settings::WindowSettings,
     window::{
       BackendWindow,
       WindowId,
@@ -23,7 +34,58 @@ use {
   },
 };
 
-pub struct MacOSWindow;
+pub struct MacOSWindow {
+  window: Window,
+}
+
+impl MacOSWindow {
+  pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
+    let _ = settings;
+
+    App::new("com.gtlugo.window", Self {
+      window: Default::default(),
+    })
+    .run();
+
+    Ok(Self {
+      window: Default::default(),
+    })
+  }
+}
+
+impl AppDelegate for MacOSWindow {
+  fn did_finish_launching(&self) {
+    App::set_menu(vec![
+      Menu::new("", vec![
+        MenuItem::Services,
+        MenuItem::Separator,
+        MenuItem::Hide,
+        MenuItem::HideOthers,
+        MenuItem::ShowAll,
+        MenuItem::Separator,
+        MenuItem::Quit,
+      ]),
+      Menu::new("File", vec![MenuItem::CloseWindow]),
+      Menu::new("View", vec![MenuItem::EnterFullScreen]),
+      Menu::new("Window", vec![
+        MenuItem::Minimize,
+        MenuItem::Zoom,
+        MenuItem::Separator,
+        MenuItem::new("Bring All to Front"),
+      ]),
+    ]);
+
+    App::activate();
+
+    self.window.set_minimum_content_size(400., 400.);
+    self.window.set_title("A Basic Window");
+    self.window.show();
+  }
+
+  fn should_terminate_after_last_window_closed(&self) -> bool {
+    true
+  }
+}
 
 impl BackendWindow for MacOSWindow {
   fn id(&self) -> WindowId {
