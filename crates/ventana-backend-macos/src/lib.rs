@@ -38,7 +38,7 @@ impl Backend for MacOS {
   where
     Self: Sized,
   {
-    MacOS::connect().is_ok()
+    true
   }
 
   fn name(&self) -> &'static str {
