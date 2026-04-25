@@ -14,21 +14,17 @@ pub struct Linux;
 
 impl Linux {
   pub fn is_wayland_available() -> bool {
-    #[cfg(feature = "wayland")]
-    {
-      Wayland::is_available()
+    cfg_select! {
+      feature = "wayland" => Wayland::is_available(),
+      _ => false
     }
-    #[cfg(not(feature = "wayland"))]
-    false
   }
 
   pub fn is_x11_available() -> bool {
-    #[cfg(feature = "x11")]
-    {
-      X11::is_available()
+    cfg_select! {
+      feature = "x11" => X11::is_available(),
+      _ => false
     }
-    #[cfg(not(feature = "x11"))]
-    false
   }
 
   pub fn is_available() -> bool {
@@ -37,25 +33,15 @@ impl Linux {
   }
 
   pub fn instance() -> Option<&'static dyn Backend> {
-    let wayland = {
-      #[cfg(feature = "wayland")]
-      {
-        Wayland::instance()
-      }
-      #[cfg(not(feature = "wayland"))]
-      {
-        None
-      }
+    let wayland = cfg_select! {
+      feature = "wayland" => Wayland::instance(),
+      _ => None
     };
 
-    let x11 = {
-      #[cfg(feature = "x11")]
-      {
-        || X11::instance()
-      }
-      #[cfg(not(feature = "x11"))]
-      {
-        || None
+    let x11 = || {
+      cfg_select! {
+        feature = "x11" => X11::instance(),
+        _ => None
       }
     };
 

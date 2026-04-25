@@ -22,7 +22,7 @@ pub struct Win32;
 
 #[allow(unused)]
 impl Backend for Win32 {
-  #[cfg(target_os = "windows")]
+  #[cfg(windows)]
   fn new() -> Option<&'static Self>
   where
     Self: Sized,
@@ -36,19 +36,19 @@ impl Backend for Win32 {
   where
     Self: Sized,
   {
-    cfg!(target_os = "windows")
+    cfg!(windows)
   }
 
   fn name(&self) -> &'static str {
     "Win32"
   }
 
-  #[cfg(target_os = "windows")]
+  #[cfg(windows)]
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     Ok(Arc::new(self::window::Win32Window::new(settings)?))
   }
 
-  #[cfg(target_os = "windows")]
+  #[cfg(windows)]
   fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
     Ok(
       win64::user::Monitor::available()
@@ -59,7 +59,7 @@ impl Backend for Win32 {
     )
   }
 
-  #[cfg(target_os = "windows")]
+  #[cfg(windows)]
   fn primary_monitor(&self) -> Result<Arc<dyn BackendMonitor>, RequestError> {
     Ok(Arc::new(self::monitor::Win32Monitor(win64::user::Monitor::primary())))
   }
