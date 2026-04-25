@@ -124,6 +124,10 @@ impl BackendWindow for MacOSWindow {
     todo!()
   }
 
+  fn set_title(&self, title: String) {
+    self.window.set_title(&title);
+  }
+
   fn scale_factor(&self) -> f64 {
     todo!()
   }
