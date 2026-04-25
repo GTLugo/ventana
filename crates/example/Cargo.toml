@@ -10,12 +10,14 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
-log = "0.4"
+log        = "0.4"
 env_logger = "0.11"
-anyhow = "1.0"
+anyhow     = "1.0"
+chrono     = "0.4"
 
-wgpu     = "29.0"
-pollster = "0.4"
+wgpu        = "29.0"
+pollster    = "0.4"
+fps_counter = "3.0"
 
 [dependencies.ventana]
 version = "*"

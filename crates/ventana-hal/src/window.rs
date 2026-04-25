@@ -61,6 +61,8 @@ pub trait BackendWindow: Send + Sync {
 
   fn title(&self) -> String;
 
+  fn set_title(&self, title: String);
+
   fn scale_factor(&self) -> f64;
 
   fn inner_size(&self) -> PhysicalSize<u32>;

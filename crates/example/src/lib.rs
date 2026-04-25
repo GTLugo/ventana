@@ -1,14 +1,37 @@
-use ventana::{
-  dpi::PhysicalSize,
-  window::Window,
+use {
+  chrono::Local,
+  env_logger::Target,
+  fps_counter::FPSCounter,
+  std::{
+    fs::File,
+    io::Write,
+  },
+  ventana::{
+    dpi::PhysicalSize,
+    window::Window,
+  },
 };
 
 pub fn initialize_logger() {
+  // taken from github https://github.com/rust-cli/env_logger/issues/125
+  let file_target = Box::new(File::create("ventana.log").unwrap());
   env_logger::builder()
+    .target(Target::Pipe(file_target))
     .filter(None, log::LevelFilter::Trace)
     .filter(Some("wgpu"), log::LevelFilter::Off)
     .filter(Some("naga"), log::LevelFilter::Off)
-    .format_source_path(true)
+    .format(|buf, record| {
+      writeln!(
+        buf,
+        "[{} {} {}:{}] {}",
+        Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+        record.level(),
+        // record.thread_name().unwrap_or("unknown"),
+        record.file().unwrap_or("unknown"),
+        record.line().unwrap_or(0),
+        record.args()
+      )
+    })
     .init();
 }
 
@@ -19,6 +42,9 @@ pub struct State {
   config: wgpu::SurfaceConfiguration,
   is_surface_configured: bool,
   window: Window,
+  fps_counter: FPSCounter,
+  last_frame_time: std::time::Instant,
+  delta_time: std::time::Duration,
 }
 
 impl State {
@@ -82,16 +108,20 @@ impl State {
       config,
       is_surface_configured: true,
       window,
+      fps_counter: FPSCounter::new(),
+      last_frame_time: std::time::Instant::now(),
+      delta_time: std::time::Duration::ZERO,
     })
   }
 
   pub fn resize(&mut self, size: PhysicalSize<u32>) {
-    log::info!("Resize: ({}, {})", size.width, size.height);
+    // log::info!("Resize: ({}, {})", size.width, size.height);
     if size.width > 0 && size.height > 0 && (size.width != self.config.width || size.height != self.config.height) {
       self.config.width = size.width;
       self.config.height = size.height;
       self.reconfigure();
     }
+    self.window.request_redraw();
   }
 
   fn reconfigure(&mut self) {
@@ -104,6 +134,13 @@ impl State {
   }
 
   pub fn draw(&mut self) {
+    self.delta_time = self.last_frame_time.elapsed();
+    self.last_frame_time = std::time::Instant::now();
+    self.window.set_title(format!(
+      "Example | FPS: {} FT: {:?} s",
+      self.fps_counter.tick(),
+      self.delta_time.as_secs_f64()
+    ));
     match self.render() {
       Ok(_) => (),
       Err(e) => {
@@ -114,8 +151,6 @@ impl State {
   }
 
   fn render(&mut self) -> anyhow::Result<()> {
-    // self.window.request_redraw();
-
     // We can't render unless the surface is configured
     if !self.is_surface_configured {
       return Ok(());

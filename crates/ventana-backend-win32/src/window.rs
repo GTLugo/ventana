@@ -8,11 +8,18 @@ use {
   self::{
     command::Command,
     state::SharedInternal,
-    thread::Procedure,
+    thread::Win32ThreadHandler,
   },
-  crate::window::command::CommandResponse,
+  crate::window::command::{
+    CommandResponse,
+    CreateInfo,
+  },
   ::win64::Handle,
   std::sync::Arc,
+  threadloop::{
+    ThreadLoop,
+    message::ClientToServer,
+  },
   ventana_hal::{
     error::{
       MapToOSError,
@@ -27,17 +34,12 @@ use {
       KeyState,
     },
     monitor::BackendMonitor,
-    os_error_fmt,
     pointer::{
       ButtonState,
       mouse::MouseButton,
     },
     settings::WindowSettings,
-    thread::{
-      ThreadLoop,
-      server::Server,
-      signal::StopSignal,
-    },
+    types::Flow,
     window::{
       BackendWindow,
       WindowId,
@@ -54,24 +56,35 @@ use {
   },
 };
 
+// struct Win32Client {
+//   hwnd: Option<Window>,
+//   shared: Arc<SharedInternal>,
+// }
+
+// impl Client for Win32Client {
+//   fn destroy(&self, client: &ClientWrapper<Self::Command, Self::ThreadResponse, Self>) -> Result<(), RequestError> {
+//     self.shared.set_ready(false);
+//     log::trace!("Sending Command::Destroy...");
+//     client.send_command(Command::Destroy, true);
+//     Ok(())
+//   }
+// }
+
 // No `Arc` necessary for fields other than `shared` as this will be inside an `Arc<dyn BackendWindow>`
 pub struct Win32Window {
   hwnd: Window,
-
-  thread: ThreadLoop<Window, Command, CommandResponse>,
-  stop_signal: StopSignal,
-
-  shared: Arc<SharedInternal>, // This is Arc so that it can be shared with the Window thread
+  flow: Flow,
+  shared: Arc<SharedInternal>,
+  thread: Arc<ThreadLoop<Win32ThreadHandler>>,
 }
 
 impl Drop for Win32Window {
   fn drop(&mut self) {
-    log::trace!("Dropping Win32Window");
-    self
-      .thread
-      .join()
-      .expect("panicked when attempting to join Window thread");
-    log::trace!("Destroyed window");
+    log::trace!("Dropping window");
+    // self
+    //   .thread
+    //   .join()
+    //   .expect("panicked when attempting to join Window thread");
   }
 }
 
@@ -79,112 +92,50 @@ impl Win32Window {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     set_process_dpi_awareness(DPIAwarenessContext::PerMonitorAwareV2);
 
+    log::trace!("Creating ThreadLoop");
+    let thread = ThreadLoop::new(Arc::new(Win32ThreadHandler::new())).request_error()?;
+
+    log::trace!("Sending Command::CreateWindow...");
+
+    let flow = settings.flow;
     let shared = SharedInternal::new(settings.clone());
-    let mut thread = ThreadLoop::new(
-      settings.flow,
-      |client| {
-        // On drop
-        client.send_command(Command::Destroy);
-      },
-      |window: &Window| {
-        // On wake
-        const WAKE_MESSAGE: u32 = Message::APP + 67;
-        window
-          .post_message(Message::App(AppMessage::empty(WAKE_MESSAGE)))
-          .unwrap();
-      },
-    );
-    let stop_signal = thread.loop_signal();
-    let hwnd = Self::start_thread(&mut thread, shared.clone(), settings)?;
+    let Some(CommandResponse::CreateWindow(hwnd)) = thread
+      .send_request(ClientToServer::request(Command::CreateWindow(CreateInfo {
+        shared: shared.clone(),
+        settings,
+      })))
+      .unwrap()
+    else {
+      unreachable!("Command::CreateWindow should always return CommandResponse::CreateWindow")
+    };
+
+    log::trace!("Received window handle from window thread");
 
     Ok(Self {
       hwnd,
-      thread,
+      flow,
       shared,
-      stop_signal,
+      thread,
     })
   }
 
-  fn start_thread(
-    thread: &mut ThreadLoop<Window, Command, CommandResponse>,
-    shared: Arc<SharedInternal>,
-    settings: WindowSettings,
-  ) -> Result<Window, RequestError> {
-    let (window_tx, window_rx) = crossbeam_channel::bounded(0);
-    thread.run(move |server| {
-      log::trace!("Starting window thread");
-
-      let window = Self::create_window(server, shared.clone(), settings)?;
-      window_tx
-        .send(window)
-        .map_err(|e| os_error_fmt!("failed to send window handle: `{e}`"))?;
-
-      shared.set_ready(true);
-
-      log::trace!("Window is ready; entering message loop");
-
-      MessageLoop::new().run();
-
-      log::trace!("Joining main thread");
-
-      Ok(())
-    })?;
-
-    log::trace!("Waiting to receive window handle back from window thread");
-
-    let hwnd = window_rx
-      .recv()
-      .expect("Failed to receive window back from window thread");
-
-    thread.set_window(hwnd);
-
-    log::trace!("Received window handle from window thread: `{hwnd:?}`");
-
-    Ok(hwnd)
-  }
-
-  fn create_window(
-    server: Arc<Server<Command, CommandResponse>>,
-    internal: Arc<SharedInternal>,
-    settings: WindowSettings,
-  ) -> Result<Window, RequestError> {
-    let class = {
-      let mut class = WindowClass::builder()
-        .with_name("Window Class")
-        .with_style(WindowClassStyle::DoubleClicks);
-      if let Some(color) = settings.clear_color {
-        class = class.with_background_brush(Brush::solid(color));
-      }
-      class
-    }
-    .register()
-    .map_to_os_err()?;
-    log::debug!("{settings:?}");
-    let hwnd = class
-      .create_window()
-      .with_procedure(Procedure { server, internal })
-      .with_name(settings.title.clone())
-      .with_style(WindowStyle::OverlappedWindow | WindowStyle::Visible)
-      .with_position(settings.position)
-      .with_size(Some(settings.size))
-      .create()
-      .map_to_os_err()?;
-    Ok(hwnd)
+  fn hwnd(&self) -> Window {
+    self.hwnd
   }
 }
 
 impl BackendWindow for Win32Window {
   fn id(&self) -> WindowId {
-    WindowId::from_raw(self.hwnd.to_ptr() as usize)
+    WindowId::from_raw(self.hwnd().to_ptr() as usize)
   }
 
   fn raw_window_handle(&self) -> RawWindowHandle {
     let mut handle = Win32WindowHandle::new(
-      std::num::NonZeroIsize::new(self.hwnd.to_ptr() as isize).expect("window handle should not be zero"),
+      std::num::NonZeroIsize::new(self.hwnd().to_ptr() as isize).expect("window handle should not be zero"),
     );
 
-    let hinstance =
-      std::num::NonZeroIsize::new(self.hwnd.instance().to_ptr() as isize).expect("instance handle should not be zero");
+    let hinstance = std::num::NonZeroIsize::new(self.hwnd().instance().to_ptr() as isize)
+      .expect("instance handle should not be zero");
     handle.hinstance = Some(hinstance);
     handle.into()
   }
@@ -195,7 +146,7 @@ impl BackendWindow for Win32Window {
   }
 
   fn next(&self) -> Option<Event> {
-    let event = self.thread.next_event()?;
+    let event = self.thread.next_event(matches!(self.flow, Flow::Wait))?;
 
     if let Event::Window(WindowEvent::CloseRequest) = event {
       let x = self.shared.state_lock().close_on_x;
@@ -212,42 +163,55 @@ impl BackendWindow for Win32Window {
   }
 
   fn close(&self) {
-    self.stop_signal.stop();
+    self.thread.send_request(ClientToServer::stop());
   }
 
   fn is_closing(&self) -> bool {
-    self.stop_signal.should_stop()
+    todo!()
+    // self.stop_signal.should_stop()
   }
 
   fn request_redraw(&self) {
-    self.thread.send_command(Command::Redraw);
+    log::trace!("Sending Command::Redraw...");
+    self.thread.send_request(ClientToServer::request(Command::Redraw));
   }
 
   fn title(&self) -> String {
-    let Some(CommandResponse::GetWindowText(text)) = self.thread.send_command(Command::GetWindowText) else {
+    log::trace!("Sending Command::GetWindowText...");
+    let Ok(Some(CommandResponse::GetWindowText(text))) = self
+      .thread
+      .send_request(ClientToServer::request(Command::GetWindowText))
+    else {
       return String::new();
     };
     text
   }
 
+  fn set_title(&self, title: String) {
+    log::trace!("Sending Command::SetWindowText...");
+    self
+      .thread
+      .send_request(ClientToServer::request(Command::SetWindowText(title)));
+  }
+
   fn scale_factor(&self) -> f64 {
-    self.hwnd.scale_factor()
+    self.hwnd().scale_factor()
   }
 
   fn inner_size(&self) -> PhysicalSize<u32> {
-    self.hwnd.client_size()
+    self.hwnd().client_size()
   }
 
   fn outer_size(&self) -> PhysicalSize<u32> {
-    self.hwnd.window_size()
+    self.hwnd().window_size()
   }
 
   fn inner_position(&self) -> PhysicalPosition<i32> {
-    self.hwnd.client_position()
+    self.hwnd().client_position()
   }
 
   fn outer_position(&self) -> PhysicalPosition<i32> {
-    self.hwnd.window_position()
+    self.hwnd().window_position()
   }
 
   fn key(&self, keycode: Code) -> KeyState {

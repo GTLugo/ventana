@@ -1,22 +1,19 @@
 use {
-  super::{
-    acknowledge::AcknowledgementToken,
-    response::ResponseEnvelope,
-  },
+  super::signal::AcknowledgeSignal,
   crate::event::Event,
 };
 
-#[derive(Debug)]
-pub enum ThreadEvent<ThreadResponse> {
-  // Ready(Result<ReadyInfo, RequestError>),
-  Event(EventEnvelope),
-  CommandResponse(ResponseEnvelope<ThreadResponse>),
-}
+// #[derive(Debug)]
+// pub enum ThreadEvent<ThreadResponse> {
+//   // Ready(Result<ReadyInfo, RequestError>),
+//   Event(EventEnvelope),
+//   CommandResponse(ResponseEnvelope<ThreadResponse>),
+// }
 
 #[derive(Debug, Clone)]
 pub struct EventEnvelope {
   pub event: Event,
-  pub ack: Option<AcknowledgementToken>,
+  pub ack: Option<AcknowledgeSignal>,
 }
 
 impl EventEnvelope {

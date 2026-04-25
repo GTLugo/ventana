@@ -60,6 +60,10 @@ pub trait MapToOSError<T, E> {
   fn map_to_os_err(self) -> Result<T, OsError>
   where
     Self: Sized;
+
+  fn request_error(self) -> Result<T, RequestError>
+  where
+    Self: Sized;
 }
 
 impl<T, E> MapToOSError<T, E> for Result<T, E>
@@ -74,6 +78,13 @@ where
       Ok(t) => Ok(t),
       Err(e) => Err(crate::os_error!(e)),
     }
+  }
+
+  fn request_error(self) -> Result<T, RequestError>
+  where
+    Self: Sized,
+  {
+    Ok(self.map_to_os_err()?)
   }
 }
 

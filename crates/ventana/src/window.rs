@@ -65,6 +65,10 @@ impl Window {
     Ok(Self { backend, window })
   }
 
+  pub fn backend(&self) -> &'static dyn Backend {
+    self.backend
+  }
+
   pub fn id(&self) -> WindowId {
     self.window.id()
   }
@@ -73,6 +77,10 @@ impl Window {
   // pub fn title(&self) -> String {
   //   self.window.title()
   // }
+
+  pub fn set_title(&self, title: impl Into<String>) {
+    self.window.set_title(title.into())
+  }
 
   pub fn scale_factor(&self) -> f64 {
     self.window.scale_factor()
@@ -133,7 +141,7 @@ impl Default for WindowOptions {
       #[cfg(not(feature = "auto-backend"))]
       backend: None,
       #[cfg(feature = "auto-backend")]
-      backend: backend::AutoBackend::instance().map(|b| b as _),
+      backend: backend::AutoBackend::instance(),
       title: "Window",
       size: Size::Logical((800.0, 500.0).into()),
       position: None,
@@ -147,6 +155,15 @@ impl Default for WindowOptions {
 }
 
 impl WindowOptions {
+  pub const BLACK: RGB8 = RGB8::new(0, 0, 0);
+  pub const BLUE: RGB8 = RGB8::new(0, 0, 255);
+  pub const DARK_GRAY: RGB8 = RGB8::new(192, 192, 192);
+  pub const GRAY: RGB8 = RGB8::new(127, 127, 127);
+  pub const GREEN: RGB8 = RGB8::new(0, 255, 0);
+  pub const LIGHT_GRAY: RGB8 = RGB8::new(63, 63, 63);
+  pub const RED: RGB8 = RGB8::new(255, 0, 0);
+  pub const WHITE: RGB8 = RGB8::new(255, 255, 255);
+
   pub fn with_backend(mut self, backend: Option<&'static impl Backend>) -> Self {
     self.backend = backend.map(|b| b as _);
     self

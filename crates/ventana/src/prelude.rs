@@ -6,7 +6,7 @@ pub use {
     WindowOptions,
   },
   hal::{
-    backend::Backend,
+    backend::Backend as _,
     dpi::{
       LogicalPosition,
       LogicalSize,

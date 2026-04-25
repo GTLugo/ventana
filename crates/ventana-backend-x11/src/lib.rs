@@ -22,7 +22,7 @@ pub struct X11(#[cfg(linux_platform)] Arc<crate::backend::X11State>);
 
 impl Backend for X11 {
   #[cfg(linux_platform)]
-  fn instance() -> Option<&'static Self>
+  fn new() -> Option<&'static Self>
   where
     Self: Sized,
   {

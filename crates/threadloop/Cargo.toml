@@ -1,0 +1,14 @@
+[package]
+name    = "threadloop"
+version = "0.1.0"
+readme.workspace     = true
+edition.workspace    = true
+authors.workspace    = true
+license.workspace    = true
+keywords.workspace   = true
+categories.workspace = true
+repository.workspace = true
+
+[dependencies]
+log       = "0.4"
+thiserror = "2.0"

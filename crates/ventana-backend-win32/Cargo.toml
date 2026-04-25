@@ -22,5 +22,9 @@ crossbeam-queue   = "0.3"
 version = "0.0.3"
 path = "../ventana-hal"
 
+[dependencies.threadloop]
+version = "0.1"
+path = "../threadloop"
+
 [target.'cfg(target_os = "windows")'.dependencies]
 win64 = "0.0.23"

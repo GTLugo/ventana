@@ -1,20 +1,37 @@
-use ventana_hal::{
-  cursor_icon::CursorIcon,
-  dpi::{
-    Position,
-    Size,
+use {
+  super::state::SharedInternal,
+  std::{
+    fmt::Debug,
+    sync::Arc,
   },
-  types::{
-    CursorMode,
-    Fullscreen,
-    Visibility,
+  ventana_hal::{
+    cursor_icon::CursorIcon,
+    dpi::{
+      Position,
+      Size,
+    },
+    settings::WindowSettings,
+    types::{
+      CursorMode,
+      Fullscreen,
+      Visibility,
+    },
   },
+  win64::user::Window,
 };
 
+#[derive(Clone, Debug)]
+pub struct CreateInfo {
+  pub shared: Arc<SharedInternal>,
+  pub settings: WindowSettings,
+}
+
 #[allow(unused)]
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum Command {
-  Destroy,
+  Empty,
+  CreateWindow(CreateInfo),
+  // Destroy,
   Redraw,
   GetWindowText,
   SetVisibility(Visibility),
@@ -28,8 +45,11 @@ pub enum Command {
   SetCursorVisibility(Visibility),
 }
 
+impl Command {}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum CommandResponse {
   Success,
   GetWindowText(String),
+  CreateWindow(Window),
 }

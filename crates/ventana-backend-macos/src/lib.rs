@@ -25,7 +25,7 @@ pub struct MacOS;
 
 impl Backend for MacOS {
   #[cfg(target_os = "macos")]
-  fn instance() -> Option<&'static Self>
+  fn new() -> Option<&'static Self>
   where
     Self: Sized,
   {

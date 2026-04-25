@@ -1,7 +1,13 @@
 #[cfg(feature = "wayland")]
-pub use backend_wayland::Wayland;
+pub use backend_wayland::{
+  self as wayland,
+  Wayland,
+};
 #[cfg(feature = "x11")]
-pub use backend_x11::X11;
+pub use backend_x11::{
+  self as x11,
+  X11,
+};
 use hal::backend::Backend;
 
 pub struct Linux;
@@ -26,15 +32,15 @@ impl Linux {
   }
 
   pub fn is_available() -> bool {
+    log::info!("Wayland available: {} | X11 available: {}", Self::is_wayland_available(), Self::is_x11_available());
     Self::is_wayland_available() || Self::is_x11_available()
   }
 
   pub fn instance() -> Option<&'static dyn Backend> {
-    log::info!("Wayland available: {}", Self::is_wayland_available());
     let wayland = {
       #[cfg(feature = "wayland")]
       {
-        Wayland::instance().map(|b| b as _)
+        Wayland::instance()
       }
       #[cfg(not(feature = "wayland"))]
       {
@@ -42,11 +48,10 @@ impl Linux {
       }
     };
 
-    log::info!("X11 available: {}", Self::is_x11_available());
     let x11 = {
       #[cfg(feature = "x11")]
       {
-        || X11::instance().map(|b| b as _)
+        || X11::instance()
       }
       #[cfg(not(feature = "x11"))]
       {

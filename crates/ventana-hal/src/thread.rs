@@ -2,10 +2,10 @@
   Separate this out into a separate crate, and make it more generic.
 */
 
-pub mod acknowledge;
 pub mod client;
 pub mod command;
 pub mod event;
+pub mod queues;
 pub mod response;
 pub mod server;
 pub mod signal;
@@ -13,7 +13,7 @@ pub mod signal;
 use {
   self::{
     client::Client,
-    server::Server,
+    server::ServerWrapper,
     signal::StopSignal,
   },
   crate::{
@@ -22,21 +22,41 @@ use {
       RequestError,
     },
     event::Event,
+    thread::{
+      client::ClientWrapper,
+      response::Responses,
+      server::Server,
+    },
     types::Flow,
   },
-  std::sync::Arc,
+  std::sync::{
+    Arc,
+    Mutex,
+  },
 };
 
-pub struct ThreadLoop<Window, Command, ThreadResponse>
+pub struct ThreadLoop<Command, ThreadResponse, C>
 where
   Self: Send + Sync + 'static,
-  Window: Send + Sync + 'static,
   Command: Send + Sync + 'static,
   ThreadResponse: Send + Sync + 'static,
+  C: Client<Command = Command, ThreadResponse = ThreadResponse>,
 {
-  client: Client<Window, Command, ThreadResponse>,
-  server: Arc<Server<Command, ThreadResponse>>,
-  server_handle: Option<std::thread::JoinHandle<Result<(), RequestError>>>,
+  is_running: bool,
+  client: ClientWrapper<Command, ThreadResponse, C>,
+  server: Arc<ServerWrapper<Command, ThreadResponse>>,
+  handle: Mutex<Option<std::thread::JoinHandle<Result<(), RequestError>>>>,
+}
+
+impl<Command, ThreadResponse, C> Drop for ThreadLoop<Command, ThreadResponse, C>
+where
+  Command: Send + Sync + 'static,
+  ThreadResponse: Send + Sync + 'static,
+  C: Client<Command = Command, ThreadResponse = ThreadResponse>,
+{
+  fn drop(&mut self) {
+    log::trace!("Dropping ThreadLoop");
+  }
 }
 
 // impl<Command: Send + Sync + 'static, ThreadResponse: Send + Sync + 'static> Drop
@@ -57,55 +77,73 @@ where
 //   }
 // }
 
-impl<Window: Send + Sync + 'static, Command: Send + Sync + 'static, ThreadResponse: Send + Sync + 'static>
-  ThreadLoop<Window, Command, ThreadResponse>
+impl<Command, ThreadResponse, C> ThreadLoop<Command, ThreadResponse, C>
+where
+  Command: Send + Sync + 'static,
+  ThreadResponse: Send + Sync + 'static,
+  C: Client<Command = Command, ThreadResponse = ThreadResponse>,
 {
   pub fn new(
     flow: Flow,
-    on_drop: impl Fn(&Client<Window, Command, ThreadResponse>) + Send + Sync + 'static,
-    on_wake: impl Fn(&Window) + Send + Sync + 'static,
-  ) -> Self {
+    client: C,
+    server: impl Server<Command = Command, ThreadResponse = ThreadResponse> + 'static,
+  ) -> Result<Self, RequestError> {
     let signal = StopSignal::new();
     let (event_tx, event_rx) = crossbeam_channel::unbounded();
     let (message_tx, message_rx) = crossbeam_channel::unbounded();
+    let responses = Responses::new();
 
-    let client = Client::new(signal.clone(), flow, event_rx, message_tx, on_drop, on_wake);
-    let server = Arc::new(Server::new(event_tx, message_rx));
+    let client = ClientWrapper::new(client, signal.clone(), flow, event_rx, message_tx, responses.clone());
+    let server = ServerWrapper::new(server, event_tx, message_rx, responses, signal)?;
 
-    Self {
+    Ok(Self {
+      is_running: false,
       client,
       server,
-      server_handle: None,
-    }
+      handle: Mutex::new(None),
+    })
   }
 
-  pub fn run(
-    &mut self,
-    server_fn: impl FnOnce(Arc<Server<Command, ThreadResponse>>) -> Result<(), RequestError> + Send + 'static,
-  ) -> Result<(), RequestError> {
+  pub fn run(&mut self) -> Result<(), RequestError> {
+    if self.is_running {
+      return Err(RequestError::Ignored);
+    }
+    self.is_running = true;
+
     let server = self.server.clone();
-    self.server_handle = Some(
+
+    *self.handle.lock().unwrap() = Some(
       std::thread::Builder::new()
-        .spawn(move || server_fn(server))
+        .name("window".to_string())
+        .spawn(move || server.run())
         .map_to_os_err()?,
     );
+
     Ok(())
   }
 
-  pub fn loop_signal(&self) -> StopSignal {
-    self.client.stop_signal()
+  pub fn client(&self) -> &C {
+    self.client.client()
   }
 
-  pub fn set_window(&mut self, window: Window) {
-    self.client.window = Some(window);
+  pub fn client_mut(&mut self) -> &mut C {
+    self.client.client_mut()
+  }
+
+  pub fn stop_signal(&self) -> StopSignal {
+    self.client.stop_signal()
   }
 
   pub fn set_flow(&self, flow: Flow) {
     self.client.set_flow(flow);
   }
 
-  pub fn send_command(&self, message: Command) -> Option<ThreadResponse> {
-    self.client.send_command(message)
+  pub fn send_request(&self, message: Command, wake_server: bool) -> Option<ThreadResponse> {
+    self.client.send_request(message, wake_server)
+  }
+
+  pub fn send_command(&self, message: Command, wake_server: bool) {
+    self.client.send_command(message, wake_server)
   }
 
   pub fn next_event(&self) -> Option<Event> {
@@ -115,13 +153,14 @@ impl<Window: Send + Sync + 'static, Command: Send + Sync + 'static, ThreadRespon
   pub fn join(&mut self) -> Result<(), RequestError> {
     self.client.destroy();
 
-    let Some(thread) = self.server_handle.take() else {
-      return Err(RequestError::Ignored);
-    };
-
-    log::trace!("Window thread joining main thread");
-    thread.join().map_err(|_| os_error!("Failed to join main thread"))??;
-    log::trace!("Window thread joined main thread");
+    // self.server.join()?;
+    if let Some(thread) = self.handle.lock().unwrap().take() {
+      log::trace!("Waiting for server thread to join main thread");
+      thread
+        .join()
+        .map_err(|_| os_error!("Server thread failed to join main thread"))??;
+      log::trace!("Server thread joined main thread");
+    }
 
     Ok(())
   }

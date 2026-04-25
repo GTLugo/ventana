@@ -11,6 +11,7 @@ use {
   ventana_hal::settings::WindowSettings,
 };
 
+#[derive(Debug)]
 pub(crate) struct SharedInternal {
   is_ready: AtomicBool,
   state: Mutex<State>,
@@ -37,6 +38,7 @@ impl SharedInternal {
   }
 }
 
+#[derive(Debug)]
 pub struct State {
   pub(crate) close_on_x: bool,
 }
