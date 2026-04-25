@@ -23,7 +23,7 @@ pub struct Win32;
 #[allow(unused)]
 impl Backend for Win32 {
   #[cfg(windows)]
-  fn new() -> Option<&'static Self>
+  fn instance() -> Option<&'static Self>
   where
     Self: Sized,
   {
