@@ -3,8 +3,10 @@
 /.vscode
 /.vs
 /.cargo
+/.zed
 
 Cargo.lock
 rustc-ice-*
+ventana*.log
 *.png~
 flamegraph.svg
