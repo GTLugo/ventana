@@ -311,6 +311,11 @@ impl BackendWindow for X11Window {
     todo!()
   }
 
+  fn set_title(&self, title: String) {
+    let _ = title;
+    todo!()
+  }
+
   fn scale_factor(&self) -> f64 {
     todo!()
   }

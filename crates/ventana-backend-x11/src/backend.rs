@@ -29,10 +29,7 @@ use {
       GetGeometryReply,
       Screen,
     },
-    resource_manager::{
-      Database,
-      new_from_default,
-    },
+    resource_manager::Database,
     xcb_ffi::XCBConnection,
   },
 };
@@ -79,31 +76,13 @@ pub fn primary_monitor() -> Result<Arc<dyn BackendMonitor>, RequestError> {
 }
 
 pub struct X11State {
-  connection: XCBConnection,
-  default_screen_index: usize,
-  database: Database,
-  atoms: Atoms,
+  pub connection: XCBConnection,
+  pub default_screen_index: usize,
+  pub database: Database,
+  pub atoms: Atoms,
 }
 
 impl X11 {
-  pub(crate) fn new() -> Option<Self> {
-    let (connection, default_screen_index) = match XCBConnection::connect(None) {
-      Ok(connection) => connection,
-      Err(error) => {
-        log::error!("Failed to connect to X server: `{error}`");
-        return None;
-      },
-    };
-    let database = new_from_default(&connection).unwrap();
-    let atoms = Atoms::new(&connection).unwrap().reply().unwrap();
-    Some(Self(Arc::new(X11State {
-      connection,
-      default_screen_index,
-      database,
-      atoms,
-    })))
-  }
-
   pub fn connection() -> &'static XCBConnection {
     &Self::instance().unwrap().0.connection
   }

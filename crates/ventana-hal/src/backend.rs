@@ -22,19 +22,19 @@ pub trait Backend: Send + Sync {
   /// This should return a reference to a static instance of the backend, as opposed to creating a new instance every time.
   /// This is because some backends may need to maintain global state.
   /// This should also return `None` if the backend is not implemented on the current platform.
-  fn new() -> Option<&'static Self>
+  fn instance() -> Option<&'static Self>
   where
     Self: Sized + 'static,
   {
     None
   }
 
-  /// Returns a reference to a static instance of the backend. Returns `None` if the backend is not implemented on the current platform.
-  fn instance() -> Option<&'static dyn Backend>
+  /// Returns a reference to the instance as `dyn Backend`
+  fn backend() -> Option<&'static dyn Backend>
   where
     Self: Sized + 'static,
   {
-    Self::new().map(|b| b as _)
+    Self::instance().map(|b| b as _)
   }
 
   /// This should be a quick check to see if the backend is available on the current platform. One should implement this with

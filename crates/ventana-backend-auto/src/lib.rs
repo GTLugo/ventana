@@ -34,7 +34,7 @@ impl Debug for AutoBackend {
 }
 
 impl Backend for AutoBackend {
-  fn new() -> Option<&'static Self>
+  fn instance() -> Option<&'static Self>
   where
     Self: Sized,
   {
@@ -69,9 +69,9 @@ impl Backend for AutoBackend {
 impl AutoBackend {
   /// Attempts to select a backend from the first-party backend implementations. Returns `RequestError::NotSupported` if none are available.
   fn auto() -> Result<&'static dyn Backend, RequestError> {
-    Win32::instance()
-      .or_else(MacOS::instance)
-      .or_else(Linux::instance)
+    Win32::backend()
+      .or_else(MacOS::backend)
+      .or_else(Linux::backend)
       .ok_or(RequestError::not_supported("No supported backend available to auto-select from."))
   }
 }

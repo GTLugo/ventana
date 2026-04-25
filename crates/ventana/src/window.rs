@@ -138,10 +138,10 @@ pub struct WindowOptions {
 impl Default for WindowOptions {
   fn default() -> Self {
     Self {
-      #[cfg(not(feature = "auto-backend"))]
-      backend: None,
-      #[cfg(feature = "auto-backend")]
-      backend: backend::AutoBackend::instance(),
+      backend: cfg_select! {
+        feature = "auto-backend" => backend::AutoBackend::backend(),
+        _ => None,
+      },
       title: "Window",
       size: Size::Logical((800.0, 500.0).into()),
       position: None,

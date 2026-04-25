@@ -34,7 +34,7 @@ pub struct Wayland(#[cfg(linux_platform)] Arc<self::backend::WaylandState>);
 
 impl Backend for Wayland {
   #[cfg(linux_platform)]
-  fn new() -> Option<&'static Self>
+  fn instance() -> Option<&'static Self>
   where
     Self: Sized,
   {
