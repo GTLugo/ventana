@@ -59,7 +59,6 @@ where
   responses: Arc<ResponseStore<H::Response>>,
   backlog: Mutex<VecDeque<Envelope<H::Event>>>,
   pending_ack: Mutex<Option<AcknowledgeSignal>>,
-  ready: H::Ready,
   stopped: Arc<AtomicBool>,
   server_handle: Mutex<Option<JoinHandle<Result<()>>>>,
 }
@@ -84,47 +83,58 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
       from_client,
       responses: responses.clone(),
       stopped: stopped.clone(),
+      is_ready: Default::default(),
       _ready: PhantomData,
     };
 
     let server = handler.clone();
     let server_handle = std::thread::Builder::new().name("server".to_string()).spawn(move || {
+      log::trace!("Starting server thread; waiting for ClientToServer::Start.");
       let ClientToServer::Start { params, .. } = ctx
         .from_client
         .recv()
         .map_err(|e| crate::Error::Disconnected(e.to_string()))?
       else {
-        unreachable!("First command should always be CreateWindow");
+        unreachable!("First command should always be ClientToServer::Start");
       };
+      log::trace!("Received ClientToServer::Start; running server.");
       server.run(params, Arc::new(ctx))
     })?;
-
-    let mut backlog = VecDeque::new();
-    let ready = loop {
-      match from_server.recv().map_err(|e| Error::Disconnected(format!("{e}")))? {
-        ServerToClient::Ready(Ok(r)) => break r,
-        ServerToClient::Ready(Err(e)) => return Err(e),
-        ServerToClient::Event(ev) => backlog.push_back(ev),
-        ServerToClient::Stop => return Err(Error::Other("Stop was sent before ThreadLoop was ready.".to_string())),
-      }
-    };
 
     Ok(Arc::new(Self {
       handler,
       from_server: Mutex::new(from_server),
       to_server,
       responses,
-      backlog: Mutex::new(backlog),
+      backlog: Mutex::new(Default::default()),
       pending_ack: Mutex::new(None),
-      ready,
       stopped,
       server_handle: Mutex::new(Some(server_handle)),
     }))
   }
 
-  pub fn ready_response(&self) -> &H::Ready {
-    &self.ready
+  pub fn start(&self, params: H::Start) -> Result<H::Ready> {
+    // THIS IS THE PROBLEM. THIS BLOCKS THE MAIN THREAD BEFORE IT CAN SEND THE CREATION SIGNAL. REFACTOR NEEDED.
+    let from_server = self.from_server.lock().unwrap();
+    self
+      .to_server
+      .send(ClientToServer::start(params))
+      .map_err(|e| crate::Error::Disconnected(e.to_string()))?;
+    // let response = self.send_request().unwrap();
+
+    loop {
+      match from_server.recv().map_err(|e| Error::Disconnected(format!("{e}")))? {
+        ServerToClient::Ready(r) => break r,
+        // ServerToClient::Ready(Err(e)) => return Err(e),
+        ServerToClient::Event(ev) => self.backlog.lock().unwrap().push_back(ev),
+        ServerToClient::Stop => return Err(Error::Other("Stop was sent before ThreadLoop was ready.".to_string())),
+      }
+    }
   }
+
+  // pub fn ready_response(&self) -> &H::Ready {
+  //   &self.ready
+  // }
 
   // TODO: Flatten the result into a custom enum
   pub fn send_request(&self, request: ClientToServer<H::Request, H::Start>) -> Result<Option<H::Response>> {
@@ -135,6 +145,14 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
       .map_err(|e| crate::Error::Disconnected(e.to_string()))?;
     self.handler.wake()?;
     Ok(self.responses.wait_and_take(&id))
+  }
+
+  pub fn try_send_request(&self, request: ClientToServer<H::Request, H::Start>) -> Result<()> {
+    self
+      .to_server
+      .send(request)
+      .map_err(|e| crate::Error::Disconnected(e.to_string()))?;
+    self.handler.wake()
   }
 
   pub fn next_event(&self, wait: bool) -> Option<H::Event> {

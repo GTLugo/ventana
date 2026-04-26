@@ -88,8 +88,6 @@ impl ThreadHandler for Win32ThreadHandler {
     params: Self::Start,
     ctx: Arc<Context<Self::Event, Self::Request, Self::Response, Self::Start, Self::Ready>>,
   ) -> threadloop::Result<()> {
-    log::trace!("Starting window thread");
-
     // log::trace!("Waiting for Command::CreateWindow...");
 
     // // REPLACE WAIT_FOR WITH A BARRIER / WAIT GROUP
@@ -185,7 +183,7 @@ impl Procedure {
 
 impl WindowProcedure for Procedure {
   fn on_message(&mut self, window: &Window, message: &Message) -> Option<LResult> {
-    log::trace!("Received message: `{message:?}`");
+    // log::trace!("Received message: `{message:?}`");
 
     // if self.server.are_commands_pending() {
     // log::trace!("Commands are pending, processing them before handling the message");
@@ -241,24 +239,28 @@ impl WindowProcedure for Procedure {
 
     match message {
       Message::Create(_) => {
+        log::trace!("{window:?} | {message:?}");
         window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
         None
       },
       Message::SettingChange(_) => {
+        log::trace!("{window:?} | {message:?}");
         window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
         None
       },
       Message::Close => {
+        log::trace!("{window:?} | {message:?}");
         self.ctx.send_event(Event::Window(WindowEvent::CloseRequest));
         Some(LResult(0)) // We don't want defwindowproc to run since it'll auto-destroy the window
       },
       Message::Destroy => {
+        log::trace!("{window:?} | {message:?}");
         window.quit();
         None
       },
       _ => {
         if let Some(event) = map_native_event(message) {
-          // log::trace!("{window:?} | {message:?} | {event:?}");
+          log::trace!("{window:?} | {message:?} | {event:?}");
           self.ctx.send_event(Event::Window(event));
         }
         None

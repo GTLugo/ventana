@@ -52,6 +52,7 @@ where
   pub(crate) to_client: Sender<ServerToClient<E, Ready>>,
   pub(crate) from_client: Receiver<ClientToServer<Req, Start>>,
   pub(crate) responses: Arc<ResponseStore<Res>>,
+  pub(crate) is_ready: Arc<AtomicBool>,
   pub(crate) stopped: Arc<AtomicBool>,
   pub(crate) _ready: PhantomData<Ready>,
 }
@@ -65,7 +66,12 @@ where
   Ready: Send + 'static,
 {
   pub fn signal_ready(&self, ready: Result<Ready>) {
+    self.is_ready.store(true, Ordering::Release);
     let _ = self.to_client.send(ServerToClient::Ready(ready));
+  }
+
+  pub fn is_ready(&self) -> bool {
+    self.is_ready.load(Ordering::Acquire)
   }
 
   fn try_recv_request(&self) -> Option<ClientToServer<Req, Start>> {
@@ -82,7 +88,7 @@ where
   }
 
   pub fn send_event(&self, event: E) -> Result<()> {
-    let ack = Some(AcknowledgeSignal::new());
+    let ack = self.is_ready().then(AcknowledgeSignal::new);
     self
       .to_client
       .send(ServerToClient::Event(Envelope {
@@ -92,6 +98,8 @@ where
       .map_err(|e| crate::Error::Disconnected(e.to_string()))?;
     if let Some(ack) = ack {
       ack.wait();
+    } else {
+      log::debug!("Skipping ack for event")
     }
     Ok(())
   }

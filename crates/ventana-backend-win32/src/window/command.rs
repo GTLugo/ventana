@@ -30,7 +30,7 @@ pub struct CreateInfo {
 #[derive(Clone, Debug)]
 pub enum Command {
   Empty,
-  CreateWindow(CreateInfo),
+  // CreateWindow(CreateInfo),
   // Destroy,
   Redraw,
   GetWindowText,
@@ -51,5 +51,5 @@ impl Command {}
 pub enum CommandResponse {
   Success,
   GetWindowText(String),
-  CreateWindow(Window),
+  // CreateWindow(Window),
 }

@@ -16,7 +16,7 @@ pub fn initialize_logger() {
   // taken from github https://github.com/rust-cli/env_logger/issues/125
   let file_target = Box::new(File::create("ventana.log").unwrap());
   env_logger::builder()
-    .target(Target::Pipe(file_target))
+    // .target(Target::Pipe(file_target))
     .filter(None, log::LevelFilter::Trace)
     .filter(Some("wgpu"), log::LevelFilter::Off)
     .filter(Some("naga"), log::LevelFilter::Off)

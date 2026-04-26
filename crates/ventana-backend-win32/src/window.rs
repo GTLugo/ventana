@@ -99,15 +99,12 @@ impl Win32Window {
 
     let flow = settings.flow;
     let shared = SharedInternal::new(settings.clone());
-    let Some(CommandResponse::CreateWindow(hwnd)) = thread
-      .send_request(ClientToServer::request(Command::CreateWindow(CreateInfo {
+    let hwnd = thread
+      .start(CreateInfo {
         shared: shared.clone(),
         settings,
-      })))
-      .unwrap()
-    else {
-      unreachable!("Command::CreateWindow should always return CommandResponse::CreateWindow")
-    };
+      })
+      .request_error()?;
 
     log::trace!("Received window handle from window thread");
 
@@ -163,7 +160,7 @@ impl BackendWindow for Win32Window {
   }
 
   fn close(&self) {
-    self.thread.send_request(ClientToServer::stop());
+    self.thread.try_send_request(ClientToServer::stop());
   }
 
   fn is_closing(&self) -> bool {
@@ -171,9 +168,10 @@ impl BackendWindow for Win32Window {
     // self.stop_signal.should_stop()
   }
 
+  // this should be changed to activate a flag to avoid excessive redraws
   fn request_redraw(&self) {
     log::trace!("Sending Command::Redraw...");
-    self.thread.send_request(ClientToServer::request(Command::Redraw));
+    self.thread.try_send_request(ClientToServer::request(Command::Redraw));
   }
 
   fn title(&self) -> String {
@@ -191,7 +189,7 @@ impl BackendWindow for Win32Window {
     log::trace!("Sending Command::SetWindowText...");
     self
       .thread
-      .send_request(ClientToServer::request(Command::SetWindowText(title)));
+      .try_send_request(ClientToServer::request(Command::SetWindowText(title)));
   }
 
   fn scale_factor(&self) -> f64 {
