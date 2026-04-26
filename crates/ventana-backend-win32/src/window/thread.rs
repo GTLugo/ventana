@@ -17,6 +17,7 @@ use {
   threadloop::{
     context::{
       Context,
+      ThreadContext,
       ThreadHandler,
     },
     message::ClientToServer,
@@ -47,7 +48,7 @@ impl Win32ThreadHandler {
 
 impl Win32ThreadHandler {
   fn create_window(
-    ctx: Arc<Context<Event, Command, CommandResponse, CreateInfo, Window>>,
+    ctx: Arc<ThreadContext<Self>>,
     internal: Arc<SharedInternal>,
     settings: WindowSettings,
   ) -> Result<Window, RequestError> {
@@ -88,18 +89,6 @@ impl ThreadHandler for Win32ThreadHandler {
     params: Self::Start,
     ctx: Arc<Context<Self::Event, Self::Request, Self::Response, Self::Start, Self::Ready>>,
   ) -> threadloop::Result<()> {
-    // log::trace!("Waiting for Command::CreateWindow...");
-
-    // // REPLACE WAIT_FOR WITH A BARRIER / WAIT GROUP
-    // let CommandEnvelope {
-    //   id,
-    //   command: Command::CreateWindow(create_info),
-    //   ack
-    // } = ctx.wait_for_command()?
-    // else {
-    //   unreachable!("First command should always be CreateWindow");
-    // };
-
     log::trace!("Creating window");
 
     let window = Self::create_window(ctx.clone(), params.shared.clone(), params.settings.clone())
@@ -109,9 +98,6 @@ impl ThreadHandler for Win32ThreadHandler {
     log::trace!("Sending window handle to main thread");
 
     ctx.signal_ready(Ok(window));
-    params.shared.set_ready(true);
-
-    // server_thread.send_response(id.new_response(CommandResponse::CreateWindow(window)), ack)?;
 
     log::trace!("Window is ready; entering message loop");
 
@@ -134,108 +120,64 @@ impl ThreadHandler for Win32ThreadHandler {
 }
 
 pub struct Procedure {
-  pub ctx: Arc<Context<Event, Command, CommandResponse, CreateInfo, Window>>,
+  pub ctx: Arc<ThreadContext<Win32ThreadHandler>>,
   pub internal: Arc<SharedInternal>,
 }
 
 impl Procedure {
-  // fn send_event(&self, event: Event) {
-  //   self.ctx.send_event(event, self.internal.is_ready()).unwrap();
-  // }
+  const DESTROY_MESSAGE: u32 = Message::APP + 11;
 
-  // fn on_command(&mut self, window: &Window, CommandEnvelope { id, command, ack }: CommandEnvelope<Command>) {
-  //   log::trace!("Handling command: `{command:?}`");
-  //   match command {
-  //     Command::Destroy => {
-  //       window.destroy().unwrap();
-  //       self
-  //         .ctx
-  //         .send_response(id.new_response(CommandResponse::Success), ack)
-  //         .unwrap();
-  //     },
-  //     Command::Redraw => {
-  //       window.redraw().unwrap();
-  //       self
-  //         .server
-  //         .send_response(id.new_response(CommandResponse::Success), ack)
-  //         .unwrap();
-  //     },
-  //     Command::GetWindowText => {
-  //       self
-  //         .server
-  //         .send_response(
-  //           id.new_response(CommandResponse::GetWindowText(window.get_window_text().unwrap_or_default())),
-  //           ack,
-  //         )
-  //         .unwrap();
-  //     },
-  //     Command::SetWindowText(text) => {
-  //       window.set_window_text(&text).unwrap();
-  //       self
-  //         .server
-  //         .send_response(id.new_response(CommandResponse::Success), ack)
-  //         .unwrap();
-  //     },
-  //     _ => (),
-  //   }
-  // }
+  fn handle_pending_commands(&mut self, window: &Window) -> Result<(), RequestError> {
+    let mut handling_commands = true;
+    while handling_commands {
+      handling_commands = self
+        .ctx
+        .try_handle_request(|request| match request {
+          ClientToServer::Request {
+            request: Command::Redraw,
+            ..
+          } => {
+            window.redraw().map_err(|e| threadloop::Error::OS(e.into()))?;
+            Ok(CommandResponse::Success)
+          },
+          ClientToServer::Request {
+            request: Command::GetWindowText,
+            ..
+          } => Ok(CommandResponse::GetWindowText(window.get_window_text().unwrap_or_default())),
+          ClientToServer::Request {
+            request: Command::SetWindowText(text),
+            ..
+          } => {
+            window
+              .set_window_text(text)
+              .map_err(|e| threadloop::Error::OS(e.into()))?;
+            Ok(CommandResponse::Success)
+          },
+          ClientToServer::Stop { .. } => {
+            self.ctx.set_stopped();
+            window
+              .post_message(Message::App(AppMessage::empty(Self::DESTROY_MESSAGE)))
+              .map_err(|e| threadloop::Error::OS(e.into()))?;
+            Ok(CommandResponse::Success)
+          },
+          _ => Ok(CommandResponse::Success),
+        })
+        .request_error()?;
+    }
+
+    Ok(())
+  }
 }
 
 impl WindowProcedure for Procedure {
   fn on_message(&mut self, window: &Window, message: &Message) -> Option<LResult> {
     // log::trace!("Received message: `{message:?}`");
 
-    // if self.server.are_commands_pending() {
-    // log::trace!("Commands are pending, processing them before handling the message");
-    let mut handling_commands = true;
-    // while let Some(command_envelope) = self.ctx.receive_command() {
-    //   self.on_command(window, command_envelope);
-    // }
-    while handling_commands {
-      handling_commands = self
-        .ctx
-        .try_handle_request(|request| {
-          match request {
-            // ClientToServer::Request {
-            //   request: Command::Destroy,
-            //   ..
-            // } => {
-            //   window.destroy();
-            //   Ok(CommandResponse::Success)
-            // },
-            ClientToServer::Request {
-              request: Command::Redraw,
-              ..
-            } => {
-              window.redraw();
-              Ok(CommandResponse::Success)
-            },
-            ClientToServer::Request {
-              request: Command::GetWindowText,
-              ..
-            } => {
-              window.destroy();
-              Ok(CommandResponse::GetWindowText(window.get_window_text().unwrap_or_default()))
-            },
-            ClientToServer::Request {
-              request: Command::SetWindowText(text),
-              ..
-            } => {
-              window.set_window_text(text);
-              Ok(CommandResponse::Success)
-            },
-            ClientToServer::Stop { .. } => {
-              window.destroy();
-              Ok(CommandResponse::Success)
-            },
-            _ => Ok(CommandResponse::Success),
-          }
-        })
-        .unwrap();
-    }
-    // }
+    if let Err(error) = self.handle_pending_commands(window) {
+      log::error!("{error}");
+    };
 
-    log::trace!("Handling message: `{message:?}`");
+    // log::trace!("Handling message: `{message:?}`");
 
     match message {
       Message::Create(_) => {
@@ -250,8 +192,15 @@ impl WindowProcedure for Procedure {
       },
       Message::Close => {
         log::trace!("{window:?} | {message:?}");
-        self.ctx.send_event(Event::Window(WindowEvent::CloseRequest));
+        let _ = self.ctx.send_event(Event::Window(WindowEvent::CloseRequest));
         Some(LResult(0)) // We don't want defwindowproc to run since it'll auto-destroy the window
+      },
+      Message::App(AppMessage {
+        id: Self::DESTROY_MESSAGE,
+        ..
+      }) => {
+        let _ = window.destroy();
+        None
       },
       Message::Destroy => {
         log::trace!("{window:?} | {message:?}");
@@ -260,8 +209,8 @@ impl WindowProcedure for Procedure {
       },
       _ => {
         if let Some(event) = map_native_event(message) {
-          log::trace!("{window:?} | {message:?} | {event:?}");
-          self.ctx.send_event(Event::Window(event));
+          // log::trace!("{window:?} | {message:?} | {event:?}");
+          let _ = self.ctx.send_event(Event::Window(event));
         }
         None
       },

@@ -15,7 +15,13 @@ use {
     CreateInfo,
   },
   ::win64::Handle,
-  std::sync::Arc,
+  std::sync::{
+    Arc,
+    atomic::{
+      AtomicBool,
+      Ordering,
+    },
+  },
   threadloop::{
     ThreadLoop,
     message::ClientToServer,
@@ -74,6 +80,7 @@ use {
 pub struct Win32Window {
   hwnd: Window,
   flow: Flow,
+  should_quit: Arc<AtomicBool>,
   shared: Arc<SharedInternal>,
   thread: Arc<ThreadLoop<Win32ThreadHandler>>,
 }
@@ -81,10 +88,6 @@ pub struct Win32Window {
 impl Drop for Win32Window {
   fn drop(&mut self) {
     log::trace!("Dropping window");
-    // self
-    //   .thread
-    //   .join()
-    //   .expect("panicked when attempting to join Window thread");
   }
 }
 
@@ -93,6 +96,7 @@ impl Win32Window {
     set_process_dpi_awareness(DPIAwarenessContext::PerMonitorAwareV2);
 
     log::trace!("Creating ThreadLoop");
+
     let thread = ThreadLoop::new(Arc::new(Win32ThreadHandler::new())).request_error()?;
 
     log::trace!("Sending Command::CreateWindow...");
@@ -111,6 +115,7 @@ impl Win32Window {
     Ok(Self {
       hwnd,
       flow,
+      should_quit: Arc::new(AtomicBool::new(false)),
       shared,
       thread,
     })
@@ -143,6 +148,13 @@ impl BackendWindow for Win32Window {
   }
 
   fn next(&self) -> Option<Event> {
+    if self.is_closing() {
+      // TODO: reset flag and set active in case we start looping again later
+      // self.should_quit.store(false, Ordering::Release);
+      self.thread.set_inactive();
+      return None;
+    }
+
     let event = self.thread.next_event(matches!(self.flow, Flow::Wait))?;
 
     if let Event::Window(WindowEvent::CloseRequest) = event {
@@ -160,22 +172,24 @@ impl BackendWindow for Win32Window {
   }
 
   fn close(&self) {
-    self.thread.try_send_request(ClientToServer::stop());
+    self.should_quit.store(true, Ordering::Release);
   }
 
   fn is_closing(&self) -> bool {
-    todo!()
-    // self.stop_signal.should_stop()
+    self.should_quit.load(Ordering::Acquire)
   }
 
   // this should be changed to activate a flag to avoid excessive redraws
   fn request_redraw(&self) {
-    log::trace!("Sending Command::Redraw...");
-    self.thread.try_send_request(ClientToServer::request(Command::Redraw));
+    // log::trace!("Sending Command::Redraw...");
+    self
+      .thread
+      .try_send_request(ClientToServer::request(Command::Redraw))
+      .unwrap();
   }
 
   fn title(&self) -> String {
-    log::trace!("Sending Command::GetWindowText...");
+    // log::trace!("Sending Command::GetWindowText...");
     let Ok(Some(CommandResponse::GetWindowText(text))) = self
       .thread
       .send_request(ClientToServer::request(Command::GetWindowText))
@@ -186,10 +200,11 @@ impl BackendWindow for Win32Window {
   }
 
   fn set_title(&self, title: String) {
-    log::trace!("Sending Command::SetWindowText...");
+    // log::trace!("Sending Command::SetWindowText...");
     self
       .thread
-      .try_send_request(ClientToServer::request(Command::SetWindowText(title)));
+      .try_send_request(ClientToServer::request(Command::SetWindowText(title)))
+      .unwrap();
   }
 
   fn scale_factor(&self) -> f64 {

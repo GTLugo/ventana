@@ -74,9 +74,9 @@ impl Window {
   }
 
   // TODO: Buggy implementation. Needs revision. Win32 backend might be leaking title?
-  // pub fn title(&self) -> String {
-  //   self.window.title()
-  // }
+  pub fn title(&self) -> String {
+    self.window.title()
+  }
 
   pub fn set_title(&self, title: impl Into<String>) {
     self.window.set_title(title.into())

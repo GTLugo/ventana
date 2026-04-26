@@ -2,7 +2,10 @@ use {
   self::{
     context::{
       Context,
+      State,
+      ThreadContext,
       ThreadHandler,
+      ThreadState,
     },
     message::{
       ClientToServer,
@@ -18,10 +21,6 @@ use {
     sync::{
       Arc,
       Mutex,
-      atomic::{
-        AtomicBool,
-        Ordering,
-      },
       mpsc::{
         Receiver,
         Sender,
@@ -59,13 +58,13 @@ where
   responses: Arc<ResponseStore<H::Response>>,
   backlog: Mutex<VecDeque<Envelope<H::Event>>>,
   pending_ack: Mutex<Option<AcknowledgeSignal>>,
-  stopped: Arc<AtomicBool>,
+  state: State,
   server_handle: Mutex<Option<JoinHandle<Result<()>>>>,
 }
 
 impl<H: ThreadHandler + Send + Sync + 'static> Drop for ThreadLoop<H> {
   fn drop(&mut self) {
-    if let Err(e) = self.shutdown() {
+    if let Err(e) = self.stop() {
       log::error!("{e}");
     };
   }
@@ -76,30 +75,20 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
     let (to_client, from_server) = std::sync::mpsc::channel();
     let (to_server, from_client) = std::sync::mpsc::channel();
     let responses = Arc::new(ResponseStore::new());
-    let stopped = Arc::new(AtomicBool::new(false));
 
     let ctx = Context {
       to_client,
       from_client,
       responses: responses.clone(),
-      stopped: stopped.clone(),
-      is_ready: Default::default(),
+      state: Default::default(),
       _ready: PhantomData,
     };
 
     let server = handler.clone();
-    let server_handle = std::thread::Builder::new().name("server".to_string()).spawn(move || {
-      log::trace!("Starting server thread; waiting for ClientToServer::Start.");
-      let ClientToServer::Start { params, .. } = ctx
-        .from_client
-        .recv()
-        .map_err(|e| crate::Error::Disconnected(e.to_string()))?
-      else {
-        unreachable!("First command should always be ClientToServer::Start");
-      };
-      log::trace!("Received ClientToServer::Start; running server.");
-      server.run(params, Arc::new(ctx))
-    })?;
+    let server_handle = std::thread::Builder::new()
+      .name("server".to_string())
+      .spawn(move || server_main(server, ctx))?;
+    let state = State::default();
 
     Ok(Arc::new(Self {
       handler,
@@ -108,13 +97,12 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
       responses,
       backlog: Mutex::new(Default::default()),
       pending_ack: Mutex::new(None),
-      stopped,
+      state: state.clone(),
       server_handle: Mutex::new(Some(server_handle)),
     }))
   }
 
   pub fn start(&self, params: H::Start) -> Result<H::Ready> {
-    // THIS IS THE PROBLEM. THIS BLOCKS THE MAIN THREAD BEFORE IT CAN SEND THE CREATION SIGNAL. REFACTOR NEEDED.
     let from_server = self.from_server.lock().unwrap();
     self
       .to_server
@@ -175,7 +163,6 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
           return Some(message);
         },
         ServerToClient::Stop => {
-          self.stopped.store(true, Ordering::Release);
           return None;
         },
         _ => (), // Ready
@@ -183,13 +170,25 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
     }
   }
 
-  pub fn shutdown(&self) -> Result<()> {
-    if self.stopped.swap(true, Ordering::AcqRel) {
+  #[inline(always)]
+  pub fn set_active(&self) {
+    self.state.change_state(ThreadState::Ready);
+  }
+
+  #[inline(always)]
+  pub fn set_inactive(&self) {
+    self.state.change_state(ThreadState::Inactive);
+  }
+
+  pub fn stop(&self) -> Result<()> {
+    if matches!(self.state.swap_state(ThreadState::Stopping), ThreadState::Stopping | ThreadState::Stopped) {
       return Err(Error::Ignored);
     }
 
+    log::trace!("Stopping server thread");
+
     self.ack_last_event();
-    self.send_request(ClientToServer::stop())?;
+    self.try_send_request(ClientToServer::stop())?;
 
     let handle = self.server_handle.lock().unwrap().take();
     if let Some(handle) = handle {
@@ -207,4 +206,20 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
       pending.heard();
     }
   }
+}
+
+fn server_main<H: ThreadHandler>(server: Arc<H>, ctx: ThreadContext<H>) -> Result<()> {
+  log::trace!("Starting server thread; waiting for ClientToServer::Start.");
+
+  let ClientToServer::Start { params, .. } = ctx
+    .from_client
+    .recv()
+    .map_err(|e| crate::Error::Disconnected(e.to_string()))?
+  else {
+    unreachable!("First command should always be ClientToServer::Start");
+  };
+
+  log::trace!("Received ClientToServer::Start; running server.");
+
+  server.run(params, Arc::new(ctx))
 }

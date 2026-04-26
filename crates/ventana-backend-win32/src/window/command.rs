@@ -17,7 +17,6 @@ use {
       Visibility,
     },
   },
-  win64::user::Window,
 };
 
 #[derive(Clone, Debug)]
