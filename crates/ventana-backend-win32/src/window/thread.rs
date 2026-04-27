@@ -128,44 +128,49 @@ impl Procedure {
   const DESTROY_MESSAGE: u32 = Message::APP + 11;
 
   fn handle_pending_commands(&mut self, window: &Window) -> Result<(), RequestError> {
-    let mut handling_commands = true;
-    while handling_commands {
-      handling_commands = self
+    loop {
+      if !self
         .ctx
-        .try_handle_request(|request| match request {
-          ClientToServer::Request {
-            request: Command::Redraw,
-            ..
-          } => {
-            window.redraw().map_err(|e| threadloop::Error::OS(e.into()))?;
-            Ok(CommandResponse::Success)
-          },
-          ClientToServer::Request {
-            request: Command::GetWindowText,
-            ..
-          } => Ok(CommandResponse::GetWindowText(window.get_window_text().unwrap_or_default())),
-          ClientToServer::Request {
-            request: Command::SetWindowText(text),
-            ..
-          } => {
-            window
-              .set_window_text(text)
-              .map_err(|e| threadloop::Error::OS(e.into()))?;
-            Ok(CommandResponse::Success)
-          },
-          ClientToServer::Stop { .. } => {
-            self.ctx.set_stopped();
-            window
-              .post_message(Message::App(AppMessage::empty(Self::DESTROY_MESSAGE)))
-              .map_err(|e| threadloop::Error::OS(e.into()))?;
-            Ok(CommandResponse::Success)
-          },
-          _ => Ok(CommandResponse::Success),
-        })
-        .request_error()?;
+        .try_handle_request(|request| Self::on_command(window, request))
+        .request_error()?
+      {
+        break;
+      }
     }
 
     Ok(())
+  }
+
+  fn on_command(window: &Window, request: ClientToServer<Command, CreateInfo>) -> threadloop::Result<CommandResponse> {
+    match request {
+      ClientToServer::Request {
+        request: Command::Redraw,
+        ..
+      } => {
+        window.redraw().map_err(|e| threadloop::Error::OS(e.into()))?;
+        Ok(CommandResponse::Success)
+      },
+      ClientToServer::Request {
+        request: Command::GetWindowText,
+        ..
+      } => Ok(CommandResponse::GetWindowText(window.get_window_text().unwrap_or_default())),
+      ClientToServer::Request {
+        request: Command::SetWindowText(text),
+        ..
+      } => {
+        window
+          .set_window_text(text)
+          .map_err(|e| threadloop::Error::OS(e.into()))?;
+        Ok(CommandResponse::Success)
+      },
+      ClientToServer::Stop { .. } => {
+        window
+          .post_message(Message::App(AppMessage::empty(Self::DESTROY_MESSAGE)))
+          .map_err(|e| threadloop::Error::OS(e.into()))?;
+        Ok(CommandResponse::Success)
+      },
+      _ => Ok(CommandResponse::Success),
+    }
   }
 }
 

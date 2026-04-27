@@ -14,10 +14,6 @@ use {
     sync::{
       Arc,
       Mutex,
-      atomic::{
-        AtomicU8,
-        Ordering,
-      },
       mpsc::{
         Receiver,
         Sender,
@@ -150,6 +146,10 @@ where
     }
 
     if let Some(request) = self.try_recv_request() {
+      if let ClientToServer::Stop { .. } = &request {
+        self.state.change_state(ThreadState::Stopped);
+      }
+
       self.responses.insert_and_notify(request.id(), handler(request)?);
     } else {
       return Ok(false);
@@ -181,11 +181,6 @@ where
   #[inline(always)]
   pub fn set_inactive(&self) {
     self.state.change_state(ThreadState::Inactive);
-  }
-
-  #[inline(always)]
-  pub fn set_stopped(&self) {
-    self.state.change_state(ThreadState::Stopped);
   }
 
   #[inline(always)]

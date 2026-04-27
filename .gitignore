@@ -4,6 +4,7 @@
 /.vs
 /.cargo
 /.zed
+/logs
 
 Cargo.lock
 rustc-ice-*

@@ -1,10 +1,13 @@
 use {
-  example::State,
+  example::{
+    State,
+    logger::Logger,
+  },
   ventana::prelude::*,
 };
 
 fn main() -> anyhow::Result<()> {
-  example::initialize_logger();
+  let _logger = Logger::init()?;
 
   AutoBackend::instance().inspect(|b| log::debug!("Backend: {}", b.name()));
 
