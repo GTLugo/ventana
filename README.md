@@ -21,7 +21,7 @@ for event in window {
 
 A key feature for this library is the iterator API. Working with callbacks and traits is nice, but can be a little intense for a simple application. The iterator API in Rust is easy-to-use and fits very naturally with how one might perceive events as arriving in a window like letters in a mailbox. This library allows users to take advantage of that elegance.
 
-## Bring your own backend (or use Ventana's)
+## Choose your own backend
 
 As there are many different platforms, each with their own unique windowing APIs, Ventana is designed such that users may implement their own backends to replace the ones built into the core library. If you don't like the way the default backends work, you can disable the `auto-backend` feature and plug your own into the `WindowOptions` struct. You can also do this if you are working on an unsupported platform and prefer to keep your builds lean.
 
