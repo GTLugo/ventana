@@ -148,15 +148,15 @@ where
       return Ok(false);
     }
 
-    if let Some(request) = self.try_recv_request() {
-      if let ClientToServer::Stop { .. } = &request {
-        self.state.change_state(ThreadState::Stopped);
-      }
-
-      self.responses.insert_and_notify(request.id(), handler(request)?);
-    } else {
+    let Some(request) = self.try_recv_request() else {
       return Ok(false);
+    };
+
+    if let ClientToServer::Stop { .. } = &request {
+      self.state.change_state(ThreadState::Stopped);
     }
+
+    self.responses.insert_and_notify(request.id(), handler(request)?);
 
     Ok(true)
   }
@@ -206,10 +206,5 @@ where
   #[inline(always)]
   pub fn has_stopped(&self) -> bool {
     self.state.has_stopped()
-  }
-
-  pub fn notify_stopped(&self) -> Result<()> {
-    self.set_inactive();
-    self.to_client.send(ServerToClient::Stop).map_err(|e| crate::Error::Disconnected(e.to_string()))
   }
 }

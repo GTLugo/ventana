@@ -10,10 +10,7 @@ use {
     state::SharedInternal,
     thread::Win32ThreadHandler,
   },
-  crate::window::command::{
-    CommandResponse,
-    CreateInfo,
-  },
+  crate::window::command::CreateInfo,
   ::win64::Handle,
   std::sync::{
     Arc,
@@ -95,14 +92,15 @@ impl Win32Window {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     set_process_dpi_awareness(DPIAwarenessContext::PerMonitorAwareV2);
 
+    let flow = settings.flow;
+    let shared = SharedInternal::new(settings.clone());
+
     log::trace!("Creating ThreadLoop");
 
     let thread = ThreadLoop::new(Arc::new(Win32ThreadHandler::new())).request_error()?;
 
     log::trace!("Sending Command::CreateWindow...");
 
-    let flow = settings.flow;
-    let shared = SharedInternal::new(settings.clone());
     let hwnd = thread.start(CreateInfo { shared: shared.clone(), settings }).request_error()?;
 
     log::trace!("Received window handle from window thread");
@@ -174,15 +172,15 @@ impl BackendWindow for Win32Window {
     self.thread.try_send_request(ClientToServer::request(Command::Redraw)).unwrap();
   }
 
-  fn title(&self) -> String {
-    // log::trace!("Sending Command::GetWindowText...");
-    let Ok(Some(CommandResponse::GetWindowText(text))) =
-      self.thread.send_request(ClientToServer::request(Command::GetWindowText))
-    else {
-      return String::new();
-    };
-    text
-  }
+  // fn title(&self) -> String {
+  //   // log::trace!("Sending Command::GetWindowText...");
+  //   let Ok(Some(CommandResponse::GetWindowText(text))) =
+  //     self.thread.send_request(ClientToServer::request(Command::GetWindowText))
+  //   else {
+  //     return String::new();
+  //   };
+  //   text
+  // }
 
   fn set_title(&self, title: String) {
     // log::trace!("Sending Command::SetWindowText...");

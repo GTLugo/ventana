@@ -41,7 +41,8 @@ Ventana comes by default with the `AutoBackend` which supports the platforms lis
 
 ## Final words
 
-Please note, as I am only one person working on this in his free time, Ventana is likely hilariously unoptimized in certain places. Certain performance liberties are taken in the name of maintainability and ease-of-use, but I am completely open to feedback concerning particularly problematic code.
+Please note, as I am only one person working on this in his free time, Ventana is likely hilariously unoptimized in certain places. Certain performance liberties are taken in the name of maintainability and ease-of-use, but I am completely open to feedback concerning particularly problematic code. On a similar note, documentation is currently nearly non-existant, but as
+the library matures, will be added.
 
 ## Credits
 

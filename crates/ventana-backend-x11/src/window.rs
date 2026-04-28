@@ -298,9 +298,9 @@ impl BackendWindow for X11Window {
     !self.state_lock().is_running
   }
 
-  fn title(&self) -> String {
-    todo!()
-  }
+  // fn title(&self) -> String {
+  //   todo!()
+  // }
 
   fn set_title(&self, title: String) {
     let _ = title;

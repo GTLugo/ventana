@@ -59,7 +59,7 @@ pub trait BackendWindow: Send + Sync {
 
   fn request_redraw(&self);
 
-  fn title(&self) -> String;
+  // fn title(&self) -> String;
 
   fn set_title(&self, title: String);
 
