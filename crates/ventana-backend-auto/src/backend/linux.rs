@@ -28,7 +28,11 @@ impl Linux {
   }
 
   pub fn is_available() -> bool {
-    log::info!("Wayland available: {} | X11 available: {}", Self::is_wayland_available(), Self::is_x11_available());
+    log::info!(
+      "Wayland available: {} | X11 available: {}",
+      Self::is_wayland_available(),
+      Self::is_x11_available()
+    );
     Self::is_wayland_available() || Self::is_x11_available()
   }
 

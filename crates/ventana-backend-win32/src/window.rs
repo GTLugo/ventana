@@ -103,22 +103,11 @@ impl Win32Window {
 
     let flow = settings.flow;
     let shared = SharedInternal::new(settings.clone());
-    let hwnd = thread
-      .start(CreateInfo {
-        shared: shared.clone(),
-        settings,
-      })
-      .request_error()?;
+    let hwnd = thread.start(CreateInfo { shared: shared.clone(), settings }).request_error()?;
 
     log::trace!("Received window handle from window thread");
 
-    Ok(Self {
-      hwnd,
-      flow,
-      should_quit: Arc::new(AtomicBool::new(false)),
-      shared,
-      thread,
-    })
+    Ok(Self { hwnd, flow, should_quit: Arc::new(AtomicBool::new(false)), shared, thread })
   }
 
   fn hwnd(&self) -> Window {
@@ -182,17 +171,13 @@ impl BackendWindow for Win32Window {
   // this should be changed to activate a flag to avoid excessive redraws
   fn request_redraw(&self) {
     // log::trace!("Sending Command::Redraw...");
-    self
-      .thread
-      .try_send_request(ClientToServer::request(Command::Redraw))
-      .unwrap();
+    self.thread.try_send_request(ClientToServer::request(Command::Redraw)).unwrap();
   }
 
   fn title(&self) -> String {
     // log::trace!("Sending Command::GetWindowText...");
-    let Ok(Some(CommandResponse::GetWindowText(text))) = self
-      .thread
-      .send_request(ClientToServer::request(Command::GetWindowText))
+    let Ok(Some(CommandResponse::GetWindowText(text))) =
+      self.thread.send_request(ClientToServer::request(Command::GetWindowText))
     else {
       return String::new();
     };
@@ -201,10 +186,7 @@ impl BackendWindow for Win32Window {
 
   fn set_title(&self, title: String) {
     // log::trace!("Sending Command::SetWindowText...");
-    self
-      .thread
-      .try_send_request(ClientToServer::request(Command::SetWindowText(title)))
-      .unwrap();
+    self.thread.try_send_request(ClientToServer::request(Command::SetWindowText(title))).unwrap();
   }
 
   fn scale_factor(&self) -> f64 {

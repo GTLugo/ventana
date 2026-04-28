@@ -53,9 +53,8 @@ impl Win32ThreadHandler {
     settings: WindowSettings,
   ) -> Result<Window, RequestError> {
     let class = {
-      let mut class = WindowClass::builder()
-        .with_name("Window Class")
-        .with_style(WindowClassStyle::DoubleClicks);
+      let mut class =
+        WindowClass::builder().with_name("Window Class").with_style(WindowClassStyle::DoubleClicks);
       if let Some(color) = settings.clear_color {
         class = class.with_background_brush(Brush::solid(color));
       }
@@ -129,11 +128,7 @@ impl Procedure {
 
   fn handle_pending_commands(&mut self, window: &Window) -> Result<(), RequestError> {
     loop {
-      if !self
-        .ctx
-        .try_handle_request(|request| Self::on_command(window, request))
-        .request_error()?
-      {
+      if !self.ctx.try_handle_request(|request| Self::on_command(window, request)).request_error()? {
         break;
       }
     }
@@ -141,26 +136,20 @@ impl Procedure {
     Ok(())
   }
 
-  fn on_command(window: &Window, request: ClientToServer<Command, CreateInfo>) -> threadloop::Result<CommandResponse> {
+  fn on_command(
+    window: &Window,
+    request: ClientToServer<Command, CreateInfo>,
+  ) -> threadloop::Result<CommandResponse> {
     match request {
-      ClientToServer::Request {
-        request: Command::Redraw,
-        ..
-      } => {
+      ClientToServer::Request { request: Command::Redraw, .. } => {
         window.redraw().map_err(|e| threadloop::Error::OS(e.into()))?;
         Ok(CommandResponse::Success)
       },
-      ClientToServer::Request {
-        request: Command::GetWindowText,
-        ..
-      } => Ok(CommandResponse::GetWindowText(window.get_window_text().unwrap_or_default())),
-      ClientToServer::Request {
-        request: Command::SetWindowText(text),
-        ..
-      } => {
-        window
-          .set_window_text(text)
-          .map_err(|e| threadloop::Error::OS(e.into()))?;
+      ClientToServer::Request { request: Command::GetWindowText, .. } => {
+        Ok(CommandResponse::GetWindowText(window.get_window_text().unwrap_or_default()))
+      },
+      ClientToServer::Request { request: Command::SetWindowText(text), .. } => {
+        window.set_window_text(text).map_err(|e| threadloop::Error::OS(e.into()))?;
         Ok(CommandResponse::Success)
       },
       ClientToServer::Stop { .. } => {
@@ -200,10 +189,7 @@ impl WindowProcedure for Procedure {
         let _ = self.ctx.send_event(Event::Window(WindowEvent::CloseRequest));
         Some(LResult(0)) // We don't want defwindowproc to run since it'll auto-destroy the window
       },
-      Message::App(AppMessage {
-        id: Self::DESTROY_MESSAGE,
-        ..
-      }) => {
+      Message::App(AppMessage { id: Self::DESTROY_MESSAGE, .. }) => {
         let _ = window.destroy();
         None
       },

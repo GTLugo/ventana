@@ -56,12 +56,8 @@ impl State {
       .await?;
 
     let surface_caps = surface.get_capabilities(&adapter);
-    let surface_format = surface_caps
-      .formats
-      .iter()
-      .find(|f| f.is_srgb())
-      .copied()
-      .unwrap_or(surface_caps.formats[0]);
+    let surface_format =
+      surface_caps.formats.iter().find(|f| f.is_srgb()).copied().unwrap_or(surface_caps.formats[0]);
     let config = wgpu::SurfaceConfiguration {
       usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
       format: surface_format,
@@ -89,7 +85,10 @@ impl State {
 
   pub fn resize(&mut self, size: PhysicalSize<u32>) {
     // log::info!("Resize: ({}, {})", size.width, size.height);
-    if size.width > 0 && size.height > 0 && (size.width != self.config.width || size.height != self.config.height) {
+    if size.width > 0
+      && size.height > 0
+      && (size.width != self.config.width || size.height != self.config.height)
+    {
       self.config.width = size.width;
       self.config.height = size.height;
       self.reconfigure();
@@ -154,9 +153,8 @@ impl State {
 
     let view = output.texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-    let mut encoder = self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-      label: Some("Render Encoder"),
-    });
+    let mut encoder =
+      self.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: Some("Render Encoder") });
 
     {
       let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -166,12 +164,7 @@ impl State {
           resolve_target: None,
           depth_slice: None,
           ops: wgpu::Operations {
-            load: wgpu::LoadOp::Clear(wgpu::Color {
-              r: 0.1,
-              g: 0.2,
-              b: 0.3,
-              a: 1.0,
-            }),
+            load: wgpu::LoadOp::Clear(wgpu::Color { r: 0.1, g: 0.2, b: 0.3, a: 1.0 }),
             store: wgpu::StoreOp::Store,
           },
         })],

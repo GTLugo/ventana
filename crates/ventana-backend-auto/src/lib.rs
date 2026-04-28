@@ -38,7 +38,8 @@ impl Backend for AutoBackend {
   where
     Self: Sized,
   {
-    static INSTANCE: LazyLock<Option<AutoBackend>> = LazyLock::new(|| AutoBackend::auto().ok().map(AutoBackend));
+    static INSTANCE: LazyLock<Option<AutoBackend>> =
+      LazyLock::new(|| AutoBackend::auto().ok().map(AutoBackend));
     INSTANCE.as_ref()
   }
 

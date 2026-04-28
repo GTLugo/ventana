@@ -140,7 +140,10 @@ where
     self.from_client.try_recv().ok()
   }
 
-  pub fn try_handle_request(&self, mut handler: impl FnMut(ClientToServer<Req, Start>) -> Result<Res>) -> Result<bool> {
+  pub fn try_handle_request(
+    &self,
+    mut handler: impl FnMut(ClientToServer<Req, Start>) -> Result<Res>,
+  ) -> Result<bool> {
     if self.state.has_stopped() {
       return Ok(false);
     }
@@ -162,10 +165,7 @@ where
     let ack = self.state.is_ready().then(AcknowledgeSignal::new);
     self
       .to_client
-      .send(ServerToClient::Event(Envelope {
-        ack: ack.clone(),
-        message: event,
-      }))
+      .send(ServerToClient::Event(Envelope { ack: ack.clone(), message: event }))
       .map_err(|e| crate::Error::Disconnected(e.to_string()))?;
     if let Some(ack) = ack {
       ack.wait();
@@ -210,9 +210,6 @@ where
 
   pub fn notify_stopped(&self) -> Result<()> {
     self.set_inactive();
-    self
-      .to_client
-      .send(ServerToClient::Stop)
-      .map_err(|e| crate::Error::Disconnected(e.to_string()))
+    self.to_client.send(ServerToClient::Stop).map_err(|e| crate::Error::Disconnected(e.to_string()))
   }
 }

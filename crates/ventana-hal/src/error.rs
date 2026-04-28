@@ -42,11 +42,7 @@ impl OsError {
     file: &'static str,
     error: impl Into<Box<dyn std::error::Error + Send + Sync + 'static>>,
   ) -> Self {
-    Self {
-      line,
-      file,
-      error: error.into(),
-    }
+    Self { line, file, error: error.into() }
   }
 }
 

@@ -105,16 +105,9 @@ impl X11Window {
       )
       .win_gravity(Gravity::NORTH_WEST)
       .background_pixel(clear_color);
-    let scale_factor = X11::instance()
-      .unwrap()
-      .primary_monitor()
-      .map_to_os_err()?
-      .scale_factor();
+    let scale_factor = X11::instance().unwrap().primary_monitor().map_to_os_err()?.scale_factor();
     let size = settings.size.to_physical(scale_factor);
-    let position = settings
-      .position
-      .map(|p| p.to_physical(scale_factor))
-      .unwrap_or_default();
+    let position = settings.position.map(|p| p.to_physical(scale_factor)).unwrap_or_default();
 
     connection
       .create_window(
@@ -137,7 +130,13 @@ impl X11Window {
       .map_to_os_err()?;
 
     connection
-      .change_property8(PropMode::REPLACE, id, AtomEnum::WM_ICON_NAME, AtomEnum::STRING, settings.title.as_bytes())
+      .change_property8(
+        PropMode::REPLACE,
+        id,
+        AtomEnum::WM_ICON_NAME,
+        AtomEnum::STRING,
+        settings.title.as_bytes(),
+      )
       .map_to_os_err()?;
 
     connection
@@ -158,12 +157,7 @@ impl X11Window {
       id,
       visual,
       // event_backlog: Mutex::new(VecDeque::new()),
-      state: Mutex::new(State {
-        settings,
-        size,
-        position,
-        is_running: true,
-      }),
+      state: Mutex::new(State { settings, size, position, is_running: true }),
     })
   }
 
@@ -267,10 +261,7 @@ impl BackendWindow for X11Window {
     //   return backlog.pop_front();
     // }
 
-    let x11_event = X11::connection()
-      .wait_for_event()
-      .inspect_err(|e| log::error!("{e}"))
-      .ok()?;
+    let x11_event = X11::connection().wait_for_event().inspect_err(|e| log::error!("{e}")).ok()?;
     let event = self.map_native_event(&x11_event, self.id);
 
     if let Event::Window(WindowEvent::CloseRequest) = event

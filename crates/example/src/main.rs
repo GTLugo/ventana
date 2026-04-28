@@ -7,7 +7,7 @@ use {
 };
 
 fn main() -> anyhow::Result<()> {
-  let _logger = Logger::init()?;
+  Logger::init()?;
 
   AutoBackend::instance().inspect(|b| log::debug!("Backend: {}", b.name()));
 

@@ -47,12 +47,7 @@ impl Backend for X11 {
       };
       let database = new_from_default(&connection).unwrap();
       let atoms = Atoms::new(&connection).unwrap().reply().unwrap();
-      Some(X11(Arc::new(X11State {
-        connection,
-        default_screen_index,
-        database,
-        atoms,
-      })))
+      Some(X11(Arc::new(X11State { connection, default_screen_index, database, atoms })))
     });
     INSTANCE.as_ref()
   }

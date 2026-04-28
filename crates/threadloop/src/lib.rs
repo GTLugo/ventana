@@ -85,9 +85,8 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
     };
 
     let server = handler.clone();
-    let server_handle = std::thread::Builder::new()
-      .name("server".to_string())
-      .spawn(move || server_main(server, ctx))?;
+    let server_handle =
+      std::thread::Builder::new().name("server".to_string()).spawn(move || server_main(server, ctx))?;
     let state = State::default();
 
     Ok(Arc::new(Self {
@@ -115,7 +114,9 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
         ServerToClient::Ready(r) => break r,
         // ServerToClient::Ready(Err(e)) => return Err(e),
         ServerToClient::Event(ev) => self.backlog.lock().unwrap().push_back(ev),
-        ServerToClient::Stop => return Err(Error::Other("Stop was sent before ThreadLoop was ready.".to_string())),
+        ServerToClient::Stop => {
+          return Err(Error::Other("Stop was sent before ThreadLoop was ready.".to_string()));
+        },
       }
     }
   }
@@ -127,19 +128,13 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
   // TODO: Flatten the result into a custom enum
   pub fn send_request(&self, request: ClientToServer<H::Request, H::Start>) -> Result<Option<H::Response>> {
     let id = request.id();
-    self
-      .to_server
-      .send(request)
-      .map_err(|e| crate::Error::Disconnected(e.to_string()))?;
+    self.to_server.send(request).map_err(|e| crate::Error::Disconnected(e.to_string()))?;
     self.handler.wake()?;
     Ok(self.responses.wait_and_take(&id))
   }
 
   pub fn try_send_request(&self, request: ClientToServer<H::Request, H::Start>) -> Result<()> {
-    self
-      .to_server
-      .send(request)
-      .map_err(|e| crate::Error::Disconnected(e.to_string()))?;
+    self.to_server.send(request).map_err(|e| crate::Error::Disconnected(e.to_string()))?;
     self.handler.wake()
   }
 
@@ -211,10 +206,8 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
 fn server_main<H: ThreadHandler>(server: Arc<H>, ctx: ThreadContext<H>) -> Result<()> {
   log::trace!("Starting server thread; waiting for ClientToServer::Start.");
 
-  let ClientToServer::Start { params, .. } = ctx
-    .from_client
-    .recv()
-    .map_err(|e| crate::Error::Disconnected(e.to_string()))?
+  let ClientToServer::Start { params, .. } =
+    ctx.from_client.recv().map_err(|e| crate::Error::Disconnected(e.to_string()))?
   else {
     unreachable!("First command should always be ClientToServer::Start");
   };

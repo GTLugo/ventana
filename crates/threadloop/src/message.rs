@@ -52,10 +52,7 @@ impl<R, Start> ClientToServer<R, Start> {
   }
 
   pub fn request(request: R) -> Self {
-    Self::Request {
-      id: Id::next(),
-      request,
-    }
+    Self::Request { id: Id::next(), request }
   }
 
   pub fn stop() -> Self {
@@ -64,7 +61,9 @@ impl<R, Start> ClientToServer<R, Start> {
 
   pub fn id(&self) -> Id {
     match self {
-      ClientToServer::Start { id, .. } | ClientToServer::Request { id, .. } | ClientToServer::Stop { id } => *id,
+      ClientToServer::Start { id, .. } | ClientToServer::Request { id, .. } | ClientToServer::Stop { id } => {
+        *id
+      },
     }
   }
 }
@@ -77,10 +76,7 @@ pub(crate) struct ResponseStore<R> {
 
 impl<R> ResponseStore<R> {
   pub fn new() -> Self {
-    Self {
-      map: Default::default(),
-      con: Default::default(),
-    }
+    Self { map: Default::default(), con: Default::default() }
   }
 
   pub fn insert_and_notify(&self, id: Id, response: R) {
@@ -90,10 +86,7 @@ impl<R> ResponseStore<R> {
   }
 
   pub fn wait_and_take(&self, id: &Id) -> Option<R> {
-    let mut map = self
-      .con
-      .wait_while(self.map.lock().unwrap(), |map| !map.contains_key(id))
-      .unwrap();
+    let mut map = self.con.wait_while(self.map.lock().unwrap(), |map| !map.contains_key(id)).unwrap();
     map.remove(id)
   }
 

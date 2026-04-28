@@ -53,12 +53,7 @@ pub fn create_window(settings: WindowSettings) -> Result<Arc<dyn BackendWindow>,
 }
 
 pub fn list_available_monitors() -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
-  Ok(
-    X11Monitor::list_available()
-      .into_iter()
-      .map(|m| Arc::new(m) as _)
-      .collect(),
-  )
+  Ok(X11Monitor::list_available().into_iter().map(|m| Arc::new(m) as _).collect())
 }
 
 pub fn primary_monitor() -> Result<Arc<dyn BackendMonitor>, RequestError> {

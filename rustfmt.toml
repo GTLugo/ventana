@@ -1,7 +1,8 @@
 # https://rust-lang.github.io/rustfmt/
 tab_spaces                 = 2
-fn_call_width              = 100
-max_width                  = 120
+use_small_heuristics       = "Max"
+max_width                  = 110
+# chain_width                = 1
 imports_granularity        = "One"
 imports_layout             = "Vertical"
 group_imports              = "StdExternalCrate"

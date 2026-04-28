@@ -14,9 +14,7 @@ pub(crate) struct SharedInternal {
 
 impl SharedInternal {
   pub fn new(settings: WindowSettings) -> Arc<Self> {
-    Arc::new(Self {
-      state: Mutex::new(State::new(settings.clone())),
-    })
+    Arc::new(Self { state: Mutex::new(State::new(settings.clone())) })
   }
 
   pub fn state_lock(&self) -> MutexGuard<'_, State> {
@@ -31,8 +29,6 @@ pub struct State {
 
 impl State {
   fn new(settings: WindowSettings) -> Self {
-    Self {
-      close_on_x: settings.close_on_x,
-    }
+    Self { close_on_x: settings.close_on_x }
   }
 }

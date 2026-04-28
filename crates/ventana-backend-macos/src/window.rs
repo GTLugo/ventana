@@ -42,14 +42,9 @@ impl MacOSWindow {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     let _ = settings;
 
-    App::new("com.gtlugo.window", Self {
-      window: Default::default(),
-    })
-    .run();
+    App::new("com.gtlugo.window", Self { window: Default::default() }).run();
 
-    Ok(Self {
-      window: Default::default(),
-    })
+    Ok(Self { window: Default::default() })
   }
 }
 

@@ -55,10 +55,7 @@ pub trait Backend: Send + Sync {
 
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
     let _ = settings;
-    Err(RequestError::not_supported(format!(
-      "`{}` backend is not available to create a window",
-      self.name()
-    )))
+    Err(RequestError::not_supported(format!("`{}` backend is not available to create a window", self.name())))
   }
 
   fn list_available_monitors(&self) -> Result<VecDeque<Arc<dyn BackendMonitor>>, RequestError> {
