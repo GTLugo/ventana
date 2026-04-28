@@ -16,7 +16,6 @@ use {
   },
   threadloop::{
     context::{
-      Context,
       ThreadContext,
       ThreadHandler,
     },
