@@ -83,11 +83,7 @@ impl ThreadHandler for Win32ThreadHandler {
   type Response = CommandResponse;
   type Start = CreateInfo;
 
-  fn run(
-    &self,
-    params: Self::Start,
-    ctx: Arc<Context<Self::Event, Self::Request, Self::Response, Self::Start, Self::Ready>>,
-  ) -> threadloop::Result<()> {
+  fn start(&self, params: Self::Start, ctx: Arc<ThreadContext<Self>>) -> threadloop::Result<Self::Ready> {
     log::trace!("Creating window");
 
     let window = Self::create_window(ctx.clone(), params.shared.clone(), params.settings.clone())
@@ -96,8 +92,10 @@ impl ThreadHandler for Win32ThreadHandler {
 
     log::trace!("Sending window handle to main thread");
 
-    ctx.signal_ready(Ok(window));
+    Ok(window)
+  }
 
+  fn run(&self) -> threadloop::Result<()> {
     log::trace!("Window is ready; entering message loop");
 
     MessageLoop::new().run();
@@ -118,6 +116,7 @@ impl ThreadHandler for Win32ThreadHandler {
   }
 }
 
+#[allow(unused)]
 pub struct Procedure {
   pub ctx: Arc<ThreadContext<Win32ThreadHandler>>,
   pub internal: Arc<SharedInternal>,

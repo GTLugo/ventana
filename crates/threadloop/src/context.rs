@@ -104,7 +104,8 @@ pub trait ThreadHandler {
   type Start: Send + 'static;
   type Ready: Send + 'static;
 
-  fn run(&self, params: Self::Start, ctx: Arc<ThreadContext<Self>>) -> Result<()>;
+  fn start(&self, params: Self::Start, ctx: Arc<ThreadContext<Self>>) -> Result<Self::Ready>;
+  fn run(&self) -> Result<()>;
   fn wake(&self) -> Result<()>;
 }
 

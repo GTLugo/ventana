@@ -212,7 +212,13 @@ fn server_main<H: ThreadHandler>(server: Arc<H>, ctx: ThreadContext<H>) -> Resul
     unreachable!("First command should always be ClientToServer::Start");
   };
 
-  log::trace!("Received ClientToServer::Start; running server.");
+  log::trace!("Received ClientToServer::Start; starting server.");
 
-  server.run(params, Arc::new(ctx))
+  let ctx = Arc::new(ctx);
+
+  ctx.signal_ready(server.start(params, ctx.clone()));
+
+  log::trace!("Running server.");
+
+  server.run()
 }
