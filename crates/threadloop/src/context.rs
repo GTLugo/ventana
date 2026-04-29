@@ -9,16 +9,10 @@ use {
     },
     signal::AcknowledgeSignal,
   },
-  std::{
-    marker::PhantomData,
-    sync::{
-      Arc,
-      Mutex,
-      mpsc::{
-        Receiver,
-        Sender,
-      },
-    },
+  std::sync::{
+    Arc,
+    Mutex,
+    mpsc::Sender,
   },
 };
 
@@ -89,14 +83,6 @@ impl State {
   }
 }
 
-pub type ThreadContext<H> = Context<
-  <H as ThreadHandler>::Event,
-  <H as ThreadHandler>::Request,
-  <H as ThreadHandler>::Response,
-  <H as ThreadHandler>::Start,
-  <H as ThreadHandler>::Ready,
->;
-
 pub trait ThreadHandler {
   type Event: Send + 'static;
   type Request: Send + 'static;
@@ -105,61 +91,36 @@ pub trait ThreadHandler {
   type Ready: Send + 'static;
 
   fn start(&self, params: Self::Start, ctx: Arc<ThreadContext<Self>>) -> Result<Self::Ready>;
-  fn run(&self) -> Result<()>;
-  fn wake(&self) -> Result<()>;
+  fn run(&self, ctx: Arc<ThreadContext<Self>>) -> Result<()>;
+  // fn wake(&self) -> Result<()>;
+  fn send(&self, request: ClientToServer<Self::Request>) -> Result<()>;
 }
 
-pub struct Context<E, Req, Res, Start, Ready>
+pub type ThreadContext<H> =
+  Context<<H as ThreadHandler>::Event, <H as ThreadHandler>::Response, <H as ThreadHandler>::Ready>;
+
+pub struct Context<E, Res, Ready>
 where
   E: Send + 'static,
-  Req: Send + 'static,
   Res: Send + 'static,
-  Start: Send + 'static,
   Ready: Send + 'static,
 {
   pub(crate) to_client: Sender<ServerToClient<E, Ready>>,
-  pub(crate) from_client: Receiver<ClientToServer<Req, Start>>,
-  pub(crate) responses: Arc<ResponseStore<Res>>,
+  pub responses: Arc<ResponseStore<Res>>,
   pub(crate) state: State,
-  pub(crate) _ready: PhantomData<Ready>,
 }
 
-impl<E, Req, Res, Start, Ready> Context<E, Req, Res, Start, Ready>
+impl<E, Res, Ready> Context<E, Res, Ready>
 where
   E: Send + 'static,
-  Req: Send + 'static,
+  // Req: Send + 'static,
   Res: Send + 'static,
-  Start: Send + 'static,
+  // Start: Send + 'static,
   Ready: Send + 'static,
 {
   pub fn signal_ready(&self, ready: Result<Ready>) {
     self.state.change_state(ThreadState::Ready);
     let _ = self.to_client.send(ServerToClient::Ready(ready));
-  }
-
-  fn try_recv_request(&self) -> Option<ClientToServer<Req, Start>> {
-    self.from_client.try_recv().ok()
-  }
-
-  pub fn try_handle_request(
-    &self,
-    mut handler: impl FnMut(ClientToServer<Req, Start>) -> Result<Res>,
-  ) -> Result<bool> {
-    if self.state.has_stopped() {
-      return Ok(false);
-    }
-
-    let Some(request) = self.try_recv_request() else {
-      return Ok(false);
-    };
-
-    if let ClientToServer::Stop { .. } = &request {
-      self.state.change_state(ThreadState::Stopped);
-    }
-
-    self.responses.insert_and_notify(request.id(), handler(request)?);
-
-    Ok(true)
   }
 
   pub fn send_event(&self, event: E) -> Result<()> {

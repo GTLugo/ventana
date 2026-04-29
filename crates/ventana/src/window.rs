@@ -32,24 +32,25 @@ pub struct Window
 where
   Self: Send + Sync,
 {
-  backend: &'static dyn Backend,
+  // backend: &'static dyn Backend,
   window: Arc<dyn BackendWindow>,
 }
 
 impl std::fmt::Debug for Window {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    f.debug_struct("Window")
-      .field("backend", &self.backend.name())
-      .field("window", &self.window.id())
-      .finish()
+    // f.debug_struct("Window")
+    //   // .field("backend", &self.backend.name())
+    //   .field("id", &self.window.id())
+    //   .finish()
+    write!(f, "Window({})", self.window.id())
   }
 }
 
-impl std::fmt::Display for Window {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{backend}({id})", backend = self.backend.name(), id = self.window.id())
-  }
-}
+// impl std::fmt::Display for Window {
+//   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+//     write!(f, "{backend}({id})", backend = self.backend.name(), id = self.window.id())
+//   }
+// }
 
 impl Window {
   pub fn new(options: WindowOptions) -> Result<Self, RequestError> {
@@ -62,12 +63,12 @@ impl Window {
     log::trace!("Creating window `{}`", settings.title);
 
     let window = backend.create_window(settings)?;
-    Ok(Self { backend, window })
+    Ok(Self { window })
   }
 
-  pub fn backend(&self) -> &'static dyn Backend {
-    self.backend
-  }
+  // pub fn backend(&self) -> &'static dyn Backend {
+  //   self.backend
+  // }
 
   pub fn id(&self) -> WindowId {
     self.window.id()

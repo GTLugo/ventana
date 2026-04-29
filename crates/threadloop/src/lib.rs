@@ -1,3 +1,9 @@
+pub mod context;
+pub mod message;
+pub mod proxy;
+pub mod signal;
+pub mod v2;
+
 use {
   self::{
     context::{
@@ -13,26 +19,22 @@ use {
       ResponseStore,
       ServerToClient,
     },
+    proxy::ThreadLoopProxy,
     signal::AcknowledgeSignal,
   },
   std::{
-    collections::VecDeque,
-    marker::PhantomData,
+    collections::LinkedList,
     sync::{
       Arc,
       Mutex,
       mpsc::{
         Receiver,
-        Sender,
+        TryRecvError,
       },
     },
     thread::JoinHandle,
   },
 };
-
-pub mod context;
-pub mod message;
-pub mod signal;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -46,17 +48,23 @@ pub enum Error {
   Disconnected(String),
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum NextEventError {
+  #[error("no new events available")]
+  Empty,
+  #[error("server disconnected")]
+  Disconnected,
+}
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub struct ThreadLoop<H>
 where
   H: ThreadHandler + Send + Sync + 'static,
 {
-  handler: Arc<H>,
+  proxy: ThreadLoopProxy<H>,
   from_server: Mutex<Receiver<ServerToClient<H::Event, H::Ready>>>,
-  to_server: Sender<ClientToServer<H::Request, H::Start>>,
-  responses: Arc<ResponseStore<H::Response>>,
-  backlog: Mutex<VecDeque<Envelope<H::Event>>>,
+  backlog: Mutex<LinkedList<Envelope<H::Event>>>,
   pending_ack: Mutex<Option<AcknowledgeSignal>>,
   state: State,
   server_handle: Mutex<Option<JoinHandle<Result<()>>>>,
@@ -71,29 +79,21 @@ impl<H: ThreadHandler + Send + Sync + 'static> Drop for ThreadLoop<H> {
 }
 
 impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
-  pub fn new(handler: Arc<H>) -> Result<Arc<Self>> {
+  pub fn new(handler: Arc<H>, params: H::Start) -> Result<Arc<Self>> {
     let (to_client, from_server) = std::sync::mpsc::channel();
-    let (to_server, from_client) = std::sync::mpsc::channel();
     let responses = Arc::new(ResponseStore::new());
+    let proxy = ThreadLoopProxy::new(handler.clone(), responses.clone());
 
-    let ctx = Context {
-      to_client,
-      from_client,
-      responses: responses.clone(),
-      state: Default::default(),
-      _ready: PhantomData,
-    };
+    let ctx = Context { to_client, responses: responses.clone(), state: Default::default() };
 
-    let server = handler.clone();
-    let server_handle =
-      std::thread::Builder::new().name("server".to_string()).spawn(move || server_main(server, ctx))?;
+    let server_handle = std::thread::Builder::new()
+      .name("server".to_string())
+      .spawn(move || server_main(handler, ctx, params))?;
     let state = State::default();
 
     Ok(Arc::new(Self {
-      handler,
       from_server: Mutex::new(from_server),
-      to_server,
-      responses,
+      proxy,
       backlog: Mutex::new(Default::default()),
       pending_ack: Mutex::new(None),
       state: state.clone(),
@@ -101,13 +101,8 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
     }))
   }
 
-  pub fn start(&self, params: H::Start) -> Result<H::Ready> {
+  pub fn start(&self) -> Result<H::Ready> {
     let from_server = self.from_server.lock().unwrap();
-    self
-      .to_server
-      .send(ClientToServer::start(params))
-      .map_err(|e| crate::Error::Disconnected(e.to_string()))?;
-    // let response = self.send_request().unwrap();
 
     loop {
       match from_server.recv().map_err(|e| Error::Disconnected(format!("{e}")))? {
@@ -121,47 +116,59 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
     }
   }
 
-  // pub fn ready_response(&self) -> &H::Ready {
-  //   &self.ready
-  // }
-
-  // TODO: Flatten the result into a custom enum
-  pub fn send_request(&self, request: ClientToServer<H::Request, H::Start>) -> Result<Option<H::Response>> {
-    let id = request.id();
-    self.to_server.send(request).map_err(|e| crate::Error::Disconnected(e.to_string()))?;
-    self.handler.wake()?;
-    Ok(self.responses.wait_and_take(&id))
+  pub fn proxy(&self) -> &ThreadLoopProxy<H> {
+    &self.proxy
   }
 
-  pub fn try_send_request(&self, request: ClientToServer<H::Request, H::Start>) -> Result<()> {
-    self.to_server.send(request).map_err(|e| crate::Error::Disconnected(e.to_string()))?;
-    self.handler.wake()
+  #[inline]
+  fn drain_backlog(&self) -> Option<H::Event> {
+    match self.backlog.lock().unwrap().pop_front() {
+      Some(Envelope { message, ack }) => {
+        *self.pending_ack.lock().unwrap() = ack;
+        Some(message)
+      },
+      _ => None,
+    }
   }
 
-  pub fn next_event(&self, wait: bool) -> Option<H::Event> {
+  #[inline]
+  fn poll_event(
+    &self,
+    wait: bool,
+  ) -> std::result::Result<ServerToClient<H::Event, H::Ready>, NextEventError> {
+    match wait {
+      true => self.from_server.lock().unwrap().recv().map_err(|_| NextEventError::Disconnected),
+      false => self.from_server.lock().unwrap().try_recv().map_err(|e| match e {
+        TryRecvError::Empty => NextEventError::Empty,
+        TryRecvError::Disconnected => NextEventError::Disconnected,
+      }),
+    }
+  }
+
+  fn are_events_in_backlog(&self) -> bool {
+    // this is mostly to 110% guarantee the lock is dropped. Maybe unnecessary, but I am paranoid
+    !self.backlog.lock().unwrap().is_empty()
+  }
+
+  pub fn next_event(&self, wait: bool) -> std::result::Result<H::Event, NextEventError> {
     self.ack_last_event();
 
-    loop {
-      if let Some(Envelope { message, ack }) = self.backlog.lock().unwrap().pop_front() {
+    while self.are_events_in_backlog() {
+      if let Some(event) = self.drain_backlog() {
+        return Ok(event);
+      }
+    }
+
+    let event = self.poll_event(wait);
+
+    match event {
+      Ok(ServerToClient::Ready(_)) => Err(NextEventError::Empty),
+      Ok(ServerToClient::Event(Envelope { message, ack })) => {
         *self.pending_ack.lock().unwrap() = ack;
-        return Some(message);
-      }
-
-      let event = match wait {
-        true => self.from_server.lock().unwrap().recv().ok()?,
-        false => self.from_server.lock().unwrap().try_recv().ok()?,
-      };
-
-      match event {
-        ServerToClient::Event(Envelope { message, ack }) => {
-          *self.pending_ack.lock().unwrap() = ack;
-          return Some(message);
-        },
-        ServerToClient::Stop => {
-          return None;
-        },
-        _ => (), // Ready
-      }
+        Ok(message)
+      },
+      Ok(ServerToClient::Stop) => Err(NextEventError::Disconnected),
+      Err(error) => Err(error), // Ready
     }
   }
 
@@ -183,7 +190,7 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
     log::trace!("Stopping server thread");
 
     self.ack_last_event();
-    self.try_send_request(ClientToServer::stop())?;
+    self.proxy.try_send_request(ClientToServer::stop())?;
 
     let handle = self.server_handle.lock().unwrap().take();
     if let Some(handle) = handle {
@@ -203,16 +210,10 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
   }
 }
 
-fn server_main<H: ThreadHandler>(server: Arc<H>, ctx: ThreadContext<H>) -> Result<()> {
-  log::trace!("Starting server thread; waiting for ClientToServer::Start.");
+fn server_main<H: ThreadHandler>(server: Arc<H>, ctx: ThreadContext<H>, params: H::Start) -> Result<()> {
+  log::trace!("Starting server thread.");
 
-  let ClientToServer::Start { params, .. } =
-    ctx.from_client.recv().map_err(|e| crate::Error::Disconnected(e.to_string()))?
-  else {
-    unreachable!("First command should always be ClientToServer::Start");
-  };
-
-  log::trace!("Received ClientToServer::Start; starting server.");
+  // log::trace!("Received ClientToServer::Start; starting server.");
 
   let ctx = Arc::new(ctx);
 
@@ -220,5 +221,5 @@ fn server_main<H: ThreadHandler>(server: Arc<H>, ctx: ThreadContext<H>) -> Resul
 
   log::trace!("Running server.");
 
-  server.run()
+  server.run(ctx)
 }

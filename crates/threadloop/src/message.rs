@@ -40,16 +40,16 @@ pub enum ServerToClient<E, Ready> {
 }
 
 #[derive(Debug)]
-pub enum ClientToServer<R, Start> {
-  Start { id: Id, params: Start },
+pub enum ClientToServer<R> {
+  // Start { id: Id, params: Start },
   Request { id: Id, request: R },
   Stop { id: Id },
 }
 
-impl<R, Start> ClientToServer<R, Start> {
-  pub fn start(params: Start) -> Self {
-    Self::Start { id: Id::next(), params }
-  }
+impl<R> ClientToServer<R> {
+  // pub fn start(params: Start) -> Self {
+  //   Self::Start { id: Id::next(), params }
+  // }
 
   pub fn request(request: R) -> Self {
     Self::Request { id: Id::next(), request }
@@ -61,15 +61,13 @@ impl<R, Start> ClientToServer<R, Start> {
 
   pub fn id(&self) -> Id {
     match self {
-      ClientToServer::Start { id, .. } | ClientToServer::Request { id, .. } | ClientToServer::Stop { id } => {
-        *id
-      },
+      ClientToServer::Request { id, .. } | ClientToServer::Stop { id } => *id,
     }
   }
 }
 
-#[derive(Debug)]
-pub(crate) struct ResponseStore<R> {
+#[derive(Debug, Default)]
+pub struct ResponseStore<R> {
   map: Mutex<HashMap<Id, R>>,
   con: Condvar,
 }
@@ -89,8 +87,4 @@ impl<R> ResponseStore<R> {
     let mut map = self.con.wait_while(self.map.lock().unwrap(), |map| !map.contains_key(id)).unwrap();
     map.remove(id)
   }
-
-  // pub fn try_take(&self, id: &Id) -> Option<R> {
-  //   self.map.lock().unwrap().remove(id)
-  // }
 }

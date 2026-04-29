@@ -20,6 +20,7 @@ use {
     },
   },
   threadloop::{
+    NextEventError,
     ThreadLoop,
     message::ClientToServer,
   },
@@ -59,27 +60,13 @@ use {
   },
 };
 
-// struct Win32Client {
-//   hwnd: Option<Window>,
-//   shared: Arc<SharedInternal>,
-// }
-
-// impl Client for Win32Client {
-//   fn destroy(&self, client: &ClientWrapper<Self::Command, Self::ThreadResponse, Self>) -> Result<(), RequestError> {
-//     self.shared.set_ready(false);
-//     log::trace!("Sending Command::Destroy...");
-//     client.send_command(Command::Destroy, true);
-//     Ok(())
-//   }
-// }
-
 // No `Arc` necessary for fields other than `shared` as this will be inside an `Arc<dyn BackendWindow>`
 pub struct Win32Window {
   hwnd: Window,
   flow: Flow,
   should_quit: Arc<AtomicBool>,
   shared: Arc<SharedInternal>,
-  thread: Arc<ThreadLoop<Win32ThreadHandler>>,
+  thread: Arc<ThreadLoop<Win32ThreadHandler>>, // held as a ptr because it's chonky
 }
 
 impl Drop for Win32Window {
@@ -97,11 +84,13 @@ impl Win32Window {
 
     log::trace!("Creating ThreadLoop");
 
-    let thread = ThreadLoop::new(Arc::new(Win32ThreadHandler::new())).request_error()?;
+    let thread =
+      ThreadLoop::new(Arc::new(Win32ThreadHandler::new()), CreateInfo { shared: shared.clone(), settings })
+        .request_error()?;
 
     log::trace!("Sending Command::CreateWindow...");
 
-    let hwnd = thread.start(CreateInfo { shared: shared.clone(), settings }).request_error()?;
+    let hwnd = thread.start().request_error()?;
 
     log::trace!("Received window handle from window thread");
 
@@ -142,7 +131,11 @@ impl BackendWindow for Win32Window {
       return None;
     }
 
-    let event = self.thread.next_event(matches!(self.flow, Flow::Wait))?;
+    let event = match self.thread.next_event(matches!(self.flow, Flow::Wait)) {
+      Ok(event) => event,
+      Err(NextEventError::Empty) => Event::None,
+      Err(NextEventError::Disconnected) => return None,
+    };
 
     if let Event::Window(WindowEvent::CloseRequest) = event {
       let x = self.shared.state_lock().close_on_x;
@@ -169,7 +162,7 @@ impl BackendWindow for Win32Window {
   // this should be changed to activate a flag to avoid excessive redraws
   fn request_redraw(&self) {
     // log::trace!("Sending Command::Redraw...");
-    self.thread.try_send_request(ClientToServer::request(Command::Redraw)).unwrap();
+    self.thread.proxy().try_send_request(ClientToServer::request(Command::Redraw)).unwrap();
   }
 
   // fn title(&self) -> String {
@@ -184,7 +177,7 @@ impl BackendWindow for Win32Window {
 
   fn set_title(&self, title: String) {
     // log::trace!("Sending Command::SetWindowText...");
-    self.thread.try_send_request(ClientToServer::request(Command::SetWindowText(title))).unwrap();
+    self.thread.proxy().try_send_request(ClientToServer::request(Command::SetWindowText(title))).unwrap();
   }
 
   fn scale_factor(&self) -> f64 {

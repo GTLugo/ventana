@@ -108,11 +108,8 @@ impl State {
   pub fn draw(&mut self) {
     self.delta_time = self.last_frame_time.elapsed();
     self.last_frame_time = std::time::Instant::now();
-    self.window.set_title(format!(
-      "Example | FPS: {} FT: {:?} s",
-      self.fps_counter.tick(),
-      self.delta_time.as_secs_f64()
-    ));
+    let fps = format!("Example | FPS: {} FT: {:?} s", self.fps_counter.tick(), self.delta_time.as_secs_f64());
+    log::info!("{fps}");
     match self.render() {
       Ok(_) => (),
       Err(e) => {

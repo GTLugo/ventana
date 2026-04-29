@@ -23,7 +23,7 @@ fn main() -> anyhow::Result<()> {
   for event in &window {
     if let Event::Window(event) = event {
       if !matches!(event, WindowEvent::Draw) {
-        log::debug!("{window} | {event:?}");
+        log::debug!("{window:?} | {event:?}");
       }
 
       match event {

@@ -94,7 +94,7 @@ impl ThreadHandler for Win32ThreadHandler {
     Ok(window)
   }
 
-  fn run(&self) -> threadloop::Result<()> {
+  fn run(&self, _ctx: Arc<ThreadContext<Self>>) -> threadloop::Result<()> {
     log::trace!("Window is ready; entering message loop");
 
     MessageLoop::new().run();
@@ -104,12 +104,19 @@ impl ThreadHandler for Win32ThreadHandler {
     Ok(())
   }
 
-  fn wake(&self) -> threadloop::Result<()> {
-    const WAKE_MESSAGE: u32 = Message::APP + 67;
+  fn send(&self, request: ClientToServer<Self::Request>) -> threadloop::Result<()> {
+    let command = Box::into_raw(Box::new(request));
     if let Some(window) = self.hwnd.lock().unwrap().as_ref() {
       window
-        .post_message(Message::App(AppMessage::empty(WAKE_MESSAGE)))
-        .map_err(|e| threadloop::Error::OS(e.into()))?;
+        .post_message(Message::App(AppMessage {
+          id: Procedure::COMMAND_MESSAGE,
+          w: WParam(0),
+          l: LParam(command as _),
+        }))
+        .map_err(|e| {
+          log::error!("{e}");
+          threadloop::Error::OS(e.into())
+        })?;
     }
     Ok(())
   }
@@ -122,21 +129,12 @@ pub struct Procedure {
 }
 
 impl Procedure {
-  const DESTROY_MESSAGE: u32 = Message::APP + 11;
+  pub const COMMAND_MESSAGE: u32 = Message::APP + 1;
 
-  fn handle_pending_commands(&mut self, window: &Window) -> Result<(), RequestError> {
-    loop {
-      if !self.ctx.try_handle_request(|request| Self::on_command(window, request)).request_error()? {
-        break;
-      }
-    }
-
-    Ok(())
-  }
-
-  fn on_command(
+  fn on_request(
+    &self,
     window: &Window,
-    request: ClientToServer<Command, CreateInfo>,
+    request: ClientToServer<Command>,
   ) -> threadloop::Result<CommandResponse> {
     match request {
       ClientToServer::Request { request: Command::Redraw, .. } => {
@@ -151,9 +149,7 @@ impl Procedure {
         Ok(CommandResponse::Success)
       },
       ClientToServer::Stop { .. } => {
-        window
-          .post_message(Message::App(AppMessage::empty(Self::DESTROY_MESSAGE)))
-          .map_err(|e| threadloop::Error::OS(e.into()))?;
+        let _ = window.destroy();
         Ok(CommandResponse::Success)
       },
       _ => Ok(CommandResponse::Success),
@@ -164,10 +160,6 @@ impl Procedure {
 impl WindowProcedure for Procedure {
   fn on_message(&mut self, window: &Window, message: &Message) -> Option<LResult> {
     // log::trace!("Received message: `{message:?}`");
-
-    if let Err(error) = self.handle_pending_commands(window) {
-      log::error!("{error}");
-    };
 
     // log::trace!("Handling message: `{message:?}`");
 
@@ -187,8 +179,9 @@ impl WindowProcedure for Procedure {
         let _ = self.ctx.send_event(Event::Window(WindowEvent::CloseRequest));
         Some(LResult(0)) // We don't want defwindowproc to run since it'll auto-destroy the window
       },
-      Message::App(AppMessage { id: Self::DESTROY_MESSAGE, .. }) => {
-        let _ = window.destroy();
+      Message::App(AppMessage { id: Self::COMMAND_MESSAGE, l, .. }) => {
+        let request = *unsafe { Box::from_raw(l.0 as *mut ClientToServer<Command>) }; // TODO: add safe conversion to win64
+        let _ = self.on_request(window, request);
         None
       },
       Message::Destroy => {
