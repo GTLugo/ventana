@@ -2,6 +2,7 @@ pub mod logger;
 
 use {
   fps_counter::FPSCounter,
+  std::time::Duration,
   ventana::{
     dpi::PhysicalSize,
     window::Window,
@@ -16,6 +17,7 @@ pub struct State {
   is_surface_configured: bool,
   window: Window,
   fps_counter: FPSCounter,
+  fps: usize,
   last_frame_time: std::time::Instant,
   delta_time: std::time::Duration,
 }
@@ -78,6 +80,7 @@ impl State {
       is_surface_configured: true,
       window,
       fps_counter: FPSCounter::new(),
+      fps: 0,
       last_frame_time: std::time::Instant::now(),
       delta_time: std::time::Duration::ZERO,
     })
@@ -108,8 +111,8 @@ impl State {
   pub fn draw(&mut self) {
     self.delta_time = self.last_frame_time.elapsed();
     self.last_frame_time = std::time::Instant::now();
-    let fps = format!("Example | FPS: {} FT: {:?} s", self.fps_counter.tick(), self.delta_time.as_secs_f64());
-    log::info!("{fps}");
+    self.fps = self.fps_counter.tick();
+    // log::info!("{fps}");
     match self.render() {
       Ok(_) => (),
       Err(e) => {
@@ -117,6 +120,18 @@ impl State {
         self.window.close();
       },
     }
+  }
+
+  pub fn fps_counted(&self) -> usize {
+    self.fps
+  }
+
+  pub fn fps_calculated(&self) -> usize {
+    (1.0 / self.delta_time.as_secs_f64()) as usize
+  }
+
+  pub fn delta_time(&self) -> Duration {
+    self.delta_time
   }
 
   fn render(&mut self) -> anyhow::Result<()> {
