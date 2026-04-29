@@ -46,7 +46,7 @@ impl Logger {
       .add_directive("wgpu=off".parse()?)
       .add_directive("naga=off".parse()?);
 
-    let stdout_layer = logger.add_layer(tracing_appender::non_blocking(std::io::stdout())).pretty();
+    let stdout_layer = logger.add_layer(tracing_appender::non_blocking(std::io::stdout())).compact();
     let file_layer = logger
       .add_layer(tracing_appender::non_blocking(
         tracing_appender::rolling::Builder::new()
