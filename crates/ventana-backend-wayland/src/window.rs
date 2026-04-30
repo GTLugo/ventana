@@ -58,9 +58,9 @@ impl BackendWindow for WaylandWindow {
     todo!()
   }
 
-  // fn title(&self) -> String {
-  //   todo!()
-  // }
+  fn title(&self) -> String {
+    todo!()
+  }
 
   fn set_title(&self, title: String) {
     let _ = title;
