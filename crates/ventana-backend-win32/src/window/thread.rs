@@ -79,7 +79,6 @@ impl ThreadHandler for Win32ThreadHandler {
   type Event = Event;
   type Ready = Window;
   type Request = Command;
-  type Response = CommandResponse;
   type Start = CreateInfo;
 
   fn start(&self, params: Self::Start, ctx: Arc<ThreadContext<Self>>) -> threadloop::Result<Self::Ready> {

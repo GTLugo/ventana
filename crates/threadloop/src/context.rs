@@ -85,7 +85,6 @@ impl State {
 pub trait ThreadHandler {
   type Event: Send + 'static;
   type Request: Send + 'static;
-  type Response: Send + 'static;
   type Start: Send + 'static;
   type Ready: Send + 'static;
 
