@@ -23,13 +23,7 @@ fn main() -> anyhow::Result<()> {
   for event in &window {
     if let Event::Window(event) = event {
       if !matches!(event, WindowEvent::Draw) {
-        let fps = format!(
-          "FPS (ct): {} FPS (calc): {} FT: {:?} s",
-          state.fps_counted(),
-          state.fps_calculated(),
-          state.delta_time().as_secs_f64()
-        );
-        log::debug!("{:?} | {event:?} | {fps}", window.title());
+        log::debug!("{:?} | {event:?}", window.title());
       }
 
       match event {
