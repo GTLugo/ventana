@@ -19,7 +19,91 @@ thiserror = "2.0"
 
 [dependencies.ventana-hal]
 version = "0.0.3"
-path = "../ventana-hal"
+path    = "../ventana-hal"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-cacao = "0.3"
+block2    = "0.6"
+dispatch2 = "0.3"
+objc2     = "0.6"
+objc2-app-kit = { version = "0.3", features = [
+    "std",
+    "objc2-core-foundation",
+    "NSAppearance",
+    "NSApplication",
+    "NSBitmapImageRep",
+    "NSButton",
+    "NSColor",
+    "NSControl",
+    "NSCursor",
+    "NSDragging",
+    "NSEvent",
+    "NSGraphics",
+    "NSGraphicsContext",
+    "NSImage",
+    "NSImageRep",
+    "NSMenu",
+    "NSMenuItem",
+    "NSOpenGLView",
+    "NSPanel",
+    "NSPasteboard",
+    "NSResponder",
+    "NSRunningApplication",
+    "NSScreen",
+    "NSTextInputClient",
+    "NSTextInputContext",
+    "NSTrackingArea",
+    "NSToolbar",
+    "NSView",
+    "NSWindow",
+    "NSWindowScripting",
+    "NSWindowTabGroup",
+] }
+objc2-core-foundation = { version = "0.3", features = [
+    "std",
+    "block2",
+    "CFBase",
+    "CFCGTypes",
+    "CFData",
+    "CFRunLoop",
+    "CFString",
+    "CFUUID",
+] }
+objc2-core-graphics = { version = "0.3", features = [
+    "std",
+    "libc",
+    "CGDirectDisplay",
+    "CGDisplayConfiguration",
+    "CGDisplayFade",
+    "CGError",
+    "CGRemoteOperation",
+    "CGWindowLevel",
+] }
+objc2-core-video = { version = "0.3", features = [
+    "std",
+    "objc2-core-graphics",
+    "CVBase",
+    "CVReturn",
+    "CVDisplayLink",
+] }
+objc2-foundation = { version = "0.3", features = [
+    "std",
+    "block2",
+    "objc2-core-foundation",
+    "NSArray",
+    "NSAttributedString",
+    "NSData",
+    "NSDictionary",
+    "NSDistributedNotificationCenter",
+    "NSEnumerator",
+    "NSGeometry",
+    "NSKeyValueObserving",
+    "NSNotification",
+    "NSObjCRuntime",
+    "NSOperation",
+    "NSPathUtilities",
+    "NSProcessInfo",
+    "NSRunLoop",
+    "NSString",
+    "NSThread",
+    "NSValue",
+] }

@@ -1,20 +1,17 @@
 #![cfg(target_os = "macos")]
 
 use {
-  cacao::appkit::{
-    App,
-    AppDelegate,
-    menu::{
-      Menu,
-      MenuItem,
-    },
-    window::Window,
-  },
-  std::sync::Arc,
-  ventana_hal::{
+  dispatch2::MainThreadBound, objc2::{MainThreadMarker, rc::autoreleasepool}, objc2_app_kit::{
+    NSScreen, NSWindow, NSWindowStyleMask
+  }, objc2_core_foundation::{
+    CGPoint,
+    CGRect,
+    CGSize,
+  }, std::sync::Arc, ventana_hal::{
     dpi::{
       PhysicalPosition,
       PhysicalSize,
+      Position,
     },
     error::RequestError,
     event::Event,
@@ -31,54 +28,53 @@ use {
       BackendWindow,
       WindowId,
     },
-  },
+  }
 };
 
-pub struct AppKitWindow {
-  window: Window,
-}
+pub struct AppKitWindow {}
 
 impl AppKitWindow {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     let _ = settings;
 
-    App::new("com.gtlugo.window", Self { window: Default::default() }).run();
+    let mtm =
+      MainThreadMarker::new().ok_or(RequestError::NotSupported("Marker must be on main thread.".into()))?;
 
-    Ok(Self { window: Default::default() })
-  }
-}
+    let screen =
+      NSScreen::mainScreen(mtm).ok_or(RequestError::NotSupported("No main screen found.".into()))?;
 
-impl AppDelegate for AppKitWindow {
-  fn did_finish_launching(&self) {
-    App::set_menu(vec![
-      Menu::new("", vec![
-        MenuItem::Services,
-        MenuItem::Separator,
-        MenuItem::Hide,
-        MenuItem::HideOthers,
-        MenuItem::ShowAll,
-        MenuItem::Separator,
-        MenuItem::Quit,
-      ]),
-      Menu::new("File", vec![MenuItem::CloseWindow]),
-      Menu::new("View", vec![MenuItem::EnterFullScreen]),
-      Menu::new("Window", vec![
-        MenuItem::Minimize,
-        MenuItem::Zoom,
-        MenuItem::Separator,
-        MenuItem::new("Bring All to Front"),
-      ]),
-    ]);
+    let style = NSWindowStyleMask::Closable
+      | NSWindowStyleMask::Titled
+      | NSWindowStyleMask::Miniaturizable
+      | NSWindowStyleMask::Resizable;
 
-    App::activate();
+    // log::info!("Backing scale factor: {}", screen.backingScaleFactor());
 
-    self.window.set_minimum_content_size(400., 400.);
-    self.window.set_title("A Basic Window");
-    self.window.show();
-  }
+    let scale_factor = screen.backingScaleFactor();
 
-  fn should_terminate_after_last_window_closed(&self) -> bool {
-    true
+    let physical_size = settings.size.to_physical(scale_factor);
+    let size = CGSize::new(physical_size.width, physical_size.height);
+
+    let physical_pos = match settings.position {
+      Some(pos) => {
+        let mut pos = pos.to_physical(scale_factor);
+
+        pos.x += (physical_size.width / 2.0) as i32;
+        pos.y += (physical_size.height / 2.0) as i32;
+
+        Position::Physical(pos)
+      },
+      None => Position::Physical(
+        ((screen.frame().size.width - size.width) / 2.0, (screen.frame().size.height - size.height) / 2.0)
+          .into(),
+      ),
+    }
+    .to_physical(scale_factor);
+    let origin = CGPoint::new(physical_pos.x, physical_pos.y);
+
+    let content_rect = CGRect::new(origin, size).standardize();
+
+    Ok(Self {})
   }
 }
 
@@ -120,7 +116,7 @@ impl BackendWindow for AppKitWindow {
   }
 
   fn set_title(&self, title: String) {
-    self.window.set_title(&title);
+    todo!()
   }
 
   fn scale_factor(&self) -> f64 {
