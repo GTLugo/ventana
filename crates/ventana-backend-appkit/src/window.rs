@@ -115,9 +115,9 @@ impl BackendWindow for AppKitWindow {
     todo!()
   }
 
-  // fn title(&self) -> String {
-  //   todo!()
-  // }
+  fn title(&self) -> String {
+    todo!()
+  }
 
   fn set_title(&self, title: String) {
     self.window.set_title(&title);
