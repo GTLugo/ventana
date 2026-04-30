@@ -21,15 +21,15 @@ use {
 };
 
 #[derive(Clone)]
-pub struct MacOS;
+pub struct AppKit;
 
-impl Backend for MacOS {
+impl Backend for AppKit {
   #[cfg(target_os = "macos")]
   fn instance() -> Option<&'static Self>
   where
     Self: Sized,
   {
-    static INSTANCE: LazyLock<Option<MacOS>> = LazyLock::new(MacOS::new);
+    static INSTANCE: LazyLock<Option<AppKit>> = LazyLock::new(AppKit::new);
     INSTANCE.as_ref()
   }
 
@@ -42,12 +42,12 @@ impl Backend for MacOS {
   }
 
   fn name(&self) -> &'static str {
-    "macOS"
+    "AppKit"
   }
 
   #[cfg(target_os = "macos")]
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    Ok(Arc::new(self::window::MacOSWindow::new(settings)?))
+    Ok(Arc::new(self::window::AppKitWindow::new(settings)?))
   }
 
   #[cfg(target_os = "macos")]

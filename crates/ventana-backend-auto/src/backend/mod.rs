@@ -1,9 +1,9 @@
 pub mod linux;
 
 pub use {
-  backend_macos as macos,
+  appkit::AppKit,
+  backend_appkit as appkit,
   backend_win32 as win32,
   linux::Linux,
-  macos::MacOS,
   win32::Win32,
 };

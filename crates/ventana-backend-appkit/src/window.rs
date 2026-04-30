@@ -34,11 +34,11 @@ use {
   },
 };
 
-pub struct MacOSWindow {
+pub struct AppKitWindow {
   window: Window,
 }
 
-impl MacOSWindow {
+impl AppKitWindow {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     let _ = settings;
 
@@ -48,7 +48,7 @@ impl MacOSWindow {
   }
 }
 
-impl AppDelegate for MacOSWindow {
+impl AppDelegate for AppKitWindow {
   fn did_finish_launching(&self) {
     App::set_menu(vec![
       Menu::new("", vec![
@@ -82,7 +82,7 @@ impl AppDelegate for MacOSWindow {
   }
 }
 
-impl BackendWindow for MacOSWindow {
+impl BackendWindow for AppKitWindow {
   fn id(&self) -> WindowId {
     todo!()
   }

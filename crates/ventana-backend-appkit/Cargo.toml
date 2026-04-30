@@ -1,5 +1,5 @@
 [package]
-name                 = "ventana-backend-macos"
+name                 = "ventana-backend-appkit"
 description          = "A cross-platform, iterator-based windowing library"
 version              = "0.0.1"
 readme.workspace     = true

@@ -1,8 +1,8 @@
 #![cfg(target_os = "macos")]
 
-use crate::MacOS;
+use crate::AppKit;
 
-impl MacOS {
+impl AppKit {
   pub fn new() -> Option<Self> {
     Some(Self)
   }

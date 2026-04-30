@@ -2,8 +2,8 @@ pub mod backend;
 
 use {
   backend::{
+    appkit::AppKit,
     linux::Linux,
-    macos::MacOS,
     win32::Win32,
   },
   hal::{
@@ -71,7 +71,7 @@ impl AutoBackend {
   /// Attempts to select a backend from the first-party backend implementations. Returns `RequestError::NotSupported` if none are available.
   fn auto() -> Result<&'static dyn Backend, RequestError> {
     Win32::backend()
-      .or_else(MacOS::backend)
+      .or_else(AppKit::backend)
       .or_else(Linux::backend)
       .ok_or(RequestError::not_supported("No supported backend available to auto-select from."))
   }
