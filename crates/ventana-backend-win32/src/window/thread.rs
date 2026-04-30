@@ -105,18 +105,12 @@ impl ThreadHandler for Win32ThreadHandler {
   }
 
   fn send(&self, request: ClientToServer<Self::Request>) -> threadloop::Result<()> {
-    let command = Box::into_raw(Box::new(request));
     if let Some(window) = self.hwnd.lock().unwrap().as_ref() {
-      window
-        .post_message(Message::App(AppMessage {
-          id: Procedure::COMMAND_MESSAGE,
-          w: WParam(0),
-          l: LParam(command as _),
-        }))
-        .map_err(|e| {
-          log::error!("{e}");
-          threadloop::Error::OS(e.into())
-        })?;
+      let msg = Message::App(AppMessage::new(Procedure::COMMAND_MESSAGE).with_data(request));
+      window.post_message(msg).map_err(|e| {
+        log::error!("{e}");
+        threadloop::Error::OS(e.into())
+      })?;
     }
     Ok(())
   }
@@ -179,9 +173,8 @@ impl WindowProcedure for Procedure {
         let _ = self.ctx.send_event(Event::Window(WindowEvent::CloseRequest));
         Some(LResult(0)) // We don't want defwindowproc to run since it'll auto-destroy the window
       },
-      Message::App(AppMessage { id: Self::COMMAND_MESSAGE, l, .. }) => {
-        let request = *unsafe { Box::from_raw(l.0 as *mut ClientToServer<Command>) }; // TODO: add safe conversion to win64
-        let _ = self.on_request(window, request);
+      Message::App(msg @ AppMessage { id: Self::COMMAND_MESSAGE, .. }) => {
+        let _ = self.on_request(window, msg.clone().try_read().ok().unwrap());
         None
       },
       Message::Destroy => {
