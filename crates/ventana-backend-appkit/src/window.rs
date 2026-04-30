@@ -1,17 +1,41 @@
 #![cfg(target_os = "macos")]
 
 use {
-  dispatch2::MainThreadBound, objc2::{MainThreadMarker, rc::autoreleasepool}, objc2_app_kit::{
-    NSScreen, NSWindow, NSWindowStyleMask
-  }, objc2_core_foundation::{
+  dispatch2::MainThreadBound,
+  objc2::{
+    ClassType,
+    MainThreadMarker,
+    Message,
+    define_class,
+    msg_send,
+    rc::Retained,
+  },
+  objc2_app_kit::{
+    NSBackingStoreType,
+    NSColor,
+    NSResponder,
+    NSScreen,
+    NSView,
+    NSWindow,
+    NSWindowStyleMask,
+  },
+  objc2_core_foundation::{
+    CGFloat,
     CGPoint,
-    CGRect,
     CGSize,
-  }, std::sync::Arc, ventana_hal::{
+  },
+  objc2_foundation::{
+    NSObject,
+    NSRect,
+    NSString,
+  },
+  std::sync::Arc,
+  ventana_hal::{
     dpi::{
       PhysicalPosition,
       PhysicalSize,
       Position,
+      Size,
     },
     error::RequestError,
     event::Event,
@@ -23,15 +47,45 @@ use {
       ButtonState,
       mouse::MouseButton,
     },
+    raw_window_handle::{
+      AppKitDisplayHandle,
+      AppKitWindowHandle,
+      RawDisplayHandle,
+      RawWindowHandle,
+    },
+    rgb::RGB8,
     settings::WindowSettings,
     window::{
       BackendWindow,
       WindowId,
     },
-  }
+  },
 };
 
-pub struct AppKitWindow {}
+define_class!(
+  #[unsafe(super(NSWindow, NSResponder, NSObject))]
+  #[name = "VentanaWindow"]
+  #[derive(Debug)]
+  pub struct VentanaWindow;
+
+  impl VentanaWindow {
+    #[unsafe(method(canBecomeMainWindow))]
+    fn can_become_main_window(&self) -> bool {
+      true
+    }
+
+    #[unsafe(method(canBecomeKeyWindow))]
+    fn can_become_key_window(&self) -> bool {
+      true
+    }
+  }
+);
+
+pub struct AppKitWindow {
+  screen: MainThreadBound<Retained<NSScreen>>,
+  window: MainThreadBound<Retained<NSWindow>>,
+  size: PhysicalSize<u32>,
+}
 
 impl AppKitWindow {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
@@ -53,7 +107,7 @@ impl AppKitWindow {
     let scale_factor = screen.backingScaleFactor();
 
     let physical_size = settings.size.to_physical(scale_factor);
-    let size = CGSize::new(physical_size.width, physical_size.height);
+    let cgsize = CGSize::new(physical_size.width, physical_size.height);
 
     let physical_pos = match settings.position {
       Some(pos) => {
@@ -65,16 +119,67 @@ impl AppKitWindow {
         Position::Physical(pos)
       },
       None => Position::Physical(
-        ((screen.frame().size.width - size.width) / 2.0, (screen.frame().size.height - size.height) / 2.0)
+        (
+          (screen.frame().size.width - cgsize.width) / 2.0,
+          (screen.frame().size.height - cgsize.height) / 2.0,
+        )
           .into(),
       ),
     }
     .to_physical(scale_factor);
     let origin = CGPoint::new(physical_pos.x, physical_pos.y);
 
-    let content_rect = CGRect::new(origin, size).standardize();
+    let content_rect = NSRect::new(origin, cgsize).standardize();
 
-    Ok(Self {})
+    let window: Retained<NSWindow> = unsafe {
+      let window: Option<Retained<VentanaWindow>> = msg_send![
+        super(mtm.alloc().set_ivars(())),
+        initWithContentRect: content_rect,
+        styleMask: style,
+        backing: NSBackingStoreType::Buffered,
+        defer: false
+      ];
+
+      window.ok_or(RequestError::NotSupported("Failed to create window.".into()))?.as_super().retain()
+    };
+
+    unsafe { window.setReleasedWhenClosed(false) };
+
+    window.setTitle(&NSString::from_str(&settings.title));
+    window.setAcceptsMouseMovedEvents(true);
+
+    let (r, g, b) = settings
+      .clear_color
+      .map(|RGB8 { r, g, b }| (r as f64 / 255.0, g as f64 / 255.0, b as f64 / 255.0))
+      .unwrap_or_else(|| {
+        let clear = NSColor::clearColor();
+        (clear.redComponent(), clear.greenComponent(), clear.blueComponent())
+      });
+
+    fn init_color(red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) -> Retained<NSColor> {
+      unsafe {
+        msg_send![
+          NSColor::class(),
+          colorWithCalibratedRed: red,
+          green: green,
+          blue: blue,
+          alpha: alpha
+        ]
+      }
+    }
+
+    let nscolor = init_color(r, g, b, 1.0);
+    window.setBackgroundColor(Some(nscolor.as_ref()));
+
+    let screen = MainThreadBound::new(screen, mtm);
+    let window = MainThreadBound::new(window, mtm);
+
+    Ok(Self { screen, window, size: physical_size.cast() })
+  }
+
+  fn view(&self) -> Retained<NSView> {
+    let mtm = MainThreadMarker::new().unwrap();
+    self.window.get(mtm).contentView().unwrap().downcast().unwrap()
   }
 }
 
@@ -84,11 +189,15 @@ impl BackendWindow for AppKitWindow {
   }
 
   fn raw_window_handle(&self) -> ventana_hal::raw_window_handle::RawWindowHandle {
-    todo!()
+    let window_handle = AppKitWindowHandle::new({
+      let ptr = Retained::as_ptr(&self.view()) as *mut _;
+      std::ptr::NonNull::new(ptr).unwrap()
+    });
+    RawWindowHandle::AppKit(window_handle)
   }
 
   fn raw_display_handle(&self) -> ventana_hal::raw_window_handle::RawDisplayHandle {
-    todo!()
+    RawDisplayHandle::AppKit(AppKitDisplayHandle::new())
   }
 
   fn monitor(&self) -> Arc<dyn ventana_hal::monitor::BackendMonitor> {
@@ -96,7 +205,7 @@ impl BackendWindow for AppKitWindow {
   }
 
   fn next(&self) -> Option<Event> {
-    todo!()
+    None
   }
 
   fn request_redraw(&self) {
@@ -116,6 +225,7 @@ impl BackendWindow for AppKitWindow {
   }
 
   fn set_title(&self, title: String) {
+    let _ = title;
     todo!()
   }
 
@@ -124,7 +234,7 @@ impl BackendWindow for AppKitWindow {
   }
 
   fn inner_size(&self) -> PhysicalSize<u32> {
-    todo!()
+    self.size
   }
 
   fn outer_size(&self) -> PhysicalSize<u32> {
