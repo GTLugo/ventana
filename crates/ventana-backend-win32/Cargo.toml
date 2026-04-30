@@ -26,3 +26,4 @@ path = "../threadloop"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 win64 = "0.0.25"
+widestring = "1.2"

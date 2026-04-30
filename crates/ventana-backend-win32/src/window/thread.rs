@@ -32,6 +32,7 @@ use {
     },
     settings::WindowSettings,
   },
+  widestring::WideCString,
   win64::prelude::*,
 };
 
@@ -157,19 +158,21 @@ impl WindowProcedure for Procedure {
 
     match message {
       Message::Create(_) => {
-        log::trace!("{window:?} | {message:?}");
         window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
         None
       },
       Message::SettingChange(_) => {
-        log::trace!("{window:?} | {message:?}");
         window.dwm_set_window_attribute(DwmWindowAttribute::UseImmersiveDarkMode(is_os_dark_mode()));
         None
       },
       Message::Close => {
-        log::trace!("{window:?} | {message:?}");
         let _ = self.ctx.send_event(Event::Window(WindowEvent::CloseRequest));
         Some(LResult(0)) // We don't want defwindowproc to run since it'll auto-destroy the window
+      },
+      Message::SetText(SetTextMessage { l }) => {
+        let text = unsafe { WideCString::from_ptr_str(l.0 as *const u16) };
+        *self.internal.title.lock().unwrap() = text.to_string_lossy();
+        None
       },
       Message::App(msg @ AppMessage { id: Self::COMMAND_MESSAGE, .. }) => {
         let request: ClientToServer<Command> = msg.clone().try_read().ok().unwrap();
