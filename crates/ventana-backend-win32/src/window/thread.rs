@@ -136,7 +136,8 @@ impl Procedure {
         Ok(CommandResponse::Success)
       },
       ClientToServer::Request { request: Command::GetWindowText, .. } => {
-        Ok(CommandResponse::GetWindowText(window.get_window_text().unwrap_or_default()))
+        let text = window.get_window_text().unwrap_or_default();
+        Ok(CommandResponse::GetWindowText(text))
       },
       ClientToServer::Request { request: Command::SetWindowText(text), .. } => {
         window.set_window_text(text).map_err(|e| threadloop::Error::OS(e.into()))?;
@@ -155,8 +156,6 @@ impl WindowProcedure for Procedure {
   fn on_message(&mut self, window: &Window, message: &Message) -> Option<LResult> {
     // log::trace!("Received message: `{message:?}`");
 
-    // log::trace!("Handling message: `{message:?}`");
-
     match message {
       Message::Create(_) => {
         log::trace!("{window:?} | {message:?}");
@@ -174,7 +173,8 @@ impl WindowProcedure for Procedure {
         Some(LResult(0)) // We don't want defwindowproc to run since it'll auto-destroy the window
       },
       Message::App(msg @ AppMessage { id: Self::COMMAND_MESSAGE, .. }) => {
-        let _ = self.on_request(window, msg.clone().try_read().ok().unwrap());
+        let request: ClientToServer<Command> = msg.clone().try_read().ok().unwrap();
+        let _ = self.on_request(window, request).inspect_err(|e| log::error!("{e}"));
         None
       },
       Message::Destroy => {
@@ -184,7 +184,6 @@ impl WindowProcedure for Procedure {
       },
       _ => {
         if let Some(event) = map_native_event(message) {
-          // log::trace!("{window:?} | {message:?} | {event:?}");
           let _ = self.ctx.send_event(Event::Window(event));
         }
         None

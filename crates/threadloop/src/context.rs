@@ -4,15 +4,14 @@ use {
     message::{
       ClientToServer,
       Envelope,
-      ResponseStore,
       ServerToClient,
     },
     signal::AcknowledgeSignal,
   },
+  crossbeam_channel::Sender,
   std::sync::{
     Arc,
     Mutex,
-    mpsc::Sender,
   },
 };
 
@@ -92,42 +91,35 @@ pub trait ThreadHandler {
 
   fn start(&self, params: Self::Start, ctx: Arc<ThreadContext<Self>>) -> Result<Self::Ready>;
   fn run(&self, ctx: Arc<ThreadContext<Self>>) -> Result<()>;
-  // fn wake(&self) -> Result<()>;
   fn send(&self, request: ClientToServer<Self::Request>) -> Result<()>;
 }
 
-pub type ThreadContext<H> =
-  Context<<H as ThreadHandler>::Event, <H as ThreadHandler>::Response, <H as ThreadHandler>::Ready>;
+pub type ThreadContext<H> = Context<<H as ThreadHandler>::Event, <H as ThreadHandler>::Ready>;
 
-pub struct Context<E, Res, Ready>
+pub struct Context<Event, Ready>
 where
-  E: Send + 'static,
-  Res: Send + 'static,
+  Event: Send + 'static,
   Ready: Send + 'static,
 {
-  pub(crate) to_client: Sender<ServerToClient<E, Ready>>,
-  pub responses: Arc<ResponseStore<Res>>,
+  pub(crate) to_client: Sender<ServerToClient<Event, Ready>>,
   pub(crate) state: State,
 }
 
-impl<E, Res, Ready> Context<E, Res, Ready>
+impl<E, Ready> Context<E, Ready>
 where
   E: Send + 'static,
-  // Req: Send + 'static,
-  Res: Send + 'static,
-  // Start: Send + 'static,
   Ready: Send + 'static,
 {
   pub fn signal_ready(&self, ready: Result<Ready>) {
     self.state.change_state(ThreadState::Ready);
-    let _ = self.to_client.send(ServerToClient::Ready(ready));
+    let _ = self.to_client.try_send(ServerToClient::Ready(ready));
   }
 
   pub fn send_event(&self, event: E) -> Result<()> {
     let ack = self.state.is_ready().then(AcknowledgeSignal::new);
     self
       .to_client
-      .send(ServerToClient::Event(Envelope { ack: ack.clone(), message: event }))
+      .try_send(ServerToClient::Event(Envelope { ack: ack.clone(), message: event }))
       .map_err(|e| crate::Error::Disconnected(e.to_string()))?;
     if let Some(ack) = ack {
       ack.wait();

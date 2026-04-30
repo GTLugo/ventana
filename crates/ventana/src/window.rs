@@ -75,9 +75,9 @@ impl Window {
   }
 
   // It's giving me headaches and apparently not all platforms might support this anyways
-  // pub fn title(&self) -> String {
-  //   self.window.title()
-  // }
+  pub fn title(&self) -> String {
+    self.window.title()
+  }
 
   pub fn set_title(&self, title: impl Into<String>) {
     self.window.set_title(title.into())

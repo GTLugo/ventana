@@ -3,7 +3,7 @@ use {
     context::ThreadHandler,
     message::{
       ClientToServer,
-      ResponseStore,
+      Id,
     },
   },
   std::sync::Arc,
@@ -18,7 +18,6 @@ where
   H: ThreadHandler + Send + Sync + 'static,
 {
   handler: Arc<H>,
-  responses: Arc<ResponseStore<H::Response>>,
 }
 
 impl<H> ThreadLoopProxy<H>
@@ -26,17 +25,13 @@ where
   Self: Send + Sync,
   H: ThreadHandler + Send + Sync + 'static,
 {
-  pub fn new(handler: Arc<H>, responses: Arc<ResponseStore<H::Response>>) -> Self {
-    Self { handler, responses }
+  pub fn new(handler: Arc<H>) -> Self {
+    Self { handler }
   }
 
-  pub fn send_request(&self, request: ClientToServer<H::Request>) -> crate::Result<Option<H::Response>> {
+  pub fn send_request(&self, request: ClientToServer<H::Request>) -> crate::Result<Id> {
     let id = request.id();
     self.handler.send(request)?;
-    Ok(self.responses.wait_and_take(&id))
-  }
-
-  pub fn try_send_request(&self, request: ClientToServer<H::Request>) -> crate::Result<()> {
-    self.handler.send(request)
+    Ok(id)
   }
 }

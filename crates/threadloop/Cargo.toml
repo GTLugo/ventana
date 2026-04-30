@@ -10,5 +10,6 @@ categories.workspace = true
 repository.workspace = true
 
 [dependencies]
-log       = "0.4"
-thiserror = "2.0"
+log               = "0.4"
+thiserror         = "2.0"
+crossbeam-channel = "0.5"

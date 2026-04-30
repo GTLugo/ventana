@@ -113,6 +113,13 @@ impl State {
     self.last_frame_time = std::time::Instant::now();
     self.fps = self.fps_counter.tick();
     // log::info!("{fps}");
+    let fps = format!(
+      "FPS (ct): {} FPS (calc): {} FT: {:?} s",
+      self.fps_counted(),
+      self.fps_calculated(),
+      self.delta_time().as_secs_f64()
+    );
+    self.window.set_title(fps);
     match self.render() {
       Ok(_) => (),
       Err(e) => {

@@ -16,21 +16,19 @@ use {
     message::{
       ClientToServer,
       Envelope,
-      ResponseStore,
       ServerToClient,
     },
     proxy::ThreadLoopProxy,
     signal::AcknowledgeSignal,
   },
+  crossbeam_channel::{
+    Receiver,
+    TryRecvError,
+  },
   std::{
-    collections::LinkedList,
     sync::{
       Arc,
       Mutex,
-      mpsc::{
-        Receiver,
-        TryRecvError,
-      },
     },
     thread::JoinHandle,
   },
@@ -63,8 +61,7 @@ where
   H: ThreadHandler + Send + Sync + 'static,
 {
   proxy: ThreadLoopProxy<H>,
-  from_server: Mutex<Receiver<ServerToClient<H::Event, H::Ready>>>,
-  backlog: Mutex<LinkedList<Envelope<H::Event>>>,
+  from_server: Receiver<ServerToClient<H::Event, H::Ready>>,
   pending_ack: Mutex<Option<AcknowledgeSignal>>,
   state: State,
   server_handle: Mutex<Option<JoinHandle<Result<()>>>>,
@@ -80,11 +77,10 @@ impl<H: ThreadHandler + Send + Sync + 'static> Drop for ThreadLoop<H> {
 
 impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
   pub fn new(handler: Arc<H>, params: H::Start) -> Result<Arc<Self>> {
-    let (to_client, from_server) = std::sync::mpsc::channel();
-    let responses = Arc::new(ResponseStore::new());
-    let proxy = ThreadLoopProxy::new(handler.clone(), responses.clone());
+    let (to_client, from_server) = crossbeam_channel::unbounded();
+    let proxy = ThreadLoopProxy::new(handler.clone());
 
-    let ctx = Context { to_client, responses: responses.clone(), state: Default::default() };
+    let ctx = Context { to_client, state: Default::default() };
 
     let server_handle = std::thread::Builder::new()
       .name("server".to_string())
@@ -92,9 +88,8 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
     let state = State::default();
 
     Ok(Arc::new(Self {
-      from_server: Mutex::new(from_server),
       proxy,
-      backlog: Mutex::new(Default::default()),
+      from_server,
       pending_ack: Mutex::new(None),
       state: state.clone(),
       server_handle: Mutex::new(Some(server_handle)),
@@ -102,33 +97,16 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
   }
 
   pub fn start(&self) -> Result<H::Ready> {
-    let from_server = self.from_server.lock().unwrap();
-
-    loop {
-      match from_server.recv().map_err(|e| Error::Disconnected(format!("{e}")))? {
-        ServerToClient::Ready(r) => break r,
-        // ServerToClient::Ready(Err(e)) => return Err(e),
-        ServerToClient::Event(ev) => self.backlog.lock().unwrap().push_back(ev),
-        ServerToClient::Stop => {
-          return Err(Error::Other("Stop was sent before ThreadLoop was ready.".to_string()));
-        },
+    for event in self.from_server.iter() {
+      if let ServerToClient::Ready(r) = event {
+        return r;
       }
     }
+    Err(Error::Disconnected("Threadloop disconnected before it was ready.".to_string()))
   }
 
   pub fn proxy(&self) -> &ThreadLoopProxy<H> {
     &self.proxy
-  }
-
-  #[inline]
-  fn drain_backlog(&self) -> Option<H::Event> {
-    match self.backlog.lock().unwrap().pop_front() {
-      Some(Envelope { message, ack }) => {
-        *self.pending_ack.lock().unwrap() = ack;
-        Some(message)
-      },
-      _ => None,
-    }
   }
 
   #[inline]
@@ -137,31 +115,17 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
     wait: bool,
   ) -> std::result::Result<ServerToClient<H::Event, H::Ready>, NextEventError> {
     match wait {
-      true => self.from_server.lock().unwrap().recv().map_err(|_| NextEventError::Disconnected),
-      false => self.from_server.lock().unwrap().try_recv().map_err(|e| match e {
+      true => self.from_server.recv().map_err(|_| NextEventError::Disconnected),
+      false => self.from_server.try_recv().map_err(|e| match e {
         TryRecvError::Empty => NextEventError::Empty,
         TryRecvError::Disconnected => NextEventError::Disconnected,
       }),
     }
   }
 
-  fn are_events_in_backlog(&self) -> bool {
-    // this is mostly to 110% guarantee the lock is dropped. Maybe unnecessary, but I am paranoid
-    !self.backlog.lock().unwrap().is_empty()
-  }
-
   pub fn next_event(&self, wait: bool) -> std::result::Result<H::Event, NextEventError> {
     self.ack_last_event();
-
-    while self.are_events_in_backlog() {
-      if let Some(event) = self.drain_backlog() {
-        return Ok(event);
-      }
-    }
-
-    let event = self.poll_event(wait);
-
-    match event {
+    match self.poll_event(wait) {
       Ok(ServerToClient::Ready(_)) => Err(NextEventError::Empty),
       Ok(ServerToClient::Event(Envelope { message, ack })) => {
         *self.pending_ack.lock().unwrap() = ack;
@@ -190,7 +154,7 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
     log::trace!("Stopping server thread");
 
     self.ack_last_event();
-    self.proxy.try_send_request(ClientToServer::stop())?;
+    self.proxy.send_request(ClientToServer::stop())?;
 
     let handle = self.server_handle.lock().unwrap().take();
     if let Some(handle) = handle {
@@ -212,8 +176,6 @@ impl<H: ThreadHandler + Send + Sync + 'static> ThreadLoop<H> {
 
 fn server_main<H: ThreadHandler>(server: Arc<H>, ctx: ThreadContext<H>, params: H::Start) -> Result<()> {
   log::trace!("Starting server thread.");
-
-  // log::trace!("Received ClientToServer::Start; starting server.");
 
   let ctx = Arc::new(ctx);
 

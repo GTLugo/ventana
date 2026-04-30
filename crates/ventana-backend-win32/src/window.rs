@@ -138,7 +138,7 @@ impl BackendWindow for Win32Window {
     };
 
     if let Event::Window(WindowEvent::CloseRequest) = event {
-      let x = self.shared.state_lock().close_on_x;
+      let x = self.shared.close_on_x;
       if x {
         self.close();
       }
@@ -162,22 +162,21 @@ impl BackendWindow for Win32Window {
   // this should be changed to activate a flag to avoid excessive redraws
   fn request_redraw(&self) {
     // log::trace!("Sending Command::Redraw...");
-    self.thread.proxy().try_send_request(ClientToServer::request(Command::Redraw)).unwrap();
+    self.thread.proxy().send_request(ClientToServer::request(Command::Redraw)).unwrap();
   }
 
-  // fn title(&self) -> String {
-  //   // log::trace!("Sending Command::GetWindowText...");
-  //   let Ok(Some(CommandResponse::GetWindowText(text))) =
-  //     self.thread.send_request(ClientToServer::request(Command::GetWindowText))
-  //   else {
-  //     return String::new();
-  //   };
-  //   text
-  // }
+  fn title(&self) -> String {
+    // log::trace!("Sending Command::GetWindowText...");
+    // match self.thread.send_and_wait(ClientToServer::request(Command::GetWindowText)) {
+    //   Ok(Some(CommandResponse::GetWindowText(text))) => text,
+    //   _ => String::new(),
+    // }
+    self.shared.title().clone()
+  }
 
   fn set_title(&self, title: String) {
     // log::trace!("Sending Command::SetWindowText...");
-    self.thread.proxy().try_send_request(ClientToServer::request(Command::SetWindowText(title))).unwrap();
+    self.thread.proxy().send_request(ClientToServer::request(Command::SetWindowText(title))).unwrap();
   }
 
   fn scale_factor(&self) -> f64 {

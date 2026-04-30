@@ -87,4 +87,8 @@ impl<R> ResponseStore<R> {
     let mut map = self.con.wait_while(self.map.lock().unwrap(), |map| !map.contains_key(id)).unwrap();
     map.remove(id)
   }
+
+  pub fn try_take(&self, id: &Id) -> Option<R> {
+    self.map.lock().unwrap().remove(id)
+  }
 }
