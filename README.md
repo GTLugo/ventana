@@ -30,7 +30,7 @@ As there are many different platforms, each with their own unique windowing APIs
 Ventana comes by default with the `AutoBackend` which supports the platforms listed below. While the library is designed to be cross-platform, the overall library is still in its infancy and support across the board is still work-in-progress.
 
 | Platform |    AutoBackend Support                |
-|----------|-------------------------------------: |
+|:---------|--------------------------------------:|
 | Windows  |                         (Prototype)⚠️ |
 | X11      |                               (WIP)🚧 |
 | Wayland  |                               (WIP)🚧 |
