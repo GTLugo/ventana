@@ -1,7 +1,6 @@
 pub mod logger;
 
 use {
-  fps_counter::FPSCounter,
   std::time::Duration,
   ventana::{
     dpi::PhysicalSize,
@@ -16,8 +15,6 @@ pub struct State {
   config: wgpu::SurfaceConfiguration,
   is_surface_configured: bool,
   window: Window,
-  fps_counter: FPSCounter,
-  fps: usize,
   last_frame_time: std::time::Instant,
   delta_time: std::time::Duration,
 }
@@ -79,8 +76,6 @@ impl State {
       config,
       is_surface_configured: true,
       window,
-      fps_counter: FPSCounter::new(),
-      fps: 0,
       last_frame_time: std::time::Instant::now(),
       delta_time: std::time::Duration::ZERO,
     })
@@ -111,15 +106,6 @@ impl State {
   pub fn draw(&mut self) {
     self.delta_time = self.last_frame_time.elapsed();
     self.last_frame_time = std::time::Instant::now();
-    self.fps = self.fps_counter.tick();
-    // log::info!("{fps}");
-    let fps = format!(
-      "FPS (ct): {} FPS (calc): {} FT: {:?} s",
-      self.fps_counted(),
-      self.fps_calculated(),
-      self.delta_time().as_secs_f64()
-    );
-    self.window.set_title(fps);
     match self.render() {
       Ok(_) => (),
       Err(e) => {
@@ -129,11 +115,7 @@ impl State {
     }
   }
 
-  pub fn fps_counted(&self) -> usize {
-    self.fps
-  }
-
-  pub fn fps_calculated(&self) -> usize {
+  pub fn fps(&self) -> usize {
     (1.0 / self.delta_time.as_secs_f64()) as usize
   }
 

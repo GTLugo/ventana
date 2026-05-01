@@ -21,7 +21,6 @@ chrono     = "0.4"
 
 wgpu        = "29.0"
 pollster    = "0.4"
-fps_counter = "3.0"
 
 [dependencies.ventana]
 version = "*"
