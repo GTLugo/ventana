@@ -40,7 +40,7 @@ use {
       Event as X11Event,
       xproto::{
         AtomEnum,
-        ConnectionExt as _,
+        ConnectionExt,
         CreateWindowAux,
         EventMask,
         Gravity,
@@ -299,7 +299,27 @@ impl BackendWindow for X11Window {
   }
 
   fn title(&self) -> String {
-    todo!()
+    let reply = X11::connection()
+      .get_property(false, self.id, X11::atoms()._NET_WM_NAME, X11::atoms().UTF8_STRING, 0, u32::MAX)
+      .unwrap()
+      .reply()
+      .unwrap();
+
+    if !reply.value.is_empty() {
+      return String::from_utf8_lossy(&reply.value).to_string();
+    }
+
+    let reply = X11::connection()
+      .get_property(false, self.id, AtomEnum::WM_NAME, AtomEnum::STRING, 0, u32::MAX)
+      .unwrap()
+      .reply()
+      .unwrap();
+
+    if !reply.value.is_empty() {
+      return String::from_utf8_lossy(&reply.value).to_string();
+    }
+
+    String::new()
   }
 
   fn set_title(&self, title: String) {
