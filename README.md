@@ -29,12 +29,13 @@ As there are many different platforms, each with their own unique windowing APIs
 
 Ventana comes by default with the `AutoBackend` which supports the platforms listed below. While the library is designed to be cross-platform, the overall library is still in its infancy and support across the board is still work-in-progress.
 
-| Platform | AutoBackend Support |
-|----------|---------------------|
-| Windows  |             🚧(WIP) |
-| X11      |             🚧(WIP) |
-| Wayland  |             🚧(WIP) |
-| MacOS    |         ❌(Planned) |
+| Platform |    AutoBackend Support                |
+|----------|-------------------------------------: |
+| Windows  |                         (Prototype)⚠️ |
+| X11      |                               (WIP)🚧 |
+| Wayland  |                               (WIP)🚧 |
+| MacOS    |                               (WIP)🚧 |
+| Web      |         (Investigating Feasibility)❌ |
 
 > [!IMPORTANT]
 > Alternate platforms not listed above can be implemented as third-party backends and fed into the `backend` field of `WindowOptions`.
