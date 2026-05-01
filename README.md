@@ -40,6 +40,23 @@ Ventana comes by default with the `AutoBackend` which supports the platforms lis
 > [!IMPORTANT]
 > Alternate platforms not listed above can be implemented as third-party backends and fed into the `backend` field of `WindowOptions`.
 
+## Todo list (Non-exhaustive)
+
+* IME
+* Custom decorations
+* Window operations
+  - Drag-n-drop
+  - Copy/Paste
+* Platform-specific features
+  - Blur
+  - Corner rounding
+* Custom window reveal delay
+  - Avoids flash of blank window
+* Additional platform support
+  - Wayland
+  - MacOS
+  - Web?
+
 ## Final words
 
 Please note, as I am only one person working on this in his free time, Ventana is likely hilariously unoptimized in certain places. Certain performance liberties are taken in the name of maintainability and ease-of-use, but I am completely open to feedback concerning particularly problematic code. On a similar note, documentation is currently nearly non-existant, but as the library matures, will be added.
