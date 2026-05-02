@@ -76,7 +76,6 @@ static PREFERENCES: LazyLock<Mutex<&'static [Backend]>> = LazyLock::new(|| {
   ])
 });
 
-// TODO: Add a way to specify a preferred backend selection order
 #[derive(Clone)]
 pub struct AutoBackend(&'static dyn HalBackend);
 
