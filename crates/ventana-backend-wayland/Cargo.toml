@@ -31,3 +31,7 @@ version = "0.0.3"
 path = "../ventana-hal"
 
 [target.'cfg(all(unix, not(any(target_os = "redox", target_family = "wasm", target_os = "android", target_vendor = "apple"))))'.dependencies]
+wayland-client = "0.31"
+sctk = { package = "smithay-client-toolkit", version = "0.20", default-features = false, features = [
+    "calloop",
+] }

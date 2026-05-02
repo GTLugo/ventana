@@ -47,7 +47,7 @@ impl Backend for Wayland {
   where
     Self: Sized,
   {
-    Wayland::connect().is_ok()
+    wayland_client::Connection::connect_to_env().is_ok()
   }
 
   fn name(&self) -> &'static str {
@@ -56,8 +56,7 @@ impl Backend for Wayland {
 
   #[cfg(linux_platform)]
   fn create_window(&self, settings: WindowSettings) -> Result<Arc<dyn BackendWindow>, RequestError> {
-    let _ = settings;
-    Ok(Arc::new(self::window::WaylandWindow))
+    Ok(Arc::new(self::window::WaylandWindow::new(settings)?))
   }
 
   #[cfg(linux_platform)]

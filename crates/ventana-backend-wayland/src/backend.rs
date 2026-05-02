@@ -3,30 +3,27 @@
 use {
   crate::Wayland,
   std::sync::Arc,
-  ventana_hal::error::RequestError,
+  ventana_hal::backend::Backend,
+  wayland_client::Connection,
 };
 
 pub struct WaylandState {
-  connection: (),
+  connection: Connection,
 }
 
 impl Wayland {
   pub fn new() -> Option<Self> {
-    let connection = match Self::connect() {
+    let connection = match Connection::connect_to_env() {
       Ok(connection) => connection,
       Err(error) => {
-        log::error!("Failed to connect to Wayland server: `{error}`");
+        log::error!("failed to connect to wayland server: `{error}`");
         return None;
       },
     };
     Some(Self(Arc::new(WaylandState { connection })))
   }
 
-  pub fn connect() -> Result<(), RequestError> {
-    Err(RequestError::Ignored)
-  }
-
-  pub fn connection() -> Result<(), RequestError> {
-    Err(RequestError::Ignored)
+  pub fn connection() -> &'static Connection {
+    &Self::instance().unwrap().0.connection
   }
 }

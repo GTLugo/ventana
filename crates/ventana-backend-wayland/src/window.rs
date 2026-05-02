@@ -6,24 +6,27 @@ use {
     dpi::{
       PhysicalPosition,
       PhysicalSize,
-    },
-    event::Event,
-    keyboard::{
+    }, error::RequestError, event::Event, keyboard::{
       Code,
       KeyState,
-    },
-    pointer::{
+    }, pointer::{
       ButtonState,
       mouse::MouseButton,
-    },
-    window::{
+    }, settings::WindowSettings, window::{
       BackendWindow,
       WindowId,
-    },
+    }
   },
 };
 
 pub struct WaylandWindow;
+
+impl WaylandWindow {
+  pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
+    let _ = settings;
+    Ok(Self)
+  }
+}
 
 impl BackendWindow for WaylandWindow {
   fn id(&self) -> WindowId {
