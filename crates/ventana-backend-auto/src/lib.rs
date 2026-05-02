@@ -99,7 +99,7 @@ impl HalBackend for AutoBackend {
   where
     Self: Sized,
   {
-    Linux::is_available()
+    Win32::is_available() || Linux::is_available() || AppKit::is_available()
   }
 
   fn name(&self) -> &'static str {
