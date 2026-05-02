@@ -3,12 +3,16 @@ use {
     State,
     logger::Logger,
   },
-  ventana::prelude::*,
+  ventana::{
+    Backend,
+    prelude::*,
+  },
 };
 
 fn main() -> anyhow::Result<()> {
   Logger::init()?;
 
+  AutoBackend::set_preferences(&[Backend::Win32, Backend::Wayland, Backend::X11, Backend::AppKit]);
   AutoBackend::instance().inspect(|b| log::debug!("Backend: {}", b.name()));
 
   let window = Window::new(

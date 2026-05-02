@@ -1,21 +1,29 @@
 #![cfg(linux_platform)]
 
+pub mod state;
+
 use {
   std::sync::Arc,
   ventana_hal::{
     dpi::{
       PhysicalPosition,
       PhysicalSize,
-    }, error::RequestError, event::Event, keyboard::{
+    },
+    error::RequestError,
+    event::Event,
+    keyboard::{
       Code,
       KeyState,
-    }, pointer::{
+    },
+    pointer::{
       ButtonState,
       mouse::MouseButton,
-    }, settings::WindowSettings, window::{
+    },
+    settings::WindowSettings,
+    window::{
       BackendWindow,
       WindowId,
-    }
+    },
   },
 };
 
@@ -24,6 +32,7 @@ pub struct WaylandWindow;
 impl WaylandWindow {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     let _ = settings;
+
     Ok(Self)
   }
 }
