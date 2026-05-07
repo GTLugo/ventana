@@ -45,17 +45,17 @@ Ventana comes by default with the `AutoBackend` which supports the platforms lis
 * IME
 * Custom decorations
 * Window operations
-  - Drag-n-drop
-  - Copy/Paste
+  * Drag-n-drop
+  * Copy/Paste
 * Platform-specific features
-  - Blur
-  - Corner rounding
+  * Blur
+  * Corner rounding
 * Custom window reveal delay
-  - Avoids flash of blank window
+  * Avoids flash of blank window
 * Additional platform support
-  - Wayland
-  - MacOS
-  - Web?
+  * Wayland
+  * MacOS
+  * Web?
 
 ## Final words
 
