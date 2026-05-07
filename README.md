@@ -31,10 +31,10 @@ Ventana comes by default with the `AutoBackend` which supports the platforms lis
 
 | Platform |    AutoBackend Support                |
 |:---------|--------------------------------------:|
-| Windows  |                         (Prototype)⚠️ |
+| Windows  |                 (Minimal Prototype)⚠️ |
 | X11      |                               (WIP)🚧 |
-| Wayland  |                               (WIP)🚧 |
-| MacOS    |                               (WIP)🚧 |
+| Wayland  |                              (Stub)❌ |
+| MacOS    |                              (Stub)❌ |
 | Web      |         (Investigating Feasibility)❌ |
 
 > [!IMPORTANT]
