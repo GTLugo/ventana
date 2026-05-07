@@ -3,7 +3,21 @@
 pub mod state;
 
 use {
-  std::sync::Arc,
+  self::state::WindowState,
+  crate::{
+    Wayland,
+    backend::WaylandConnection,
+  },
+  sctk::{
+    compositor::CompositorState,
+    reexports::protocols::xdg::activation::v1::client::xdg_activation_v1::XdgActivationV1,
+    shell::xdg::window::Window as SctkWindow,
+  },
+  std::sync::{
+    Arc,
+    Mutex,
+    atomic::AtomicBool,
+  },
   ventana_hal::{
     dpi::{
       PhysicalPosition,
@@ -15,9 +29,14 @@ use {
       Code,
       KeyState,
     },
+    monitor::Monitor,
     pointer::{
       ButtonState,
       mouse::MouseButton,
+    },
+    raw_window_handle::{
+      WaylandDisplayHandle,
+      WaylandWindowHandle,
     },
     settings::WindowSettings,
     window::{
@@ -25,15 +44,30 @@ use {
       WindowId,
     },
   },
+  wayland_client::{
+    Proxy,
+    QueueHandle,
+    protocol::wl_display::WlDisplay,
+  },
 };
 
-pub struct WaylandWindow;
+pub struct WaylandWindow {
+  window: SctkWindow,
+  id: WindowId,
+  state: Arc<Mutex<WindowState>>,
+  compositor: Arc<CompositorState>,
+  display: WlDisplay,
+  xdg_activation: Option<XdgActivationV1>,
+  attention_requested: Arc<AtomicBool>,
+  queue_handle: QueueHandle<WaylandConnection>,
+  monitors: Arc<Mutex<Vec<Monitor>>>,
+}
 
 impl WaylandWindow {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     let _ = settings;
 
-    Ok(Self)
+    Ok(todo!())
   }
 }
 
@@ -43,11 +77,12 @@ impl BackendWindow for WaylandWindow {
   }
 
   fn raw_window_handle(&self) -> ventana_hal::raw_window_handle::RawWindowHandle {
-    todo!()
+    WaylandWindowHandle::new(todo!()).into()
   }
 
   fn raw_display_handle(&self) -> ventana_hal::raw_window_handle::RawDisplayHandle {
-    todo!()
+    let display = Wayland::display().id().as_ptr();
+    WaylandDisplayHandle::new(std::ptr::NonNull::new(display as *mut _).unwrap()).into()
   }
 
   fn monitor(&self) -> Arc<dyn ventana_hal::monitor::BackendMonitor> {

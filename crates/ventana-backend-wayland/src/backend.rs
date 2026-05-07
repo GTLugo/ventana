@@ -14,6 +14,10 @@ use {
   wayland_client::{
     Connection,
     EventQueue,
+    globals::{
+      GlobalList,
+      registry_queue_init,
+    },
     protocol::wl_display::WlDisplay,
   },
 };
@@ -28,8 +32,16 @@ impl Wayland {
       },
     };
     let display = connection.display();
-    let event_queue = Mutex::new(connection.new_event_queue());
-    Some(Self(Arc::new(WaylandState { connection, display, event_queue })))
+
+    let (globals, event_queue) = match registry_queue_init(&connection) {
+      Ok((globals, event_queue)) => (globals, Mutex::new(event_queue)),
+      Err(error) => {
+        log::error!("failed to connect to wayland server: `{error}`");
+        return None;
+      },
+    };
+
+    Some(Self(Arc::new(WaylandConnection { connection, display, event_queue, globals })))
   }
 
   pub fn connection() -> &'static Connection {
@@ -43,10 +55,15 @@ impl Wayland {
   pub fn event_queue() -> MutexGuard<'static, EventQueue<WindowState>> {
     Self::instance().unwrap().0.event_queue.lock().unwrap()
   }
+
+  pub fn globals() -> &'static GlobalList {
+    &Self::instance().unwrap().0.globals
+  }
 }
 
-pub struct WaylandState {
+pub struct WaylandConnection {
   connection: Connection,
   display: WlDisplay,
   event_queue: Mutex<EventQueue<WindowState>>,
+  globals: GlobalList,
 }

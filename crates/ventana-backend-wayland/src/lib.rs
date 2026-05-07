@@ -30,7 +30,7 @@ use {
 };
 
 #[derive(Clone)]
-pub struct Wayland(#[cfg(linux_platform)] Arc<self::backend::WaylandState>);
+pub struct Wayland(#[cfg(linux_platform)] Arc<self::backend::WaylandConnection>);
 
 impl Backend for Wayland {
   #[cfg(linux_platform)]

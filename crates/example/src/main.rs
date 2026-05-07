@@ -3,21 +3,18 @@ use {
     State,
     logger::Logger,
   },
-  ventana::{
-    Backend,
-    prelude::*,
-  },
+  ventana::prelude::*,
 };
 
 fn main() -> anyhow::Result<()> {
   Logger::init()?;
 
-  AutoBackend::set_preferences(&[Backend::Win32, Backend::Wayland, Backend::X11, Backend::AppKit]);
+  // AutoBackend::set_preferences(&[Backend::Win32, Backend::Wayland, Backend::X11, Backend::AppKit]);
   AutoBackend::instance().inspect(|b| log::debug!("Backend: {}", b.name()));
 
   let window = Window::new(
     WindowOptions::default()
-      .with_flow(Flow::Poll)
+      // .with_flow(Flow::Poll)
       .with_title("Example")
       .with_size(LogicalSize::new(800, 500))
       .with_clear_color(WindowOptions::BLACK),
@@ -33,7 +30,9 @@ fn main() -> anyhow::Result<()> {
 
       match event {
         WindowEvent::Draw => {
-          // window.request_redraw();
+          state.update();
+          state.draw();
+          window.request_redraw();
         },
         WindowEvent::Resized(physical_size) => {
           state.resize(physical_size);
@@ -41,8 +40,6 @@ fn main() -> anyhow::Result<()> {
         _ => (),
       }
     }
-    state.update();
-    state.draw();
   }
 
   Ok(())

@@ -31,8 +31,8 @@ pub enum Backend {
   #[default]
   Win32 = 0,
   AppKit = 1,
-  Wayland = 2,
-  X11 = 3,
+  X11 = 2,
+  Wayland = 3,
   Web = 4,
   Android = 5,
   UIKit = 6,
@@ -43,8 +43,8 @@ impl Backend {
     match self {
       Backend::Win32 => Win32::backend(),
       Backend::AppKit => AppKit::backend(),
-      Backend::Wayland => Wayland::backend(),
       Backend::X11 => X11::backend(),
+      Backend::Wayland => Wayland::backend(),
       Backend::Web => unimplemented!(),
       Backend::Android => unimplemented!(),
       Backend::UIKit => unimplemented!(),
@@ -55,8 +55,8 @@ impl Backend {
     match self {
       Backend::Win32 => Win32::is_available(),
       Backend::AppKit => AppKit::is_available(),
-      Backend::Wayland => Wayland::is_available(),
       Backend::X11 => X11::is_available(),
+      Backend::Wayland => Wayland::is_available(),
       Backend::Web => false,
       Backend::Android => false,
       Backend::UIKit => false,
@@ -68,8 +68,8 @@ static PREFERENCES: LazyLock<Mutex<&'static [Backend]>> = LazyLock::new(|| {
   Mutex::new(&[
     Backend::Win32,
     Backend::AppKit,
-    Backend::Wayland,
     Backend::X11,
+    Backend::Wayland,
     Backend::Web,
     Backend::Android,
     Backend::UIKit,
