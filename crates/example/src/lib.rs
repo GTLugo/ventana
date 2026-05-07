@@ -21,8 +21,6 @@ pub struct State {
 }
 
 impl State {
-  // We don't need this to be async right now,
-  // but we will in the next tutorial
   pub async fn new(window: Window) -> anyhow::Result<Self> {
     let size = window.inner_size();
 
