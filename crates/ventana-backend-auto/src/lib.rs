@@ -6,8 +6,6 @@ use {
     linux::Linux,
     win32::Win32,
   },
-  backend_wayland::Wayland,
-  backend_x11::X11,
   hal::{
     backend::Backend as HalBackend,
     error::RequestError,
@@ -43,8 +41,8 @@ impl Backend {
     match self {
       Backend::Win32 => Win32::backend(),
       Backend::AppKit => AppKit::backend(),
-      Backend::X11 => X11::backend(),
-      Backend::Wayland => Wayland::backend(),
+      Backend::X11 => Linux::x11(),
+      Backend::Wayland => Linux::wayland(),
       Backend::Web => unimplemented!(),
       Backend::Android => unimplemented!(),
       Backend::UIKit => unimplemented!(),
@@ -55,8 +53,8 @@ impl Backend {
     match self {
       Backend::Win32 => Win32::is_available(),
       Backend::AppKit => AppKit::is_available(),
-      Backend::X11 => X11::is_available(),
-      Backend::Wayland => Wayland::is_available(),
+      Backend::X11 => Linux::is_x11_available(),
+      Backend::Wayland => Linux::is_wayland_available(),
       Backend::Web => false,
       Backend::Android => false,
       Backend::UIKit => false,

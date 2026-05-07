@@ -36,19 +36,21 @@ impl Linux {
     Self::is_wayland_available() || Self::is_x11_available()
   }
 
-  pub fn backend() -> Option<&'static dyn Backend> {
-    let wayland = cfg_select! {
-      feature = "wayland" => Wayland::backend(),
+  pub fn wayland() -> Option<&'static dyn Backend> {
+    cfg_select! {
+      feature = "wayland" => X11::backend(),
       _ => None
-    };
+    }
+  }
 
-    let x11 = || {
-      cfg_select! {
-        feature = "x11" => X11::backend(),
-        _ => None
-      }
-    };
+  pub fn x11() -> Option<&'static dyn Backend> {
+    cfg_select! {
+      feature = "x11" => X11::backend(),
+      _ => None
+    }
+  }
 
-    wayland.or_else(x11)
+  pub fn backend() -> Option<&'static dyn Backend> {
+    Self::wayland().or_else(Self::x11)
   }
 }

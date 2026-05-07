@@ -14,8 +14,8 @@ repository.workspace = true
 default = []
 serde = ["dep:serde", "hal/serde"]
 
-x11 = ["dep:backend-x11"]
-wayland = ["dep:backend-wayland"]
+x11 = ["dep:backend_x11"]
+wayland = ["dep:backend_wayland"]
 
 [build-dependencies]
 cfg_aliases = "0.2"
@@ -27,11 +27,11 @@ serde = { version = "1.0", optional = true }
 hal = { package = "ventana-hal", version = "0.0.4", path = "../ventana-hal" }
 
 # Windows
-backend-win32 = { package = "ventana-backend-win32", version = "0.0.4", path = "../ventana-backend-win32" }
+backend_win32 = { package = "ventana-backend-win32", version = "0.0.4", path = "../ventana-backend-win32" }
 
 # Linux
-backend-wayland = { package = "ventana-backend-wayland", version = "0.0.3", path = "../ventana-backend-wayland", optional = true } # , optional = true
-backend-x11 = { package = "ventana-backend-x11", version = "0.0.3", path = "../ventana-backend-x11", optional = true } # , optional = true
+backend_wayland = { package = "ventana-backend-wayland", version = "0.0.3", path = "../ventana-backend-wayland", optional = true } # , optional = true
+backend_x11 = { package = "ventana-backend-x11", version = "0.0.3", path = "../ventana-backend-x11", optional = true } # , optional = true
 
 # MacOS
-backend-appkit = { package = "ventana-backend-appkit", version = "0.0.1", path = "../ventana-backend-appkit" }
+backend_appkit = { package = "ventana-backend-appkit", version = "0.0.1", path = "../ventana-backend-appkit" }
