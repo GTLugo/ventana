@@ -1,7 +1,10 @@
 #![cfg(linux_platform)]
 
 use {
-  crate::X11,
+  crate::{
+    X11,
+    keyboard::key_from_x11,
+  },
   std::{
     num::NonZero,
     ptr::NonNull,
@@ -211,6 +214,14 @@ impl X11Window {
 
         Event::None
       },
+      X11Event::ButtonPress(event) => {
+        todo!()
+      },
+      X11Event::ButtonRelease(event) => {
+        todo!()
+      },
+      X11Event::KeyPress(event) => Event::Window(key_from_x11(event.detail, event.state)),
+      X11Event::KeyRelease(event) => Event::Window(key_from_x11(event.detail, event.state)),
       X11Event::Error(error) => {
         log::error!("{error:?}");
         Event::None
