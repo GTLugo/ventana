@@ -2,15 +2,19 @@
 
 use {
   ventana_hal::{
-    event::WindowEvent,
-    keyboard::{
-      Key,
-      NamedKey,
+    event::{
+      KeyEvent,
+      WindowEvent,
+    },
+    input::key::{
+      LogicalKey,
+      NativeKey,
+      PhysicalKey,
     },
     pointer::mouse::MouseEvent,
   },
   win64::user::{
-    KeyEvent,
+    KeyEvent as WinKeyEvent,
     Message,
   },
 };
@@ -21,8 +25,8 @@ pub fn map_native_event(native: &Message) -> Option<WindowEvent> {
     // Message::Destroy => WindowEvent::Destroyed,
     Message::Close => WindowEvent::CloseRequest,
     Message::Paint => WindowEvent::Draw,
-    Message::KeyDown(message) => key_event_to_window_event(message.event()),
-    Message::KeyUp(message) => key_event_to_window_event(message.event()),
+    Message::KeyDown(message) => WindowEvent::Keyboard(convert_key_event(message.event())),
+    Message::KeyUp(message) => WindowEvent::Keyboard(convert_key_event(message.event())),
     Message::LButtonDown(message) => mouse_event_to_window_event(message.event()),
     Message::LButtonUp(message) => mouse_event_to_window_event(message.event()),
     Message::LButtonDblClk(message) => mouse_event_to_window_event(message.event()),
@@ -45,18 +49,18 @@ pub fn map_native_event(native: &Message) -> Option<WindowEvent> {
   })
 }
 
-fn key_event_to_window_event(key_event: KeyEvent) -> WindowEvent {
+fn convert_key_event(key_event: WinKeyEvent) -> KeyEvent {
   use win64::input::keyboard::key::Key as WinKey;
   let key = match key_event.key {
-    WinKey::Named(named_key) => Key::Named(named_key),
-    WinKey::Character(string) => Key::Character(string),
-    WinKey::Unidentified(_) => Key::Named(NamedKey::Unidentified),
-    WinKey::Dead(_) => Key::Named(NamedKey::Dead),
+    WinKey::Named(named_key) => LogicalKey::Named(named_key),
+    WinKey::Character(string) => LogicalKey::Character(string.into()),
+    WinKey::Unidentified(vkey) => LogicalKey::Unidentified(NativeKey::Key(vkey as u32)),
+    WinKey::Dead(dead) => LogicalKey::Dead(dead),
   };
-  WindowEvent::Keyboard {
+  KeyEvent {
     state: key_event.state,
     key,
-    code: key_event.code,
+    code: PhysicalKey::Code(key_event.code),
     location: key_event.location,
     modifiers: key_event.modifiers,
     repeat: key_event.repeat,

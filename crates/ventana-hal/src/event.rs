@@ -3,14 +3,19 @@
 */
 
 use {
-  crate::types::Focus,
+  crate::{
+    input::key::{
+      LogicalKey,
+      PhysicalKey,
+    },
+    types::Focus,
+  },
   dpi::{
     PhysicalPosition,
     PhysicalSize,
   },
   keyboard_types::{
     Code,
-    Key,
     KeyState,
     Location,
     Modifiers,
@@ -32,37 +37,18 @@ pub enum Event {
   // /// Sent when the message pump is exiting.
   // LoopExiting,
   /// Messages sent by devices registered for raw input.
-  RawInput(RawInputMessage),
+  RawInput(RawInputEvent),
   Window(WindowEvent),
 }
 
 #[derive(Debug, Display, PartialEq, Clone)]
 pub enum WindowEvent {
-  // /// Message sent when the window is created.
-  // Created,
-  // /// Message sent when the window is destroyed.
-  // Destroyed,
   /// Message sent when the window X button is pressed.
   CloseRequest,
   /// Message sent when the window requests itself be repainted.
   Draw,
   /// Message sent when a key is pressed, held, or released.
-  Keyboard {
-    state: KeyState,
-    // Logical key value.
-    key: Key,
-    // Physical key position. (Use this for games)
-    code: Code,
-    // Location for keys with multiple instances on common keyboards.
-    location: Location,
-    // Flags for pressed modifier keys.
-    modifiers: Modifiers,
-    // True if the key is currently auto-repeated.
-    repeat: bool,
-    // // Events with this flag should be ignored in a text editor.
-    // // and instead [composition events](CompositionEvent) should be used.
-    // is_composing: bool,
-  },
+  Keyboard(KeyEvent),
   ModifiersChanged {
     shift: KeyState,
     ctrl: KeyState,
@@ -102,8 +88,23 @@ pub enum WindowEvent {
   ScaleFactorChanged(f64),
 }
 
+#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+pub struct KeyEvent {
+  pub state: KeyState,
+  // Logical key value.
+  pub key: LogicalKey,
+  // Physical key position. (Use this for games)
+  pub code: PhysicalKey,
+  // Location for keys with multiple instances on common keyboards.
+  pub location: Location,
+  // Flags for pressed modifier keys.
+  pub modifiers: Modifiers,
+  // True if the key is currently auto-repeated.
+  pub repeat: bool,
+}
+
 #[derive(Debug, Display, PartialEq, Clone)]
-pub enum RawInputMessage {
+pub enum RawInputEvent {
   /// Raw keyboard input
   Keyboard { physical_key: Code, state: KeyState },
   /// Raw mouse button input

@@ -1,3 +1,5 @@
+pub mod key;
+
 use {
   keyboard_types::{
     Code,
