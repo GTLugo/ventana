@@ -2,13 +2,11 @@
 
 use {
   crate::{
-    X11,
-    monitor::X11Monitor,
-    window::X11Window,
+    X11, keyboard::context::Context, monitor::X11Monitor, window::X11Window
   },
   std::{
     collections::VecDeque,
-    sync::Arc,
+    sync::{Arc, Mutex, MutexGuard},
   },
   ventana_hal::{
     backend::Backend,
@@ -75,11 +73,21 @@ pub struct X11State {
   pub default_screen_index: usize,
   pub database: Database,
   pub atoms: Atoms,
+  pub xkb: Mutex<Context>,
+  pub held_key_press: Mutex<Option<u32>>,
 }
 
 impl X11 {
   pub fn connection() -> &'static XCBConnection {
     &Self::instance().unwrap().0.connection
+  }
+
+  pub fn xkb_context() -> MutexGuard<'static, Context> {
+    Self::instance().unwrap().0.xkb.lock().unwrap()
+  }
+  
+  pub fn held_key_press() -> MutexGuard<'static, Option<u32>> {
+    Self::instance().unwrap().0.held_key_press.lock().unwrap()
   }
 
   pub fn default_screen_id() -> usize {

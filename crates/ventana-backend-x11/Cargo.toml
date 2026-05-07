@@ -17,7 +17,8 @@ default = []
 cfg_aliases = "0.2"
 
 [dependencies]
-log = "0.4"
+log      = "0.4"
+smol_str = "0.3"
 
 [dependencies.ventana-hal]
 version = "0.0.3"
@@ -35,3 +36,4 @@ x11rb = { version = "0.13", features = [
   "xinput",
   "xkb",
 ]}
+xkbcommon-dl = { version = "0.4", features = ["x11"] }
