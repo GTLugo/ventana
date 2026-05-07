@@ -1,7 +1,7 @@
 [package]
 name                 = "ventana-backend-win32"
 description          = "A cross-platform, iterator-based windowing library"
-version              = "0.0.3"
+version              = "0.0.4"
 readme.workspace     = true
 edition.workspace    = true
 authors.workspace    = true
@@ -17,7 +17,7 @@ default = []
 log = "0.4"
 
 [dependencies.ventana-hal]
-version = "0.0.3"
+version = "0.0.4"
 path = "../ventana-hal"
 
 [dependencies.threadloop]

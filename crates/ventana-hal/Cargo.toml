@@ -1,7 +1,7 @@
 [package]
 name                 = "ventana-hal"
 description          = "A cross-platform, iterator-based windowing library"
-version              = "0.0.3"
+version              = "0.0.4"
 readme.workspace     = true
 edition.workspace    = true
 authors.workspace    = true
