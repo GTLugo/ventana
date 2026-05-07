@@ -32,7 +32,7 @@ use {
     monitor::Monitor,
     pointer::{
       ButtonState,
-      mouse::MouseButton,
+      button::PointerButton,
     },
     raw_window_handle::{
       WaylandDisplayHandle,
@@ -139,7 +139,7 @@ impl BackendWindow for WaylandWindow {
     todo!()
   }
 
-  fn mouse(&self, button: MouseButton) -> ButtonState {
+  fn pointer(&self, button: PointerButton) -> ButtonState {
     let _ = button;
     todo!()
   }
@@ -156,7 +156,7 @@ impl BackendWindow for WaylandWindow {
     todo!()
   }
 
-  fn super_key(&self) -> KeyState {
+  fn meta_key(&self) -> KeyState {
     todo!()
   }
 }

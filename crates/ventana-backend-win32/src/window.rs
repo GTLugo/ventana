@@ -10,7 +10,11 @@ use {
     state::SharedInternal,
     thread::Win32ThreadHandler,
   },
-  crate::window::command::CreateInfo,
+  crate::{
+    Win32,
+    monitor::Win32Monitor,
+    window::command::CreateInfo,
+  },
   ::win64::Handle,
   std::sync::{
     Arc,
@@ -31,8 +35,10 @@ use {
     },
     event::{
       Event,
+      KeyEvent,
       WindowEvent,
     },
+    input::key::PhysicalKey,
     keyboard::{
       Code,
       KeyState,
@@ -40,7 +46,8 @@ use {
     monitor::BackendMonitor,
     pointer::{
       ButtonState,
-      mouse::MouseButton,
+      PointerButton,
+      PointerEvent,
     },
     settings::WindowSettings,
     types::Flow,
@@ -137,18 +144,28 @@ impl BackendWindow for Win32Window {
       Err(NextEventError::Disconnected) => return None,
     };
 
-    if let Event::Window(WindowEvent::CloseRequest) = event {
-      let x = self.shared.close_on_x;
-      if x {
-        self.close();
-      }
+    match event {
+      Event::Window(WindowEvent::CloseRequest) => {
+        let x = self.shared.close_on_x;
+        if x {
+          self.close();
+        }
+      },
+      Event::Window(WindowEvent::Keyboard(KeyEvent { state, code: PhysicalKey::Code(code), .. })) => {
+        Win32::input_mut().update_key(code, state);
+      },
+
+      Event::Window(WindowEvent::Pointer(PointerEvent::Button { state, button, .. })) => {
+        Win32::input_mut().update_pointer(button, state);
+      },
+      _ => (),
     }
 
     Some(event)
   }
 
   fn monitor(&self) -> Arc<dyn BackendMonitor> {
-    todo!()
+    Arc::new(Win32Monitor(self.hwnd.monitor()))
   }
 
   fn close(&self) {
@@ -199,29 +216,27 @@ impl BackendWindow for Win32Window {
     self.hwnd().window_position()
   }
 
-  fn key(&self, keycode: Code) -> KeyState {
-    log::debug!("Checking {keycode:?}...");
-    todo!()
+  fn key(&self, code: Code) -> KeyState {
+    Win32::input().key(code)
   }
 
-  fn mouse(&self, button: MouseButton) -> ButtonState {
-    log::debug!("Checking {button:?}...");
-    todo!()
+  fn pointer(&self, button: PointerButton) -> ButtonState {
+    Win32::input().pointer(button)
   }
 
   fn shift_key(&self) -> KeyState {
-    todo!()
+    Win32::input().shift_key
   }
 
   fn ctrl_key(&self) -> KeyState {
-    todo!()
+    Win32::input().ctrl_key
   }
 
   fn alt_key(&self) -> KeyState {
-    todo!()
+    Win32::input().alt_key
   }
 
-  fn super_key(&self) -> KeyState {
-    todo!()
+  fn meta_key(&self) -> KeyState {
+    Win32::input().meta_key
   }
 }

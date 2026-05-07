@@ -2,6 +2,16 @@ mod event;
 mod monitor;
 mod window;
 
+#[cfg(windows)]
+use std::sync::{
+  RwLockReadGuard,
+  RwLockWriteGuard,
+};
+
+use {
+  std::sync::RwLock,
+  ventana_hal::input::Input,
+};
 #[allow(unused)]
 use {
   std::{
@@ -17,8 +27,27 @@ use {
   },
 };
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Win32;
+#[derive(Debug, Default)]
+pub struct Win32 {
+  pub(crate) input: RwLock<Input>,
+}
+
+#[cfg(windows)]
+impl Win32 {
+  fn input() -> RwLockReadGuard<'static, Input>
+  where
+    Self: Sized,
+  {
+    Self::instance().unwrap().input.read().unwrap()
+  }
+
+  fn input_mut() -> RwLockWriteGuard<'static, Input>
+  where
+    Self: Sized,
+  {
+    Self::instance().unwrap().input.write().unwrap()
+  }
+}
 
 #[allow(unused)]
 impl Backend for Win32 {
@@ -28,7 +57,7 @@ impl Backend for Win32 {
     Self: Sized,
   {
     use std::sync::LazyLock;
-    static INSTANCE: LazyLock<Win32> = LazyLock::new(|| Win32);
+    static INSTANCE: LazyLock<Win32> = LazyLock::new(Win32::default);
     Some(&INSTANCE)
   }
 

@@ -12,7 +12,15 @@ use {
     },
     error::RequestError,
     event::Event,
+    keyboard::{
+      Code,
+      KeyState,
+    },
     monitor::Monitor,
+    pointer::{
+      ButtonState,
+      PointerButton,
+    },
     rgb::RGB8,
     settings::WindowSettings,
     types::{
@@ -109,6 +117,30 @@ impl Window {
 
   pub fn request_redraw(&self) {
     self.window.request_redraw()
+  }
+
+  pub fn key(&self, code: Code) -> KeyState {
+    self.window.key(code)
+  }
+
+  pub fn pointer(&self, button: PointerButton) -> ButtonState {
+    self.window.pointer(button)
+  }
+
+  pub fn shift_key(&self) -> KeyState {
+    self.window.shift_key()
+  }
+
+  pub fn ctrl_key(&self) -> KeyState {
+    self.window.ctrl_key()
+  }
+
+  pub fn alt_key(&self) -> KeyState {
+    self.window.alt_key()
+  }
+
+  pub fn meta_key(&self) -> KeyState {
+    self.window.meta_key()
   }
 
   pub fn next_event(&self) -> Option<Event> {

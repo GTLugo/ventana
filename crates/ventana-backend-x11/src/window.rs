@@ -370,7 +370,10 @@ impl BackendWindow for X11Window {
     todo!()
   }
 
-  fn mouse(&self, _button: ventana_hal::pointer::mouse::MouseButton) -> ventana_hal::pointer::ButtonState {
+  fn pointer(
+    &self,
+    _button: ventana_hal::pointer::button::PointerButton,
+  ) -> ventana_hal::pointer::ButtonState {
     todo!()
   }
 
@@ -386,7 +389,7 @@ impl BackendWindow for X11Window {
     todo!()
   }
 
-  fn super_key(&self) -> ventana_hal::keyboard::KeyState {
+  fn meta_key(&self) -> ventana_hal::keyboard::KeyState {
     todo!()
   }
 }

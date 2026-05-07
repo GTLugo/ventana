@@ -13,7 +13,7 @@ use {
   },
   pointer_types::{
     ButtonState,
-    mouse::MouseButton,
+    PointerButton,
   },
   raw_window_handle::{
     RawDisplayHandle,
@@ -73,9 +73,9 @@ pub trait BackendWindow: Send + Sync {
 
   fn outer_position(&self) -> PhysicalPosition<i32>;
 
-  fn key(&self, keycode: Code) -> KeyState;
+  fn key(&self, code: Code) -> KeyState;
 
-  fn mouse(&self, button: MouseButton) -> ButtonState;
+  fn pointer(&self, button: PointerButton) -> ButtonState;
 
   fn shift_key(&self) -> KeyState;
 
@@ -83,7 +83,7 @@ pub trait BackendWindow: Send + Sync {
 
   fn alt_key(&self) -> KeyState;
 
-  fn super_key(&self) -> KeyState;
+  fn meta_key(&self) -> KeyState;
 }
 
 // pub trait BackendEventIterator<'window>: Send + Sync {

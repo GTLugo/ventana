@@ -45,7 +45,7 @@ use {
     },
     pointer::{
       ButtonState,
-      mouse::MouseButton,
+      button::PointerButton,
     },
     raw_window_handle::{
       AppKitDisplayHandle,
@@ -254,7 +254,7 @@ impl BackendWindow for AppKitWindow {
     todo!()
   }
 
-  fn mouse(&self, button: MouseButton) -> ButtonState {
+  fn pointer(&self, button: PointerButton) -> ButtonState {
     let _ = button;
     todo!()
   }
@@ -271,7 +271,7 @@ impl BackendWindow for AppKitWindow {
     todo!()
   }
 
-  fn super_key(&self) -> KeyState {
+  fn meta_key(&self) -> KeyState {
     todo!()
   }
 }
