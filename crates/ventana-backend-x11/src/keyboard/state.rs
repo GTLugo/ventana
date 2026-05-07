@@ -1,11 +1,13 @@
 use {
   super::{
-    ThreadPtr, XKBH, XKBXH, keymap::XkbKeymap, make_string_with
+    ThreadPtr,
+    XKBH,
+    XKBXH,
+    keymap::XkbKeymap,
+    make_string_with,
   },
   smol_str::SmolStr,
-  std::
-    ffi::c_char
-  ,
+  std::ffi::c_char,
   ventana_hal::keyboard::Modifiers,
   xkbcommon_dl::{
     self as xkb,

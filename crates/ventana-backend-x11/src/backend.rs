@@ -2,11 +2,18 @@
 
 use {
   crate::{
-    X11, keyboard::context::Context, monitor::X11Monitor, window::X11Window
+    X11,
+    keyboard::context::Context,
+    monitor::X11Monitor,
+    window::X11Window,
   },
   std::{
     collections::VecDeque,
-    sync::{Arc, Mutex, MutexGuard},
+    sync::{
+      Arc,
+      Mutex,
+      MutexGuard,
+    },
   },
   ventana_hal::{
     backend::Backend,
@@ -85,7 +92,7 @@ impl X11 {
   pub fn xkb_context() -> MutexGuard<'static, Context> {
     Self::instance().unwrap().0.xkb.lock().unwrap()
   }
-  
+
   pub fn held_key_press() -> MutexGuard<'static, Option<u32>> {
     Self::instance().unwrap().0.held_key_press.lock().unwrap()
   }
