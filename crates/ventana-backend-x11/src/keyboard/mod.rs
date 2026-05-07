@@ -1,13 +1,23 @@
+#![cfg(linux_platform)]
+
 mod keymap;
 
 use {
   ventana_hal::{
     event::WindowEvent,
-    keyboard::{Code, Key, Location, Modifiers},
+    keyboard::{
+      Code,
+      Key,
+      Location,
+      Modifiers,
+    },
   },
   x11rb::protocol::{
     Event as X11Event,
-    xproto::{KeyButMask, Keycode},
+    xproto::{
+      KeyButMask,
+      Keycode,
+    },
   },
 };
 
