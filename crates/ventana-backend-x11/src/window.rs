@@ -28,6 +28,7 @@ use {
       Event,
       WindowEvent,
     },
+    keyboard::KeyState,
     monitor::BackendMonitor,
     raw_window_handle::*,
     settings::WindowSettings,
@@ -66,7 +67,6 @@ pub struct X11Window {
   id: u32,
   visual: u32,
   state: Mutex<State>,
-  // request_redraw: AtomicBool,
 }
 
 impl Drop for X11Window {
@@ -150,11 +150,13 @@ impl X11Window {
     connection.map_window(id).map_to_os_err()?;
     connection.flush().map_to_os_err()?;
 
+    // let xkb = Context::new().ok_or(RequestError::not_supported("XKB not found"))?;
+
     let this = Self {
       id,
       visual,
       state: Mutex::new(State { settings, size, position, is_running: true }),
-      // request_redraw: AtomicBool::new(false),
+      // xkb, // request_redraw: AtomicBool::new(false),
     };
 
     this.request_redraw();
@@ -215,13 +217,27 @@ impl X11Window {
         Event::None
       },
       X11Event::ButtonPress(event) => {
-        todo!()
+        log::debug!("X11Event::ButtonPress | {event:?}");
+        Event::None
       },
       X11Event::ButtonRelease(event) => {
-        todo!()
+        log::debug!("X11Event::ButtonRelease | {event:?}");
+        Event::None
       },
-      X11Event::KeyPress(event) => Event::Window(key_from_x11(event.detail, event.state)),
-      X11Event::KeyRelease(event) => Event::Window(key_from_x11(event.detail, event.state)),
+      X11Event::KeyPress(event) => {
+        // log::debug!("X11Event::KeyPress | {event:?}");
+        match key_from_x11(event.detail, KeyState::Down) {
+          Some(event) => Event::Window(WindowEvent::Keyboard(event)),
+          None => Event::None,
+        }
+      },
+      X11Event::KeyRelease(event) => {
+        // log::debug!("X11Event::KeyRelease | {event:?}");
+        match key_from_x11(event.detail, KeyState::Down) {
+          Some(event) => Event::Window(WindowEvent::Keyboard(event)),
+          None => Event::None,
+        }
+      },
       X11Event::Error(error) => {
         log::error!("{error:?}");
         Event::None

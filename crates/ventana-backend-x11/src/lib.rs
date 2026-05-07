@@ -29,10 +29,14 @@ impl Backend for X11 {
   {
     static INSTANCE: std::sync::LazyLock<Option<X11>> = std::sync::LazyLock::new(|| {
       use {
-        self::backend::{
-          Atoms,
-          X11State,
+        self::{
+          backend::{
+            Atoms,
+            X11State,
+          },
+          keyboard::context::Context,
         },
+        std::sync::Mutex,
         x11rb::{
           resource_manager::new_from_default,
           xcb_ffi::XCBConnection,
@@ -46,9 +50,18 @@ impl Backend for X11 {
           return None;
         },
       };
+      let mut xkb = Context::from_x11_xkb(connection.get_raw_xcb_connection())?;
+      xkb.set_keymap_from_x11(connection.get_raw_xcb_connection());
       let database = new_from_default(&connection).unwrap();
       let atoms = Atoms::new(&connection).unwrap().reply().unwrap();
-      Some(X11(Arc::new(X11State { connection, default_screen_index, database, atoms })))
+      Some(X11(Arc::new(X11State {
+        connection,
+        default_screen_index,
+        database,
+        atoms,
+        xkb: Mutex::new(xkb),
+        held_key_press: Mutex::new(None),
+      })))
     });
     INSTANCE.as_ref()
   }
