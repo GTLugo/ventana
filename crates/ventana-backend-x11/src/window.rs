@@ -9,10 +9,6 @@ use {
       Arc,
       Mutex,
       MutexGuard,
-      atomic::{
-        AtomicBool,
-        Ordering,
-      },
     },
   },
   ventana_hal::{
@@ -224,7 +220,7 @@ impl X11Window {
         //   log::debug!("Redraw requested");
         //   Event::Window(WindowEvent::Draw)
         // } else {
-          Event::None
+        Event::None
         // }
       },
     }
