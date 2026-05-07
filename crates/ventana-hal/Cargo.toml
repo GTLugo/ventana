@@ -18,13 +18,8 @@ serde   = ["dep:serde"]
 log       = "0.4"
 thiserror = "2.0"
 serde     = { version = "1.0", optional = true }
-bitflags  = "2.11"
 smol_str  = "0.3"
 strum     = { version = "0.28", features = ["derive"] }
-
-# Window thread
-crossbeam-channel = "0.5"
-crossbeam-queue   = "0.3"
 
 # Standard windowing types
 dpi               = "0.1"

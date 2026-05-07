@@ -15,7 +15,6 @@ default = []
 
 [dependencies]
 log       = "0.4"
-thiserror = "2.0"
 
 [dependencies.ventana-hal]
 version = "0.0.4"
