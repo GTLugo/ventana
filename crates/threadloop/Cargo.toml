@@ -1,6 +1,7 @@
 [package]
-name    = "threadloop"
-version = "0.1.0"
+name        = "threadloop"
+description = "A helper library for Ventana"
+version     = "0.1.0"
 readme.workspace     = true
 edition.workspace    = true
 authors.workspace    = true
