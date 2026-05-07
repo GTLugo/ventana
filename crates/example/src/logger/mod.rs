@@ -46,7 +46,12 @@ impl Logger {
       .add_directive("wgpu=off".parse()?)
       .add_directive("naga=off".parse()?);
 
-    let stdout_layer = logger.add_layer(tracing_appender::non_blocking(std::io::stdout())).compact();
+    let stdout_layer = logger
+      .add_layer(tracing_appender::non_blocking(std::io::stdout()))
+      .compact()
+      .with_target(false)
+      .with_file(true)
+      .with_line_number(true);
     let file_layer = logger
       .add_layer(tracing_appender::non_blocking(
         tracing_appender::rolling::Builder::new()
@@ -56,6 +61,8 @@ impl Logger {
           .rotation(Rotation::NEVER)
           .build("./logs")?,
       ))
+      .with_file(true)
+      .with_line_number(true)
       .with_ansi(false);
 
     let subscriber = tracing_subscriber::registry().with(filter).with(stdout_layer).with(file_layer);

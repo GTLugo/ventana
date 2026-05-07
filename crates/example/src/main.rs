@@ -30,6 +30,7 @@ fn main() -> anyhow::Result<()> {
 
       match event {
         WindowEvent::Draw => {
+          // log::debug!("{:?} | {event:?}", window.title());
           state.update();
           state.draw();
           window.request_redraw();

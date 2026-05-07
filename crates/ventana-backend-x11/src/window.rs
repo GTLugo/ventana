@@ -9,6 +9,10 @@ use {
       Arc,
       Mutex,
       MutexGuard,
+      atomic::{
+        AtomicBool,
+        Ordering,
+      },
     },
   },
   ventana_hal::{
@@ -62,8 +66,8 @@ pub struct State {
 pub struct X11Window {
   id: u32,
   visual: u32,
-  // event_backlog: Mutex<VecDeque<Event>>,
   state: Mutex<State>,
+  // request_redraw: AtomicBool,
 }
 
 impl Drop for X11Window {
@@ -92,7 +96,6 @@ impl X11Window {
           | EventMask::KEYMAP_STATE
           | EventMask::STRUCTURE_NOTIFY
           | EventMask::FOCUS_CHANGE
-          // | EventMask::RESIZE_REDIRECT
           | EventMask::PROPERTY_CHANGE
           | EventMask::VISIBILITY_CHANGE
           | EventMask::BUTTON_PRESS
@@ -148,17 +151,16 @@ impl X11Window {
     connection.map_window(id).map_to_os_err()?;
     connection.flush().map_to_os_err()?;
 
-    // loop {
-    //   let event = connection.wait_for_event().map_to_os_err()?;
-    //   log::trace!("{:?}", event);
-    // }
-
-    Ok(Self {
+    let this = Self {
       id,
       visual,
-      // event_backlog: Mutex::new(VecDeque::new()),
       state: Mutex::new(State { settings, size, position, is_running: true }),
-    })
+      // request_redraw: AtomicBool::new(false),
+    };
+
+    this.request_redraw();
+
+    Ok(this)
   }
 
   fn state_lock(&self) -> MutexGuard<'_, State> {
@@ -167,8 +169,6 @@ impl X11Window {
 
   fn map_native_event(&self, native: &X11Event, window_id: u32) -> Event {
     match native {
-      // X11Event::CreateNotify(_) => Event::Window(WindowEvent::Created),
-      // X11Event::DestroyNotify(_) => Event::Window(WindowEvent::Destroyed),
       X11Event::ClientMessage(event) => {
         let data = event.data.as_data32();
 
@@ -177,10 +177,12 @@ impl X11Window {
         }
 
         if data[0] == X11::atoms().WM_DELETE_WINDOW {
+          // log::debug!("ClientMessage | Delete Window");
           return Event::Window(WindowEvent::CloseRequest);
         }
 
         if event.type_ == X11::atoms().VENTANA_REQUEST_REDRAW {
+          // log::debug!("ClientMessage | Redraw");
           return Event::Window(WindowEvent::Draw);
         }
 
@@ -200,11 +202,6 @@ impl X11Window {
 
         if event.window == window_id && old_size != new_size {
           state.size = new_size;
-          // self
-          //   .event_backlog
-          //   .lock()
-          //   .unwrap()
-          //   .push_back(Event::Window(WindowEvent::Draw));
           return Event::Window(WindowEvent::Resized(new_size));
         }
 
@@ -222,7 +219,14 @@ impl X11Window {
         log::error!("{error:?}");
         Event::None
       },
-      _ => Event::None,
+      _ => {
+        // if self.request_redraw.swap(false, Ordering::AcqRel) {
+        //   log::debug!("Redraw requested");
+        //   Event::Window(WindowEvent::Draw)
+        // } else {
+          Event::None
+        // }
+      },
     }
   }
 }
@@ -255,12 +259,6 @@ impl BackendWindow for X11Window {
       return None;
     }
 
-    // if let Ok(mut backlog) = self.event_backlog.lock()
-    //   && !backlog.is_empty()
-    // {
-    //   return backlog.pop_front();
-    // }
-
     let x11_event = X11::connection().wait_for_event().inspect_err(|e| log::error!("{e}")).ok()?;
     let event = self.map_native_event(&x11_event, self.id);
 
@@ -284,10 +282,7 @@ impl BackendWindow for X11Window {
         data: [0; 5].into(),
       })
       .unwrap();
-    // self.event_backlog
-    //   .lock()
-    //   .unwrap()
-    //   .push_back(Event::Window(WindowEvent::Draw));
+    // self.request_redraw.store(true, Ordering::Release);
   }
 
   fn close(&self) {
