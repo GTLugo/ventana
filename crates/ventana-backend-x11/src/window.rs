@@ -168,12 +168,15 @@ impl X11Window {
     self.state.lock().unwrap()
   }
 
-  fn map_native_event(&self, native: &X11Event, window_id: u32) -> Event {
+  fn map_native_event(&self, native: &Option<X11Event>) -> Event {
+    let Some(native) = native else {
+      return Event::None;
+    };
     match native {
       X11Event::ClientMessage(event) => {
         let data = event.data.as_data32();
 
-        if event.window != window_id || event.format != 32 {
+        if event.window != self.id || event.format != 32 {
           return Event::None;
         }
 
@@ -190,7 +193,7 @@ impl X11Window {
         Event::None
       },
       X11Event::Expose(event) => {
-        if event.window == window_id {
+        if event.window == self.id {
           Event::Window(WindowEvent::Draw)
         } else {
           Event::None
@@ -201,7 +204,7 @@ impl X11Window {
         let old_size = state.size;
         let new_size = PhysicalSize::new(event.width as u32, event.height as u32);
 
-        if event.window == window_id && old_size != new_size {
+        if event.window == self.id && old_size != new_size {
           state.size = new_size;
           return Event::Window(WindowEvent::Resized(new_size));
         }
@@ -209,7 +212,7 @@ impl X11Window {
         let old_position = state.position;
         let new_position = PhysicalPosition::new(event.x as i32, event.y as i32);
 
-        if event.window == window_id && old_position != new_position {
+        if event.window == self.id && old_position != new_position {
           state.position = new_position;
           return Event::Window(WindowEvent::Moved(new_position));
         }
@@ -252,6 +255,27 @@ impl X11Window {
       },
     }
   }
+
+  fn next_event<const SHOULD_WAIT: bool>(&self) -> Option<Event> {
+    if self.is_closing() {
+      return None;
+    }
+
+    let event = match SHOULD_WAIT {
+      true => Some(X11::connection().wait_for_event().inspect_err(|e| log::error!("{e}")).ok()?),
+      false => X11::connection().poll_for_event().inspect_err(|e| log::error!("{e}")).ok()?,
+    };
+
+    let event = self.map_native_event(&event);
+
+    if let Event::Window(WindowEvent::CloseRequest) = event
+      && self.state_lock().settings.close_on_x
+    {
+      self.close();
+    }
+
+    Some(event)
+  }
 }
 
 impl BackendWindow for X11Window {
@@ -278,20 +302,11 @@ impl BackendWindow for X11Window {
   }
 
   fn next(&self) -> Option<Event> {
-    if self.is_closing() {
-      return None;
-    }
+    self.next_event::<true>()
+  }
 
-    let x11_event = X11::connection().wait_for_event().inspect_err(|e| log::error!("{e}")).ok()?;
-    let event = self.map_native_event(&x11_event, self.id);
-
-    if let Event::Window(WindowEvent::CloseRequest) = event
-      && self.state_lock().settings.close_on_x
-    {
-      self.close();
-    }
-
-    Some(event)
+  fn try_next(&self) -> Option<Event> {
+    self.next_event::<false>()
   }
 
   fn request_redraw(&self) {

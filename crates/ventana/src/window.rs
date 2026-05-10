@@ -23,10 +23,7 @@ use {
     },
     rgb::RGB8,
     settings::WindowSettings,
-    types::{
-      Flow,
-      Visibility,
-    },
+    types::Visibility,
     window::{
       BackendWindow,
       WindowId,
@@ -147,6 +144,10 @@ impl Window {
     self.window.next()
   }
 
+  pub fn try_next_event(&self) -> Option<Event> {
+    self.window.try_next()
+  }
+
   // TODO: This should probably be named `Exit` or something similar as it exits the loop rather
   //      than actually closing the window. The backend will handle closing the window when the
   //      internal window is dropped.
@@ -162,7 +163,7 @@ pub struct WindowOptions {
   pub size: Size, // Maybe should make this optional and have backend handle None case
   pub position: Option<Position>,
   pub visibility: Visibility,
-  pub flow: Flow,
+  // pub flow: Flow,
   pub close_on_x: bool,
   pub clear_color: Option<RGB8>,
   // pub reveal_delay_frames: Option<u32>,
@@ -179,7 +180,7 @@ impl Default for WindowOptions {
       size: Size::Logical((800.0, 500.0).into()),
       position: None,
       visibility: Default::default(),
-      flow: Default::default(),
+      // flow: Default::default(),
       close_on_x: true,
       clear_color: None,
       // reveal_delay_frames: None,
@@ -222,10 +223,10 @@ impl WindowOptions {
     self
   }
 
-  pub fn with_flow(mut self, flow: Flow) -> Self {
-    self.flow = flow;
-    self
-  }
+  // pub fn with_flow(mut self, flow: Flow) -> Self {
+  //   self.flow = flow;
+  //   self
+  // }
 
   pub fn with_close_on_x(mut self, close_on_x: bool) -> Self {
     self.close_on_x = close_on_x;
@@ -245,7 +246,7 @@ impl From<WindowOptions> for WindowSettings {
       size: options.size,
       position: options.position,
       visibility: options.visibility,
-      flow: options.flow,
+      // flow: options.flow,
       close_on_x: options.close_on_x,
       clear_color: options.clear_color,
       // reveal_delay_frames: options.reveal_delay_frames,

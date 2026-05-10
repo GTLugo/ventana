@@ -208,6 +208,10 @@ impl BackendWindow for AppKitWindow {
     None
   }
 
+  fn try_next(&self) -> Option<Event> {
+    None
+  }
+
   fn request_redraw(&self) {
     todo!()
   }

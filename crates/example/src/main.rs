@@ -14,7 +14,6 @@ fn main() -> anyhow::Result<()> {
 
   let window = Window::new(
     WindowOptions::default()
-      // .with_flow(Flow::Poll)
       .with_title("Example")
       .with_size(LogicalSize::new(800, 500))
       .with_clear_color(WindowOptions::BLACK),
@@ -22,7 +21,7 @@ fn main() -> anyhow::Result<()> {
 
   let mut state = pollster::block_on(State::new(window.clone()))?;
 
-  for event in &window {
+  for event in window.try_iter() {
     if let Event::Window(event) = event {
       if !matches!(event, WindowEvent::Draw) {
         log::debug!("{:?} | {event:?}", window.title());
@@ -31,9 +30,7 @@ fn main() -> anyhow::Result<()> {
       match event {
         WindowEvent::Draw => {
           // log::debug!("{:?} | {event:?}", window.title());
-          state.update();
-          state.draw();
-          window.request_redraw();
+          // window.request_redraw();
         },
         WindowEvent::Resized(physical_size) => {
           state.resize(physical_size);
@@ -41,6 +38,8 @@ fn main() -> anyhow::Result<()> {
         _ => (),
       }
     }
+    state.update();
+    state.draw();
   }
 
   Ok(())

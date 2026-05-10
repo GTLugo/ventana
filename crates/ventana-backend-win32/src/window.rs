@@ -50,7 +50,6 @@ use {
       PointerEvent,
     },
     settings::WindowSettings,
-    types::Flow,
     window::{
       BackendWindow,
       WindowId,
@@ -70,7 +69,7 @@ use {
 // No `Arc` necessary for fields other than `shared` as this will be inside an `Arc<dyn BackendWindow>`
 pub struct Win32Window {
   hwnd: Window,
-  flow: Flow,
+  // flow: Flow,
   should_quit: Arc<AtomicBool>,
   shared: Arc<SharedInternal>,
   thread: Arc<ThreadLoop<Win32ThreadHandler>>, // held as a ptr because it's chonky
@@ -86,7 +85,7 @@ impl Win32Window {
   pub fn new(settings: WindowSettings) -> Result<Self, RequestError> {
     set_process_dpi_awareness(DPIAwarenessContext::PerMonitorAwareV2);
 
-    let flow = settings.flow;
+    // let flow = settings.flow;
     let shared = SharedInternal::new(settings.clone());
 
     log::trace!("Creating ThreadLoop");
@@ -101,11 +100,45 @@ impl Win32Window {
 
     log::trace!("Received window handle from window thread");
 
-    Ok(Self { hwnd, flow, should_quit: Arc::new(AtomicBool::new(false)), shared, thread })
+    Ok(Self { hwnd, should_quit: Arc::new(AtomicBool::new(false)), shared, thread })
   }
 
   fn hwnd(&self) -> Window {
     self.hwnd
+  }
+
+  fn next_event<const SHOULD_WAIT: bool>(&self) -> Option<Event> {
+    if self.is_closing() {
+      // TODO: reset flag and set active in case we start looping again later
+      // self.should_quit.store(false, Ordering::Release);
+      self.thread.set_inactive();
+      return None;
+    }
+
+    let event = match self.thread.next_event(SHOULD_WAIT) {
+      Ok(event) => event,
+      Err(NextEventError::Empty) => Event::None,
+      Err(NextEventError::Disconnected) => return None,
+    };
+
+    match event {
+      Event::Window(WindowEvent::CloseRequest) => {
+        let x = self.shared.close_on_x;
+        if x {
+          self.close();
+        }
+      },
+      Event::Window(WindowEvent::Keyboard(KeyEvent { state, code: PhysicalKey::Code(code), .. })) => {
+        Win32::input_mut().update_key(code, state);
+      },
+
+      Event::Window(WindowEvent::Pointer(PointerEvent::Button { state, button, .. })) => {
+        Win32::input_mut().update_pointer(button, state);
+      },
+      _ => (),
+    }
+
+    Some(event)
   }
 }
 
@@ -131,37 +164,11 @@ impl BackendWindow for Win32Window {
   }
 
   fn next(&self) -> Option<Event> {
-    if self.is_closing() {
-      // TODO: reset flag and set active in case we start looping again later
-      // self.should_quit.store(false, Ordering::Release);
-      self.thread.set_inactive();
-      return None;
-    }
+    self.next_event::<true>()
+  }
 
-    let event = match self.thread.next_event(matches!(self.flow, Flow::Wait)) {
-      Ok(event) => event,
-      Err(NextEventError::Empty) => Event::None,
-      Err(NextEventError::Disconnected) => return None,
-    };
-
-    match event {
-      Event::Window(WindowEvent::CloseRequest) => {
-        let x = self.shared.close_on_x;
-        if x {
-          self.close();
-        }
-      },
-      Event::Window(WindowEvent::Keyboard(KeyEvent { state, code: PhysicalKey::Code(code), .. })) => {
-        Win32::input_mut().update_key(code, state);
-      },
-
-      Event::Window(WindowEvent::Pointer(PointerEvent::Button { state, button, .. })) => {
-        Win32::input_mut().update_pointer(button, state);
-      },
-      _ => (),
-    }
-
-    Some(event)
+  fn try_next(&self) -> Option<Event> {
+    self.next_event::<false>()
   }
 
   fn monitor(&self) -> Arc<dyn BackendMonitor> {

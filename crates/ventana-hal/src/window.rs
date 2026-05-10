@@ -51,6 +51,8 @@ pub trait BackendWindow: Send + Sync {
 
   fn next(&self) -> Option<Event>;
 
+  fn try_next(&self) -> Option<Event>;
+
   fn monitor(&self) -> Arc<dyn BackendMonitor>;
 
   fn close(&self);

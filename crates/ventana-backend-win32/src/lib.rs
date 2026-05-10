@@ -8,16 +8,13 @@ use std::sync::{
   RwLockWriteGuard,
 };
 
-use {
-  std::sync::RwLock,
-  ventana_hal::input::Input,
-};
 #[allow(unused)]
 use {
   std::{
     collections::VecDeque,
     sync::Arc,
   },
+  ventana_hal::input::Input,
   ventana_hal::{
     backend::Backend,
     error::RequestError,
@@ -29,7 +26,8 @@ use {
 
 #[derive(Debug, Default)]
 pub struct Win32 {
-  pub(crate) input: RwLock<Input>,
+  #[cfg(windows)]
+  pub(crate) input: std::sync::RwLock<Input>,
 }
 
 #[cfg(windows)]

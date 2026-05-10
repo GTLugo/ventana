@@ -27,10 +27,7 @@ use {
     event::KeyEvent,
     keyboard::KeyState,
   },
-  x11rb::protocol::xproto::{
-    KeyButMask,
-    Keycode,
-  },
+  x11rb::protocol::xproto::Keycode,
   xkbcommon_dl::{
     XkbCommon,
     XkbCommonCompose,

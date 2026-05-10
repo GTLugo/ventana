@@ -93,6 +93,10 @@ impl BackendWindow for WaylandWindow {
     todo!()
   }
 
+  fn try_next(&self) -> Option<Event> {
+    todo!()
+  }
+
   fn request_redraw(&self) {
     todo!()
   }
