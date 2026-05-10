@@ -54,6 +54,7 @@ Ventana comes by default with the `AutoBackend` which supports the platforms lis
   * Corner rounding
 * Custom window reveal delay
   * Avoids flash of blank window
+* EGUI support
 * Additional platform support
   * Wayland
   * MacOS
