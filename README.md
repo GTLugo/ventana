@@ -42,8 +42,6 @@ Ventana comes by default with the `AutoBackend` which supports the platforms lis
 
 ## Todo list (Non-exhaustive)
 
-* Flow control 2.0
-  * Drop flow options instead for `.iter()` and `.try_iter()`
 * IME
 * Custom decorations
 * Window operations
