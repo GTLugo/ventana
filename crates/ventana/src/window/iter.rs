@@ -4,10 +4,12 @@ use {
 };
 
 impl Window {
+  /// Returns an iterator which reads the next event from the window, waiting if there are none available.
   pub fn iter(&'_ self) -> EventIterator<'_> {
     EventIterator { window: self }
   }
 
+  /// Returns an iterator which reads the next event from the window, returning `Some(Event::None)` if there are none available.
   pub fn try_iter(&'_ self) -> PollingEventIterator<'_> {
     PollingEventIterator { window: self }
   }
