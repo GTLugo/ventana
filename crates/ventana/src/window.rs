@@ -140,11 +140,13 @@ impl Window {
     self.window.meta_key()
   }
 
-  pub fn next_event(&self) -> Option<Event> {
+  /// Reads the next event from the window, waiting if there are none available.
+  pub fn next(&self) -> Option<Event> {
     self.window.next()
   }
 
-  pub fn try_next_event(&self) -> Option<Event> {
+  /// Reads the next event from the window, returning `Some(Event::None)` if there are none available.
+  pub fn try_next(&self) -> Option<Event> {
     self.window.try_next()
   }
 

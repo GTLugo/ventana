@@ -35,7 +35,7 @@ impl<'a> Iterator for EventIterator<'a> {
   type Item = Event;
 
   fn next(&mut self) -> Option<Self::Item> {
-    self.window.next_event()
+    self.window.next()
   }
 }
 
@@ -56,7 +56,7 @@ impl Iterator for WindowIntoIterator {
   type Item = Event;
 
   fn next(&mut self) -> Option<Self::Item> {
-    self.window.next_event()
+    self.window.next()
   }
 }
 
@@ -83,7 +83,7 @@ impl<'a> Iterator for PollingEventIterator<'a> {
   type Item = Event;
 
   fn next(&mut self) -> Option<Self::Item> {
-    self.window.try_next_event()
+    self.window.try_next()
   }
 }
 
@@ -96,6 +96,7 @@ impl<'a> Iterator for PollingEventIterator<'a> {
 //   }
 // }
 
+// This is unused for now since the default iteration method should be to wait.
 pub struct PollingWindowIntoIterator {
   window: Window,
 }
@@ -104,7 +105,7 @@ impl Iterator for PollingWindowIntoIterator {
   type Item = Event;
 
   fn next(&mut self) -> Option<Self::Item> {
-    self.window.try_next_event()
+    self.window.try_next()
   }
 }
 
