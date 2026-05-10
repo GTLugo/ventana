@@ -21,7 +21,7 @@ fn main() -> anyhow::Result<()> {
 
   let mut state = pollster::block_on(State::new(window.clone()))?;
 
-  for event in window.try_iter() {
+  for event in &window {
     if let Event::Window(event) = event {
       if !matches!(event, WindowEvent::Draw) {
         log::debug!("{:?} | {event:?}", window.title());
@@ -30,16 +30,17 @@ fn main() -> anyhow::Result<()> {
       match event {
         WindowEvent::Draw => {
           // log::debug!("{:?} | {event:?}", window.title());
-          // window.request_redraw();
+          state.update();
+          state.draw();
+          window.request_redraw();
         },
         WindowEvent::Resized(physical_size) => {
           state.resize(physical_size);
+          window.request_redraw();
         },
         _ => (),
       }
     }
-    state.update();
-    state.draw();
   }
 
   Ok(())

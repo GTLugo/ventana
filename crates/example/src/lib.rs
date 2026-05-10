@@ -135,7 +135,6 @@ impl State {
       self.config.height = size.height;
       self.reconfigure();
     }
-    self.window.request_redraw();
   }
 
   fn reconfigure(&mut self) {
